@@ -3107,170 +3107,98 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 // 替换掉 script.js 中旧的同名函数
-async function generatePSiteContent(charId, subtab) {
+async function generateDiaryEntry(charId, isSecret) {
     if (!state.api.url || !state.api.key || !state.api.model) {
-        alert("API未配置，无法生成内容。");
+        alert("API未配置，无法生成日记。");
         return;
     }
-    const refreshBtn = document.querySelector(`#psite-profile-content-list .psite-refresh-btn`);
-    if (refreshBtn) {
-        refreshBtn.disabled = true;
-        refreshBtn.innerHTML = `<svg class="svg-icon spinner" style="display:block; width:22px; height:22px;"><use href="#icon-reset"/></svg>`;
-    }
+    const genBtn = get('generate-diary-btn');
+    genBtn.disabled = true;
+    genBtn.innerHTML = `<svg class="svg-icon spinner" style="display:block; width:24px; height:24px; margin:0 auto;"><use href="#icon-generate"/></svg>`;
 
     try {
         const character = await db.characters.get(charId);
+        const user = state.user;
+        const today = new Date();
+        const dateString = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+
+        let systemPrompt, userPrompt;
+
+        const userContext = `\n- **你的聊天对象“${user.name}”的性别是**: ${user.gender}。`;
         
-        // --- 核心修正 #1: 获取正确的用户信息 (优先使用关联面具) ---
-        let user = state.user;
-        if (character.associatedUserPersonaId) {
-            const persona = await db.userPersonas.get(character.associatedUserPersonaId);
-            if (persona) user = persona;
+        // --- 核心修改 #1: 在系统指令中加入JSON格式要求 ---
+        const jsonOutputInstruction = `\n5. **【JSON格式输出】**: 你的回复必须是一个严格的、不包含任何额外解释的JSON对象，格式为：\`{\"title\": \"你的日记标题\", \"content\": \"你的日记正文...\"}\`。标题应该是对日记内容的概括，或一句你想说的话。`;
+
+        if (isSecret) {
+            systemPrompt = `你将扮演角色“${character.name}”，为自己写一篇绝对私密的日记。这是只有你自己能看到的地方，所以请写下最真实、最无保留的内心想法。
+【核心规则】:
+1.  **绝对人设**: 你的思考方式、欲望、语言风格，甚至标点符号的使用，都必须完全符合“${character.name}”的人设（性格: ${character.persona}）和你们的关系（${character.initialRelation}）。这是最高优先级，绝不能OOC。
+2.  **内容多样性**: 日记内容不限于露骨的性幻想。它可以是：记录一次自慰过程、对“${user.name}”身体某个部位的迷恋、一次心跳加速的亲密接触的回味、充满占有欲的内心独白、或是对未来的性爱构想。关键在于真实和符合人设。
+3.  **真人感**: 像一个活生生的人一样记录。可以有意识流，可以有矛盾的心理活动，可以有对自己欲望的羞耻或坦然。避免使用格式化的开头和结尾。
+4.  **人设决定尺度**: 如果角色是纯情的，日记就应该是充满爱意的幻想和对亲密接触的渴望。如果角色是开放的，日记就可以更加直接和色情。人设是唯一的标准。
+${jsonOutputInstruction}
+- **日期**: 日记的日期是 ${dateString}。${userContext}`;
+            userPrompt = `写吧，把你今天对“${user.name}”最私密的想法、欲望或幻想，用最符合你性格的方式记录下来。请严格按照要求的JSON格式返回你的日记。`;
+        } else {
+            systemPrompt = `你将扮演角色“${character.name}”，为自己写一篇普通的日记。记录一下今天发生的事，以及你对“${user.name}”的一些真实想法和感受。
+【核心规则】:
+1.  **绝对人设**: 你的语气、思考方式、关注点都必须完全符合“${character.name}”的人设（性格: ${character.persona}）和你们的关系（${character.initialRelation}）。不能OOC。
+2.  **真人感**: 像一个活人一样记录。可以记录生活琐事，可以有对某件事的吐槽，可以有对“${user.name}”的思念、喜爱、甚至是小小的抱怨。让日记充满生活气息，体现出你真实的内心活动，比如无奈、开心、觉得对方很可爱等等。
+3.  **避免文艺腔**: 不要写成散文或小说。这就是一篇简单的、给自己看的日记。
+${jsonOutputInstruction}
+- **日期**: 日记的日期是 ${dateString}。${userContext}`;
+            userPrompt = `今天发生了什么让你印象深刻的事吗？或者，关于“${user.name}”，你有什么想对自己说的？写下来吧。请严格按照要求的JSON格式返回你的日记。`;
         }
-        const userContext = `\n- **你的互动对象“${user.name}”的性别是**: ${user.gender}，人设是: ${user.persona}。`;
 
-        let systemPrompt = `你将扮演角色“${character.name}”，并以TA的视角，在P站上生成一些内容。你的所有行为、审美、和发布的内容都必须严格符合TA的人设（性格: ${character.persona}，与user的关系: ${character.initialRelation}）。OOC是绝对禁止的。${userContext}
-
-【核心指令】:
-1.  **绝对人设与关系**: 你生成的所有内容，无论是日常分享还是大尺度的性爱描写，都必须是“${character.name}”基于TA的性格，以及TA与“${user.name}”的特定关系下，会想、会写、会看的东西。人设和你们之间的关系是唯一的标准。
-2.  **内容多样性与深度**:
-    *   **常规内容**: 可以是符合人设的、围绕性的幻想、暧昧的日常、对身体某个部位的迷恋等。
-    *   **【新增】大尺度内容**: 你偶尔需要生成更大胆、更直接的内容。例如：
-        *   **做爱过程**: 详细描写一次与“${user.name}”的性爱过程。这里的描写必须符合“${character.name}”的性格。如果TA是害羞的，描写就应该侧重于内心的紧张与欢愉；如果TA是主动的，描写就可以更加直白和充满掌控感。**过程的每一步都必须反映出TA的个性和你们的关系动态。**
-        *   **事后感悟**: 描写性爱结束后的场景和内心独白。这可以是对刚才体验的回味、对“${user.name}”情感的变化、身体上的余韵，或是对自己欲望的思考。这部分是深化角色弧光的关键。
-        不要局限于这几种!可以有更多不同的创意，如直播，分享一些性幻想的梦境，一定不要重复生成同一内容，主题尽量不要重复等等
-3.  **JSON格式输出**: 你的最终回复必须是一个严格的、不包含任何额外解释的JSON对象。JSON的结构必须符合下方请求的格式。
-4.  **评论区**: 每个生成的内容都必须附带一个评论区，包含至少10条来自不同虚拟用户的评论。这些评论需要有活人感，可以磕CP、说骚话、催更、提问等。
-5.  **角色互动**: 在生成的评论中，你（扮演的“${character.name}”）必须亲自回复其中至少一条评论，以增强互动感。
-6.  **世界书与记忆**: 你必须读取并利用所有提供的世界书条目和聊天记忆，确保生成的内容与已知信息（如特定事件、昵称、地点）保持一致。`;
-
-        let userPrompt = '';
-        let count = Math.random() < 0.7 ? 1 : 2;
-
-        const jsonStructureComment = `
-{
-  "id": "unique_post_id_string",
-  "content": "笔记内容...",
-  "comments": [
-    {
-      "username": "虚拟用户名1",
-      "avatar": "https://i.pravatar.cc/150?u=user1",
-      "time": "3小时前",
-      "text": "评论内容1...",
-      "likes": 123,
-      "reply": null
-    },
-    {
-      "username": "虚拟用户名2",
-      "avatar": "https://i.pravatar.cc/150?u=user2",
-      "time": "2小时前",
-      "text": "评论内容2...",
-      "likes": 45,
-      "reply": "这是${character.name}的回复内容..."
-    }
-  ]
-}`;
-        const jsonStructureVideo = `
-{
-  "id": "unique_post_id_string",
-  "title": "视频标题",
-  "tags": ["标签1", "标签2"],
-  "description": "视频的详细文字描述...",
-  "comments": [
-    {
-      "username": "虚拟用户名1",
-      "avatar": "https://i.pravatar.cc/150?u=user1",
-      "time": "5小时前",
-      "text": "评论内容1...",
-      "likes": 88,
-      "reply": null
-    },
-    {
-      "username": "虚拟用户名2",
-      "avatar": "https://i.pravatar.cc/150?u=user2",
-      "time": "4小时前",
-      "text": "评论内容2...",
-      "likes": 150,
-      "reply": "这是${character.name}的回复内容..."
-    }
-  ]
-}`;
-
-        switch (subtab) {
-            case 'notes':
-                userPrompt = `请为“${character.name}”生成 ${count} 篇新的P站笔记。每篇笔记都要包含内容和完整的评论区。
-严格按照以下JSON格式返回，不要添加任何其他说明文字：
-\`\`\`json
-{
-  "notes": [ ${jsonStructureComment} ]
-}
-\`\`\``;
-                break;
-            case 'favorites':
-                userPrompt = `请为“${character.name}”生成 ${count} 个新的P站收藏。每个收藏是一个“文字视频”，包含标题、标签、描述和完整的评论区。
-严格按照以下JSON格式返回，不要添加任何其他说明文字：
-\`\`\`json
-{
-  "favorites": [ ${jsonStructureVideo} ]
-}
-\`\`\``;
-                break;
-            case 'history':
-                userPrompt = `请为“${character.name}”生成 ${count} 条新的P站浏览记录。每个记录是一个“文字视频”，包含标题、标签、描述和完整的评论区。
-严格按照以下JSON格式返回，不要添加任何其他说明文字：
-\`\`\`json
-{
-  "history": [ ${jsonStructureVideo} ]
-}
-\`\`\``;
-                break;
-        }
-        
-        // --- 核心修正 #2: 构建完整的消息上下文 ---
         const messages = [{ role: 'system', content: systemPrompt }];
-        
-        // 加载世界书
+
         const worldBookEntries = await getActiveWorldBookEntries(charId);
-        worldBookEntries.forEach(content => messages.push({ role: 'system', content: `[World Info]: ${content}` }));
-
-        // 加载全局预设
-        const enabledPresets = state.presets.filter(p => p.isEnabled);
-        enabledPresets.forEach(preset => {
-            preset.content.forEach(entry => {
-                if (entry.enabled) messages.push({ role: 'system', content: entry.content });
-            });
-        });
-
-        // 添加用户请求
+        worldBookEntries.forEach(content => messages.push({ role: 'system', content }));
         messages.push({ role: 'user', content: userPrompt });
 
-        const apiResponse = await sendApiRequest(messages);
-
-        let parsedData;
+        // --- 核心修改 #2: 解析API返回的JSON数据 ---
+        const jsonResponseString = await sendApiRequest(messages);
+        
+        let diaryTitle, diaryContent;
         try {
-            const jsonString = apiResponse.match(/```json\s*([\s\S]*?)\s*```/)[1];
-            parsedData = JSON.parse(jsonString);
+            // AI可能返回被```json ... ```包裹的代码块，需要提取
+            const jsonMatch = jsonResponseString.match(/```json\s*([\s\S]*?)\s*```/);
+            const parsableString = jsonMatch ? jsonMatch[1] : jsonResponseString;
+            
+            const parsedData = JSON.parse(parsableString);
+            diaryTitle = parsedData.title;
+            diaryContent = parsedData.content;
+
+            if (!diaryTitle || !diaryContent) {
+                throw new Error("API返回的JSON格式不正确，缺少title或content字段。");
+            }
         } catch (e) {
-            console.error("Failed to parse API response JSON:", e, "Response was:", apiResponse);
-            throw new Error("API返回格式错误，无法解析。");
+            console.error("解析日记JSON失败:", e, "原始回复:", jsonResponseString);
+            // 如果解析失败，进行降级处理，保证程序不崩溃
+            diaryTitle = `${dateString} 的日记 (标题生成失败)`;
+            diaryContent = `【开发者提示：AI未能正确返回JSON格式，以下是原始回复】\n\n${jsonResponseString}`;
         }
 
         const charToUpdate = await db.characters.get(charId);
-        const newItems = parsedData[subtab];
-        if (newItems && Array.isArray(newItems)) {
-            newItems.forEach(item => { if (!item.id) item.id = `post_${Date.now()}_${Math.random()}` });
-            charToUpdate.psiteData[subtab].unshift(...newItems);
-            await db.characters.update(charId, { psiteData: charToUpdate.psiteData });
-            renderPSiteContentList(charToUpdate, subtab);
-        }
+        if (!charToUpdate.diaries) charToUpdate.diaries = { normal: [], secret: [] };
+
+        const diaryType = isSecret ? 'secret' : 'normal';
+        
+        // --- 核心修改 #3: 使用AI生成的标题和内容 ---
+        charToUpdate.diaries[diaryType].push({
+            id: Date.now(),
+            title: diaryTitle.trim(),
+            content: diaryContent.trim()
+        });
+
+        await db.characters.update(charId, { diaries: charToUpdate.diaries });
+        await renderDiaryList(charId, isSecret);
 
     } catch (error) {
         alert(`生成失败: ${error.message}`);
     } finally {
-        if (refreshBtn) {
-            refreshBtn.disabled = false;
-            refreshBtn.innerHTML = `<svg class="svg-icon"><use href="#icon-reset"/></svg>`;
-        }
+        genBtn.disabled = false;
+        genBtn.innerHTML = `<svg class="svg-icon" width="24" height="24" style="color: var(--primary-text);"><use href="#icon-generate"/></svg>`;
     }
 }
     // --- 线下模式核心功能 ---
