@@ -4968,7 +4968,6 @@ get('photo-widget-input').addEventListener('change', (event) => {
 
 // --- ▲▲▲ 【代码粘贴到这里结束】 ▲▲▲ ---
 
-init(); // 确保新代码在 init() 调用之前
         setTimeout(() => get('home-screen').classList.add('active'), 100);
     }
 
