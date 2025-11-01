@@ -467,7 +467,7 @@ html, body {
     align-items: center;
     gap: 12px;
     padding: 20px 16px;
-    padding-top: calc(15px + env(safe-area-inset-top));
+    padding-top: calc(28px + env(safe-area-inset-top));
     background-color: rgba(var(--header-bg-rgb), 0.8);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -2709,7 +2709,6 @@ body.dark-mode #music-player-screen {
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     object-fit: cover;
 }
-}
 .player-song-info {
     text-align: center;
 }
@@ -2856,4 +2855,202 @@ body.dark-mode .search-result-play-btn:disabled {
     background-color: transparent;
     color: var(--secondary-text);
 }
-/* --- ▲▲▲ CSS修改结束 ▲▲▲ --- */
+/* --- 音乐播放器页面样式修正 --- */
+#music-player-screen .player-main {
+    justify-content: space-around; /* 确保元素在垂直方向均匀分布 */
+    padding: 20px 30px;
+    box-sizing: border-box;
+}
+#music-player-screen .player-main-controls,
+#music-player-screen .player-extra-controls {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+#music-player-screen .player-control-btn,
+#music-player-screen .player-extra-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--primary-text);
+    padding: 10px;
+}
+#music-player-screen .player-control-btn .svg-icon {
+    width: 35px; /* 调整上一曲/下一曲图标大小 */
+    height: 35px;
+}
+#music-player-screen .player-control-btn.play-pause .svg-icon {
+    width: 60px; /* 调整播放/暂停图标大小 */
+    height: 60px;
+}
+#music-player-screen .player-extra-btn .svg-icon {
+    width: 24px; /* 调整爱心/列表等图标大小 */
+    height: 24px;
+}
+/* --- ▼▼▼ 全新：灵动岛样式 ▼▼▼ --- */
+
+/* 灵动岛容器基础样式 */
+.dynamic-island {
+    position: absolute;
+    top: calc(2px + env(safe-area-inset-top)); /* 紧贴状态栏下方 */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    
+    /* 默认状态：一个小黑条，不可见 */
+    width: 120px;
+    height: 27px;
+    background-color: #000;
+    border-radius: 50px;
+    opacity: 1;
+    pointer-events: none; /* 默认不可点击 */
+    
+    /* 核心动画效果 */
+    transition: all 0.5s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+    
+    /* 内部元素布局 */
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    color: white;
+}
+
+/* 播放音乐时的激活状态（收起） */
+.dynamic-island.active {
+    opacity: 1;
+    width: 130px; /* 变宽 */
+    pointer-events: auto; /* 激活后可点击 */
+    cursor: pointer;
+}
+
+/* 点击后展开的状态 */
+.dynamic-island.expanded {
+    width: 70%;
+    max-width: 400px;
+    height: auto; /* 高度自动 */
+    padding: 16px;
+    box-sizing: border-box;
+    cursor: default;
+}
+
+/* 内容容器的通用样式 */
+.island-content {
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    display: none; /* 默认不显示 */
+}
+
+/* 收起状态下的内容 */
+.dynamic-island.active:not(.expanded) #island-collapsed-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 8px;
+    opacity: 1;
+}
+.island-album-art {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    object-fit: cover;
+}
+.island-visualizer svg {
+    width: 24px;
+    height: 24px;
+    color: #34C759; /* 绿色 */
+}
+
+/* 展开状态下的内容 */
+.dynamic-island.expanded #island-expanded-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    opacity: 1;
+}
+
+/* 展开播放器 - 头部（封面、歌名） */
+.island-player-container .player-header-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.player-album-art-expanded {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+.player-song-details {
+    overflow: hidden;
+}
+.player-song-details .song-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.player-song-details .song-artist {
+    font-size: 0.85rem;
+    color: #8E8E93; /* 暗色模式下的二级文字颜色 */
+    margin: 4px 0 0;
+}
+
+/* 展开播放器 - 进度条 */
+.island-player-container .player-progress-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: #8E8E93;
+}
+#island-player-progress-slider {
+    flex-grow: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: #48484A;
+    outline: none;
+    border-radius: 2px;
+}
+#island-player-progress-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    background: white;
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+/* 展开播放器 - 控制按钮 */
+.island-player-container .player-controls-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+.island-player-button {
+    background: none;
+    border: none;
+    color: white;
+    padding: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.island-player-button svg {
+    width: 22px;
+    height: 22px;
+}
+/* 中间的播放按钮可以大一点 */
+#island-player-play-pause-btn svg {
+    width: 28px;
+    height: 28px;
+}
