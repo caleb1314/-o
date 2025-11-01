@@ -4916,7 +4916,59 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         // --- ▲▲▲ JS修改结束 ▲▲▲ ---
+// --- ▼▼▼ 【在这里粘贴新代码】 ▼▼▼ ---
 
+// 1. 为 "照片小组件" 的 "本地上传" 按钮添加点击事件
+get('photo-widget-upload-local-btn').addEventListener('click', () => {
+    // a. 先关闭浮窗
+    get('upload-photo-widget-sheet').classList.remove('active');
+    // b. 触发隐藏的文件选择框
+    get('photo-widget-input').click(); 
+});
+
+// 2. 为 "照片小组件" 的 "URL上传" 按钮添加点击事件
+get('photo-widget-upload-url-btn').addEventListener('click', () => {
+    // a. 先关闭浮窗
+    get('upload-photo-widget-sheet').classList.remove('active');
+    // b. 弹出一个输入框让用户输入URL
+    const url = prompt('请输入图片的URL:');
+    if (url) {
+        // c. 更新状态和界面
+        state.photoWidgetUrl = url;
+        get('photo-widget-img').src = url;
+        // d. 保存状态
+        saveState();
+    }
+});
+
+// 3. 监听隐藏的文件选择框 (photo-widget-input) 的变化事件
+get('photo-widget-input').addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) {
+        return; // 用户取消了选择
+    }
+
+    // 使用 FileReader 将图片文件转换为 Data URL
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const imageUrl = e.target.result;
+
+        // a. 更新 state 对象中的 URL
+        state.photoWidgetUrl = imageUrl;
+        // b. 更新主屏幕上小组件的图片 src
+        get('photo-widget-img').src = imageUrl;
+        // c. 保存状态到数据库，这样刷新后图片依然存在
+        saveState();
+    };
+    reader.readAsDataURL(file);
+
+    // 重置 input 的值，这样用户可以连续上传同一张图片
+    event.target.value = '';
+});
+
+// --- ▲▲▲ 【代码粘贴到这里结束】 ▲▲▲ ---
+
+init(); // 确保新代码在 init() 调用之前
         setTimeout(() => get('home-screen').classList.add('active'), 100);
     }
 
