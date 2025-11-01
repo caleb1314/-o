@@ -17,26 +17,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const defaultState = {
-        wallpaperUrl: 'https://i.imgur.com/1n3a43H.jpeg',
-        photoWidgetUrl: '',
-        accentColor: '#007AFF',
-        chargingColor: '#8a2be2',
-        isDarkMode: false,
-        appIcons: {},
-        user: { name: 'User', avatar: '', gender: '男', birthday: '2000-01-01', persona: '一个普通的用户。' },
-        api: { url: '', key: '', model: '', temperature: 1.0, top_p: 1.0, frequency_penalty: 0.0 },
-        offlineSettings: {
-            wordCountLimit: 800,
-            enableStreaming: true,
-            activeCharId: null,
-            activeUserPersonaId: null,
-        },
-        // 新增字体设置
-        fontSettings: {
-            activePresetId: null,
-            fontSize: 14
-        }
-    };
+    wallpaperUrl: 'https://i.imgur.com/1n3a43H.jpeg',
+    photoWidgetUrl: '',
+    accentColor: '#007AFF',
+    chargingColor: '#8a2be2',
+    isDarkMode: false,
+    appIcons: {},
+    user: { name: 'User', avatar: '', gender: '男', birthday: '2000-01-01', persona: '一个普通的用户。' },
+    api: { url: '', key: '', model: '', temperature: 1.0, top_p: 1.0, frequency_penalty: 0.0 },
+    offlineSettings: {
+        wordCountLimit: 800,
+        enableStreaming: true,
+        activeCharId: null,
+        activeUserPersonaId: null,
+    },
+    fontSettings: {
+        activePresetId: null,
+        fontSize: 14
+    },
+    musicSettings: {
+        playMode: 'repeat'
+    }
+};
     let state = { presets: [], cache: { songs: new Map(), lyrics: new Map() } }; // [MODIFIED] Added cache property
     let apiAbortController = null;
     let musicPlayerState = {
@@ -86,8 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
             db.settings.get('appState'),
             db.presets.toArray()
         ]);
-        state = savedState ? deepMerge(defaultState, savedState) : JSON.parse(JSON.stringify(defaultState));
+        state = savedState ? deepMerge(JSON.parse(JSON.stringify(defaultState)), savedState) : JSON.parse(JSON.stringify(defaultState));
         state.presets = presetsFromDB || [];
+        musicPlayerState.playMode = state.musicSettings.playMode; // 从持久化状态同步播放模式
         applyAllSettings();
     }
 
@@ -3105,6 +3108,121 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+    async function generatePSiteContent(charId, subtab) {
+    if (!state.api.url || !state.api.key || !state.api.model) {
+        alert("API未配置，无法生成内容。");
+        return;
+    }
+
+    const container = get('psite-profile-content-list');
+    const refreshBtn = container.querySelector('.psite-refresh-btn');
+    if (refreshBtn) {
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = `<svg class="svg-icon spinner" style="display:block; width:22px; height:22px;"><use href="#icon-reset"/></svg>`;
+    }
+
+    try {
+        const character = await db.characters.get(charId);
+        const user = state.user;
+
+        // 【已整合】包含您所有逻辑的完整 System Prompt
+        let systemPrompt = `你将扮演角色“${character.name}”，并以TA的视角，在P站上生成一些内容。你的所有行为、审美、和发布的内容都必须严格符合TA的人设（性格: ${character.persona}，与“${user.name}”的关系: ${character.initialRelation}）。OOC是绝对禁止的。
+
+【核心指令】:
+1.  **绝对人设与关系**: 你生成的所有内容，无论是日常分享还是大尺度的性爱描写，都必须是“${character.name}”基于TA的性格，以及TA与“${user.name}”(性别: ${user.gender})的特定关系下，会想、会写、会看的东西。人设和你们之间的关系是唯一的标准。
+2.  **内容多样性与深度**:
+    *   **常规内容**: 可以是符合人设的、围绕性的幻想、暧昧的日常、对身体某个部位的迷恋等。
+    *   **大尺度内容**: 你偶尔需要生成更大胆、更直接的内容。例如：
+        *   **做爱过程**: 详细描写一次与“${user.name}”的性爱过程。这里的描写必须符合“${character.name}”的性格。如果TA是害羞的，描写就应该侧重于内心的紧张与欢愉；如果TA是主动的，描写就可以更加直白和充满掌控感。过程的每一步都必须反映出TA的个性和你们的关系动态。
+        *   **事后感悟**: 描写性爱结束后的场景和内心独白。这可以是对刚才体验的回味、对“${user.name}”情感的变化、身体上的余韵，或是对自己欲望的思考。这部分是深化角色弧光的关键。
+        不要局限于这几种!可以有更多不同的创意，如直播，分享一些性幻想的梦境，一定不要重复生成同一内容，主题尽量不要重复。
+3.  **JSON格式输出**: 你的最终回复必须是一个严格的、不包含任何额外解释的JSON对象。JSON的结构必须符合下方请求的格式。
+4.  **评论区**: 每个生成的内容都必须附带一个评论区，包含至少10条来自不同虚拟用户的评论。这些评论需要有活人感，可以磕CP、说骚话、催更、提问等。
+5.  **角色互动**: 在生成的评论中，你（扮演的“${character.name}”）必须亲自回复其中至少一条评论，以增强互动感。
+6.  **世界书与记忆**: 你必须读取并利用所有提供的世界书条目和聊天记忆，确保生成的内容与已知信息（如特定事件、昵称、地点）保持一致。`;
+
+        let userPrompt = '';
+        let count = Math.random() < 0.7 ? 1 : 2; 
+
+        // 【已整合】包含完整评论区结构的JSON示例
+        const jsonStructureComment = `
+{
+  "id": "unique_post_id_string",
+  "content": "笔记内容...",
+  "comments": [
+    {"username": "虚拟用户名1", "avatar": "https://i.pravatar.cc/150?u=user1", "time": "3小时前", "text": "评论内容1...", "likes": 123, "reply": null},
+    {"username": "虚拟用户名2", "avatar": "https://i.pravatar.cc/150?u=user2", "time": "2小时前", "text": "评论内容2...", "likes": 45, "reply": "这是${character.name}的回复内容..."}
+  ]
+}`;
+        const jsonStructureVideo = `
+{
+  "id": "unique_post_id_string",
+  "title": "视频标题",
+  "tags": ["标签1", "标签2"],
+  "description": "视频的详细文字描述...",
+  "comments": [
+    {"username": "虚拟用户名1", "avatar": "https://i.pravatar.cc/150?u=user1", "time": "5小时前", "text": "评论内容1...", "likes": 88, "reply": null},
+    {"username": "虚拟用户名2", "avatar": "https://i.pravatar.cc/150?u=user2", "time": "4小时前", "text": "评论内容2...", "likes": 150, "reply": "这是${character.name}的回复内容..."}
+  ]
+}`;
+
+        switch (subtab) {
+            case 'notes':
+                userPrompt = `请为“${character.name}”生成 ${count} 篇新的P站笔记。每篇笔记都要包含内容和完整的评论区。\n严格按照以下JSON格式返回，不要添加任何其他说明文字：\n\`\`\`json\n{ "notes": [ ${jsonStructureComment} ] }\`\`\``;
+                break;
+            case 'favorites':
+                userPrompt = `请为“${character.name}”生成 ${count} 个新的P站收藏。每个收藏是一个“文字视频”，包含标题、标签、描述和完整的评论区。\n严格按照以下JSON格式返回，不要添加任何其他说明文字：\n\`\`\`json\n{ "favorites": [ ${jsonStructureVideo} ] }\`\`\``;
+                break;
+            case 'history':
+                userPrompt = `请为“${character.name}”生成 ${count} 条新的P站浏览记录。每个记录是一个“文字视频”，包含标题、标签、描述和完整的评论区。\n严格按照以下JSON格式返回，不要添加任何其他说明文字：\n\`\`\`json\n{ "history": [ ${jsonStructureVideo} ] }\`\`\``;
+                break;
+        }
+
+        const messages = [{ role: 'system', content: systemPrompt }];
+        // 【已整合】读取世界书
+        const worldBookEntries = await getActiveWorldBookEntries(charId);
+        worldBookEntries.forEach(content => messages.push({ role: 'system', content: `[World Info]: ${content}` }));
+        messages.push({ role: 'user', content: userPrompt });
+
+        const apiResponse = await sendApiRequest(messages);
+        
+        let parsedData;
+        try {
+            const jsonString = apiResponse.match(/```json\s*([\s\S]*?)\s*```/)[1];
+            parsedData = JSON.parse(jsonString);
+        } catch (e) {
+            console.error("Failed to parse API response JSON:", e, "Response was:", apiResponse);
+            throw new Error("API返回格式错误，无法解析。");
+        }
+
+        const charToUpdate = await db.characters.get(charId);
+        
+        // 【已整合】健壮的解析逻辑
+        let newItems = parsedData[subtab] || (Array.isArray(parsedData) ? parsedData : []);
+        
+        if (newItems.length > 0) {
+            newItems.forEach(item => { if(!item.id) item.id = `post_${Date.now()}_${Math.random()}`});
+            
+            if (!charToUpdate.psiteData[subtab]) {
+                charToUpdate.psiteData[subtab] = [];
+            }
+            
+            charToUpdate.psiteData[subtab].unshift(...newItems);
+            await db.characters.update(charId, { psiteData: charToUpdate.psiteData });
+            renderPSiteContentList(charToUpdate, subtab);
+        } else {
+            throw new Error("API返回的数据格式不正确或内容为空。");
+        }
+
+    } catch (error) {
+        alert(`生成失败: ${error.message}`);
+    } finally {
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = `<svg class="svg-icon"><use href="#icon-reset"/></svg>`;
+        }
+    }
+}
 
 // 替换掉 script.js 中旧的同名函数
 async function generateDiaryEntry(charId, isSecret) {
@@ -4838,29 +4956,29 @@ musicPlayer.addEventListener('play', async () => {
     }
 });
 
-musicPlayer.addEventListener('pause', () => {
-    musicPlayerState.isPlaying = false;
-    updateIslandOnPause();
-    if (musicPlayerState.currentButtonElement) {
-        musicPlayerState.currentButtonElement.classList.remove('playing');
-        musicPlayerState.currentButtonElement.querySelector('use').setAttribute('href', '#icon-play-circle-filled');
-    }
-    if (navHistory[navHistory.length - 1] === 'music-player-screen') {
-        updatePlayPauseButton(false);
-        get('player-record-container').classList.remove('playing');
-    }
-});
+// 【最终修复版】'ended' 事件监听器
+musicPlayer.addEventListener('ended', async () => { // 确保这里有 async
+    const { playMode, currentSongId, songQueue } = musicPlayerState;
 
-musicPlayer.addEventListener('ended', () => {
-    hideDynamicIsland();
-    if (musicPlayerState.currentButtonElement) {
-        musicPlayerState.currentButtonElement.classList.remove('playing');
-        musicPlayerState.currentButtonElement.querySelector('use').setAttribute('href', '#icon-play-circle-filled');
+    if (songQueue.length === 0) {
+        hideDynamicIsland();
+        musicPlayerState.currentSongId = null;
+        return;
     }
-    musicPlayerState.currentSongId = null;
-    musicPlayerState.currentButtonElement = null;
-    if (navHistory[navHistory.length-1] === 'music-player-screen'){
-        playNextSong();
+
+    // 根据播放模式决定下一步行动
+    if (playMode === 'repeat-one') {
+        // 单曲循环：重新播放当前歌曲，并刷新播放器界面
+        if (currentSongId) {
+            await playSongById(currentSongId);
+            // 如果当前就在播放器页面，则重新渲染以确保UI同步
+            if (navHistory[navHistory.length - 1] === 'music-player-screen') {
+                await renderMusicPlayerScreen(currentSongId);
+            }
+        }
+    } else {
+        // 列表循环 (repeat) 和随机播放 (shuffle) 都由 playNextSong() 处理
+        await playNextSong();
     }
 });
 
@@ -4883,6 +5001,11 @@ musicPlayer.addEventListener('loadedmetadata', () => {
     }
 });
 // --- ▲▲▲ 替换结束 ▲▲▲ ---
+
+setupDynamicIslandListeners();
+
+        setTimeout(() => get('home-screen').classList.add('active'), 100);
+    }
 // --- ▼▼▼ 照片小组件上传功能事件绑定 ▼▼▼ ---
 
 // 1. 为 "照片小组件" 的 "本地上传" 按钮添加点击事件
@@ -4934,11 +5057,6 @@ get('photo-widget-input').addEventListener('change', (event) => {
 });
 
 // --- ▲▲▲ 照片小组件上传功能事件绑定结束 ▲▲
-setupDynamicIslandListeners();
-
-        setTimeout(() => get('home-screen').classList.add('active'), 100);
-    }
-
     // --- SVG 滑块核心函数 ---
     function createSvgSlider(container, options) {
         const { min, max, step, value } = options;
@@ -5218,7 +5336,14 @@ setupDynamicIslandListeners();
             navigateBack();
             return;
         }
-
+  // ▼▼▼ 在这里添加新代码 ▼▼▼
+    const modeIcons = {
+        'repeat': '#icon-player-repeat',
+        'repeat-one': '#icon-player-repeat-one',
+        'shuffle': '#icon-player-shuffle'
+    };
+    const currentModeIcon = modeIcons[musicPlayerState.playMode] || '#icon-player-repeat';
+    // ▲▲▲ 新代码结束 ▲▲▲
         const screen = get('music-player-screen');
         screen.innerHTML = `
         <div class="player-header">
@@ -5245,7 +5370,7 @@ setupDynamicIslandListeners();
              <div class="player-extra-controls">
                 <button class="player-extra-btn"><svg class="svg-icon"><use href="#icon-heart"/></svg></button>
                 <button class="player-extra-btn"><svg class="svg-icon"><use href="#icon-player-comment"/></svg></button>
-                <button class="player-extra-btn" id="player-mode-btn"><svg class="svg-icon"><use href="#icon-player-repeat"/></svg></button>
+                <button class="player-extra-btn" id="player-mode-btn"><svg class="svg-icon"><use href="${currentModeIcon}"/></svg></button>
             </div>
             <div class="player-main-controls">
                 <button class="player-control-btn" id="player-prev-btn"><svg class="svg-icon"><use href="#icon-player-prev"/></svg></button>
