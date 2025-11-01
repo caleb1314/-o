@@ -116,6 +116,21 @@
 <symbol id="icon-player-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></symbol>
 <symbol id="icon-player-repeat-one" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/><path d="M11 10h1v4"/></symbol>
 <symbol id="icon-player-shuffle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="16 21 21 21 21 16"></polyline><line x1="4" y1="4" x2="15" y2="15"></line></symbol>
+   <!-- ▼▼▼ 在这里添加新的灵动岛相关SVG图标 ▼▼▼ -->
+    <symbol id="icon-island-visualizer" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M6 18h2V6H6v12zm4 4h2V2h-2v20zm4-8h2v-8h-2v8zm4 4h2V8h-2v8z"/>
+    </symbol>
+    <symbol id="icon-island-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    </symbol>
+    <symbol id="icon-island-prev" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></symbol>
+    <symbol id="icon-island-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></symbol>
+    <symbol id="icon-island-pause" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></symbol>
+    <symbol id="icon-island-next" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></symbol>
+    <symbol id="icon-island-list" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zm0-8h14V7H7v2z"/>
+    </symbol>
+    <!-- ▲▲▲ SVG图标添加结束 ▲▲▲ -->
     </defs></svg>
 
     <div class="phone-container">
@@ -128,6 +143,44 @@
                 </div>
             </div>
         </div>
+
+        <!-- ▼▼▼ 在这里添加新的灵动岛HTML代码 ▼▼▼ -->
+        <div id="dynamic-island" class="dynamic-island">
+            <!-- 默认收起状态（播放音乐时显示） -->
+            <div id="island-collapsed-content" class="island-content">
+                <img id="island-album-art" src="" class="island-album-art">
+                <div id="island-visualizer" class="island-visualizer">
+                    <svg><use href="#icon-island-visualizer"></use></svg>
+                </div>
+            </div>
+
+            <!-- 展开后的小播放器 -->
+            <div id="island-expanded-content" class="island-content island-player-container">
+                <!-- 歌曲信息行 -->
+                <div class="player-header-row">
+                    <img id="island-player-album-art" src="" class="player-album-art-expanded">
+                    <div class="player-song-details">
+                        <p id="island-player-title" class="song-title">歌曲名称</p>
+                        <p id="island-player-artist" class="song-artist">歌手</p>
+                    </div>
+                </div>
+                <!-- 进度条 -->
+                <div class="player-progress-row">
+                    <span id="island-player-current-time">0:00</span>
+                    <input type="range" id="island-player-progress-slider" value="0">
+                    <span id="island-player-duration">0:00</span>
+                </div>
+                <!-- 控制按钮 -->
+                <div class="player-controls-row">
+                    <button id="island-player-like-btn" class="island-player-button"><svg><use href="#icon-island-heart"></use></svg></button>
+                    <button id="island-player-prev-btn" class="island-player-button"><svg><use href="#icon-island-prev"></use></svg></button>
+                    <button id="island-player-play-pause-btn" class="island-player-button"><svg><use href="#icon-island-play"></use></svg></button>
+                    <button id="island-player-next-btn" class="island-player-button"><svg><use href="#icon-island-next"></use></svg></button>
+                    <button id="island-player-list-btn" class="island-player-button"><svg><use href="#icon-island-list"></use></svg></button>
+                </div>
+            </div>
+        </div>
+        <!-- ▲▲▲ HTML代码添加结束 ▲▲▲ -->
 
         <div class="page-stack">
             <!-- 所有页面结构 -->
@@ -410,4 +463,3 @@
     <!-- 在 body 结束前链接你的外部脚本 -->
     <script src="script.js" defer></script>
 </body>
-</html>
