@@ -3106,22 +3106,30 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function generatePSiteContent(charId, subtab) {
-        if (!state.api.url || !state.api.key || !state.api.model) {
-            alert("API未配置，无法生成内容。");
-            return;
-        }
-        const refreshBtn = document.querySelector(`#psite-profile-content-list .psite-refresh-btn`);
-        if (refreshBtn) {
-            refreshBtn.disabled = true;
-            refreshBtn.innerHTML = `<svg class="svg-icon spinner" style="display:block; width:22px; height:22px;"><use href="#icon-reset"/></svg>`;
-        }
+// 替换掉 script.js 中旧的同名函数
+async function generatePSiteContent(charId, subtab) {
+    if (!state.api.url || !state.api.key || !state.api.model) {
+        alert("API未配置，无法生成内容。");
+        return;
+    }
+    const refreshBtn = document.querySelector(`#psite-profile-content-list .psite-refresh-btn`);
+    if (refreshBtn) {
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = `<svg class="svg-icon spinner" style="display:block; width:22px; height:22px;"><use href="#icon-reset"/></svg>`;
+    }
 
-        try {
-            const character = await db.characters.get(charId);
-            const user = state.user;
+    try {
+        const character = await db.characters.get(charId);
+        
+        // --- 核心修正 #1: 获取正确的用户信息 (优先使用关联面具) ---
+        let user = state.user;
+        if (character.associatedUserPersonaId) {
+            const persona = await db.userPersonas.get(character.associatedUserPersonaId);
+            if (persona) user = persona;
+        }
+        const userContext = `\n- **你的互动对象“${user.name}”的性别是**: ${user.gender}，人设是: ${user.persona}。`;
 
-            let systemPrompt = `你将扮演角色“${character.name}”，并以TA的视角，在P站上生成一些内容。你的所有行为、审美、和发布的内容都必须严格符合TA的人设（性格: ${character.persona}，与user的关系: ${character.initialRelation}）。OOC是绝对禁止的。
+        let systemPrompt = `你将扮演角色“${character.name}”，并以TA的视角，在P站上生成一些内容。你的所有行为、审美、和发布的内容都必须严格符合TA的人设（性格: ${character.persona}，与user的关系: ${character.initialRelation}）。OOC是绝对禁止的。${userContext}
 
 【核心指令】:
 1.  **绝对人设与关系**: 你生成的所有内容，无论是日常分享还是大尺度的性爱描写，都必须是“${character.name}”基于TA的性格，以及TA与“${user.name}”的特定关系下，会想、会写、会看的东西。人设和你们之间的关系是唯一的标准。
@@ -3136,10 +3144,10 @@ document.addEventListener('DOMContentLoaded', () => {
 5.  **角色互动**: 在生成的评论中，你（扮演的“${character.name}”）必须亲自回复其中至少一条评论，以增强互动感。
 6.  **世界书与记忆**: 你必须读取并利用所有提供的世界书条目和聊天记忆，确保生成的内容与已知信息（如特定事件、昵称、地点）保持一致。`;
 
-            let userPrompt = '';
-            let count = Math.random() < 0.7 ? 1 : 2;
+        let userPrompt = '';
+        let count = Math.random() < 0.7 ? 1 : 2;
 
-            const jsonStructureComment = `
+        const jsonStructureComment = `
 {
   "id": "unique_post_id_string",
   "content": "笔记内容...",
@@ -3162,7 +3170,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   ]
 }`;
-            const jsonStructureVideo = `
+        const jsonStructureVideo = `
 {
   "id": "unique_post_id_string",
   "title": "视频标题",
@@ -3188,68 +3196,83 @@ document.addEventListener('DOMContentLoaded', () => {
   ]
 }`;
 
-            switch (subtab) {
-                case 'notes':
-                    userPrompt = `请为“${character.name}”生成 ${count} 篇新的P站笔记。每篇笔记都要包含内容和完整的评论区。
+        switch (subtab) {
+            case 'notes':
+                userPrompt = `请为“${character.name}”生成 ${count} 篇新的P站笔记。每篇笔记都要包含内容和完整的评论区。
 严格按照以下JSON格式返回，不要添加任何其他说明文字：
 \`\`\`json
 {
   "notes": [ ${jsonStructureComment} ]
 }
 \`\`\``;
-                    break;
-                case 'favorites':
-                    userPrompt = `请为“${character.name}”生成 ${count} 个新的P站收藏。每个收藏是一个“文字视频”，包含标题、标签、描述和完整的评论区。
+                break;
+            case 'favorites':
+                userPrompt = `请为“${character.name}”生成 ${count} 个新的P站收藏。每个收藏是一个“文字视频”，包含标题、标签、描述和完整的评论区。
 严格按照以下JSON格式返回，不要添加任何其他说明文字：
 \`\`\`json
 {
   "favorites": [ ${jsonStructureVideo} ]
 }
 \`\`\``;
-                    break;
-                case 'history':
-                    userPrompt = `请为“${character.name}”生成 ${count} 条新的P站浏览记录。每个记录是一个“文字视频”，包含标题、标签、描述和完整的评论区。
+                break;
+            case 'history':
+                userPrompt = `请为“${character.name}”生成 ${count} 条新的P站浏览记录。每个记录是一个“文字视频”，包含标题、标签、描述和完整的评论区。
 严格按照以下JSON格式返回，不要添加任何其他说明文字：
 \`\`\`json
 {
   "history": [ ${jsonStructureVideo} ]
 }
 \`\`\``;
-                    break;
-            }
+                break;
+        }
+        
+        // --- 核心修正 #2: 构建完整的消息上下文 ---
+        const messages = [{ role: 'system', content: systemPrompt }];
+        
+        // 加载世界书
+        const worldBookEntries = await getActiveWorldBookEntries(charId);
+        worldBookEntries.forEach(content => messages.push({ role: 'system', content: `[World Info]: ${content}` }));
 
-            const messages = [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }];
-            const apiResponse = await sendApiRequest(messages);
+        // 加载全局预设
+        const enabledPresets = state.presets.filter(p => p.isEnabled);
+        enabledPresets.forEach(preset => {
+            preset.content.forEach(entry => {
+                if (entry.enabled) messages.push({ role: 'system', content: entry.content });
+            });
+        });
 
-            let parsedData;
-            try {
-                const jsonString = apiResponse.match(/```json\s*([\s\S]*?)\s*```/)[1];
-                parsedData = JSON.parse(jsonString);
-            } catch (e) {
-                console.error("Failed to parse API response JSON:", e, "Response was:", apiResponse);
-                throw new Error("API返回格式错误，无法解析。");
-            }
+        // 添加用户请求
+        messages.push({ role: 'user', content: userPrompt });
 
-            const charToUpdate = await db.characters.get(charId);
-            const newItems = parsedData[subtab];
-            if (newItems && Array.isArray(newItems)) {
-                // 确保每个新项目都有唯一的ID
-                newItems.forEach(item => { if (!item.id) item.id = `post_${Date.now()}_${Math.random()}` });
-                charToUpdate.psiteData[subtab].unshift(...newItems);
-                await db.characters.update(charId, { psiteData: charToUpdate.psiteData });
-                renderPSiteContentList(charToUpdate, subtab);
-            }
+        const apiResponse = await sendApiRequest(messages);
 
-        } catch (error) {
-            alert(`生成失败: ${error.message}`);
-        } finally {
-            if (refreshBtn) {
-                refreshBtn.disabled = false;
-                refreshBtn.innerHTML = `<svg class="svg-icon"><use href="#icon-reset"/></svg>`;
-            }
+        let parsedData;
+        try {
+            const jsonString = apiResponse.match(/```json\s*([\s\S]*?)\s*```/)[1];
+            parsedData = JSON.parse(jsonString);
+        } catch (e) {
+            console.error("Failed to parse API response JSON:", e, "Response was:", apiResponse);
+            throw new Error("API返回格式错误，无法解析。");
+        }
+
+        const charToUpdate = await db.characters.get(charId);
+        const newItems = parsedData[subtab];
+        if (newItems && Array.isArray(newItems)) {
+            newItems.forEach(item => { if (!item.id) item.id = `post_${Date.now()}_${Math.random()}` });
+            charToUpdate.psiteData[subtab].unshift(...newItems);
+            await db.characters.update(charId, { psiteData: charToUpdate.psiteData });
+            renderPSiteContentList(charToUpdate, subtab);
+        }
+
+    } catch (error) {
+        alert(`生成失败: ${error.message}`);
+    } finally {
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = `<svg class="svg-icon"><use href="#icon-reset"/></svg>`;
         }
     }
-
+}
     // --- 线下模式核心功能 ---
     let isOfflineReceiving = false;
     let activeRegexRules = [];
