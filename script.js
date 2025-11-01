@@ -47,7 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentButtonElement: null,
         playMode: 'repeat', // 'repeat', 'repeat-one', 'shuffle'
         songQueue: [],
-        currentQueueIndex: -1
+        currentQueueIndex: -1,
+        currentObjectUrl: null
     };
 
     // [OPTIMIZED] 核心提示词模板 V3
@@ -3085,6 +3086,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="title">详情</span>
                 <div style="width: 24px;"></div>
             </div>
+            <div class="settings-content">
             <div class="psite-content">
                 ${mainContentHtml}
                 <h3 class="psite-comments-header">评论区</h3>
@@ -4955,29 +4957,15 @@ musicPlayer.addEventListener('play', async () => {
         get('player-record-container').classList.add('playing');
     }
 });
+musicPlayer.addEventListener('ended', async () => {
+    const player = get('music-player');
+    const { playMode } = musicPlayerState;
 
-// 【最终修复版】'ended' 事件监听器
-musicPlayer.addEventListener('ended', async () => { // 确保这里有 async
-    const { playMode, currentSongId, songQueue } = musicPlayerState;
-
-    if (songQueue.length === 0) {
-        hideDynamicIsland();
-        musicPlayerState.currentSongId = null;
-        return;
-    }
-
-    // 根据播放模式决定下一步行动
     if (playMode === 'repeat-one') {
-        // 单曲循环：重新播放当前歌曲，并刷新播放器界面
-        if (currentSongId) {
-            await playSongById(currentSongId);
-            // 如果当前就在播放器页面，则重新渲染以确保UI同步
-            if (navHistory[navHistory.length - 1] === 'music-player-screen') {
-                await renderMusicPlayerScreen(currentSongId);
-            }
-        }
+        player.currentTime = 0; // 直接重置播放时间
+        player.play();          // 重新播放
     } else {
-        // 列表循环 (repeat) 和随机播放 (shuffle) 都由 playNextSong() 处理
+        // 其他模式（列表循环、随机播放）走下一首的逻辑
         await playNextSong();
     }
 });
@@ -4987,7 +4975,7 @@ musicPlayer.addEventListener('timeupdate', () => {
     if (navHistory[navHistory.length - 1] === 'music-player-screen') {
         get('player-current-time').textContent = formatTime(musicPlayer.currentTime);
         const progressSlider = get('player-progress-slider');
-        if (progressSlider) {
+        if (progressSlider && musicPlayer.duration > 0) { // 检查 duration 是否大于 0
             progressSlider.value = (musicPlayer.currentTime / musicPlayer.duration) * 100;
         }
     }
@@ -5230,102 +5218,119 @@ get('photo-widget-input').addEventListener('change', (event) => {
         get('add-song-search-btn').onclick = addSongFromSearch; // Bind the new search function
     }
 
-    // 打开“添加歌曲”页面
-    function openMusicAddSongScreen(songId = null) {
-        currentSongData = {}; // 重置临时数据
-        const isEditing = songId !== null;
-        const screen = get('music-add-song-screen');
+// 打开“添加歌曲”页面
+function openMusicAddSongScreen(songId = null) {
+    currentSongData = {}; // 重置临时数据
+    const isEditing = songId !== null;
+    const screen = get('music-add-song-screen');
 
-        screen.innerHTML = `
-        <div class="settings-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="back-bar" onclick="navigateBack()" style="position: static; margin: 0;"><svg class="svg-icon" width="12" height="21"><use href="#icon-back"/></svg> 歌单</span>
-            <h1 style="padding: 0; font-size: 18px; font-weight: 600; position: absolute; left: 50%; transform: translateX(-50%);">${isEditing ? '编辑歌曲' : '添加歌曲'}</h1>
-            <div style="width: 60px;"></div>
+    // 1. 渲染HTML，保持不变
+    screen.innerHTML = `
+    <div class="settings-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span class="back-bar" onclick="navigateBack()" style="position: static; margin: 0;"><svg class="svg-icon" width="12" height="21"><use href="#icon-back"/></svg> 歌单</span>
+        <h1 style="padding: 0; font-size: 18px; font-weight: 600; position: absolute; left: 50%; transform: translateX(-50%);">${isEditing ? '编辑歌曲' : '添加歌曲'}</h1>
+        <div style="width: 60px;"></div>
+    </div>
+    <div class="settings-content profile-edit-content">
+        <div id="song-cover-preview">
+            <svg class="svg-icon"><use href="#icon-music-recommend"></use></svg>
         </div>
-        <div class="settings-content profile-edit-content">
-            <div id="song-cover-preview">
-                <svg class="svg-icon"><use href="#icon-music-recommend"></use></svg>
-            </div>
-            <div class="profile-form">
-                <div class="form-group"><label>歌曲名</label><input type="text" id="song-title-input"></div>
-                <div class="form-group"><label>歌手</label><input type="text" id="song-artist-input"></div>
-                <button id="import-song-file-btn" class="btn btn-secondary">导入音乐文件</button>
-                <button id="import-lyrics-btn" class="btn btn-secondary" style="margin-top: 12px;">导入歌词 (可选)</button>
-            </div>
-            <div class="music-add-form-buttons">
-                <button onclick="navigateBack()" class="btn btn-secondary">取消</button>
-                <button id="save-song-btn" class="btn btn-primary">保存</button>
-            </div>
+        <div class="profile-form">
+            <div class="form-group"><label>歌曲名</label><input type="text" id="song-title-input"></div>
+            <div class="form-group"><label>歌手</label><input type="text" id="song-artist-input"></div>
+            <button id="import-song-file-btn" class="btn btn-secondary">导入音乐文件</button>
+            <button id="import-lyrics-btn" class="btn btn-secondary" style="margin-top: 12px;">导入歌词 (可选)</button>
         </div>
+        <div class="music-add-form-buttons">
+            <button onclick="navigateBack()" class="btn btn-secondary">取消</button>
+            <button id="save-song-btn" class="btn btn-primary">保存</button>
+        </div>
+    </div>
     `;
 
-        // 绑定事件
-        get('song-cover-preview').onclick = () => get('song-cover-input').click();
-        get('import-song-file-btn').onclick = () => get('song-file-input').click();
-        get('import-lyrics-btn').onclick = () => get('song-lyrics-input').click();
-        get('save-song-btn').onclick = () => handleSaveSong();
+    // --- 核心修复：使用 addEventListener 统一绑定所有事件 ---
 
-        // 文件选择后的处理
-        get('song-cover-input').onchange = (e) => handleFileSelect(e, 'coverUrl', '#song-cover-preview');
-        get('song-file-input').onchange = (e) => handleFileSelect(e, 'songUrl', '#import-song-file-btn');
-        get('song-lyrics-input').onchange = (e) => handleFileSelect(e, 'lyrics', '#import-lyrics-btn');
+    // 2. 绑定按钮点击事件
+    get('song-cover-preview').addEventListener('click', () => get('song-cover-input').click());
+    get('import-song-file-btn').addEventListener('click', () => get('song-file-input').click());
+    get('save-song-btn').addEventListener('click', handleSaveSong);
+
+    // 为歌词按钮绑定事件，并加入最终确认的 console.log
+    const lyricsButton = get('import-lyrics-btn');
+    if (lyricsButton) {
+        lyricsButton.addEventListener('click', () => {
+            console.log("addEventListener 'click' 事件已触发！正在触发文件选择框...");
+            get('song-lyrics-input').click();
+        });
     }
 
-    // 通用文件处理函数
-    function handleFileSelect(event, key, indicatorSelector) {
-        const file = event.target.files[0];
-        if (!file) return;
+    // 3. 绑定文件选择后的 onchange 事件
+    get('song-cover-input').onchange = (e) => handleFileSelect(e, 'coverUrl', '#song-cover-preview');
+    get('song-file-input').onchange = (e) => handleFileSelect(e, 'songUrl', '#import-song-file-btn');
+    get('song-lyrics-input').onchange = (e) => handleFileSelect(e, 'lyrics', '#import-lyrics-btn');
+}
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            currentSongData[key] = e.target.result;
-            const indicator = document.querySelector(indicatorSelector);
-            if (key === 'coverUrl') {
-                indicator.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
-            } else {
-                indicator.textContent = `已选择: ${file.name}`;
-            }
-        };
+// 通用文件处理函数
+function handleFileSelect(event, key, indicatorSelector) {
+    const file = event.target.files[0];
+    if (!file) return;
 
-        if (key === 'lyrics') {
-            reader.readAsText(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        currentSongData[key] = e.target.result;
+        const indicator = document.querySelector(indicatorSelector);
+        if (key === 'coverUrl') {
+            indicator.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
         } else {
-            reader.readAsDataURL(file); // 将封面和歌曲文件转为Base64
+            indicator.textContent = `已选择: ${file.name}`;
         }
-        event.target.value = ''; // 清空以便再次选择
+    };
+
+    // --- 核心修复 ---
+    // 如果是歌词文件，就按文本格式读取
+    if (key === 'lyrics') {
+        reader.readAsText(file);
+    } else {
+        // 否则（封面或歌曲），按DataURL格式读取
+        reader.readAsDataURL(file); 
     }
-    // --- 新增：保存歌曲到数据库的核心函数 ---
-    async function handleSaveSong() {
-        const title = get('song-title-input').value.trim();
-        const artist = get('song-artist-input').value.trim();
+    // --- 修复结束 ---
+    
+    event.target.value = ''; // 清空以便再次选择
+}
+// --- 新增：保存歌曲到数据库的核心函数 ---
+async function handleSaveSong() {
+    const title = get('song-title-input').value.trim();
+    const artist = get('song-artist-input').value.trim();
 
-        if (!title || !artist) {
-            alert('歌曲名和歌手不能为空！');
-            return;
-        }
-        if (!currentSongData.songUrl) {
-            alert('请导入音乐文件！');
-            return;
-        }
-
-        const songObject = {
-            title: title,
-            artist: artist,
-            coverUrl: currentSongData.coverUrl || null,
-            songUrl: currentSongData.songUrl,
-            lyrics: currentSongData.lyrics || null, // 确保歌词被包含
-        };
-
-        try {
-            await db.songs.add(songObject);
-            alert('歌曲已成功保存！');
-            navigateBack(); // 返回歌单页面
-            renderMusicPlaylistScreen(); // 重新渲染歌单
-        } catch (error) {
-            console.error("保存歌曲失败:", error);
-            alert("保存歌曲失败，请查看控制台。");
-        }
+    if (!title || !artist) {
+        alert('歌曲名和歌手不能为空！');
+        return;
     }
+    if (!currentSongData.songUrl) {
+        alert('请导入音乐文件！');
+        return;
+    }
+
+    const songObject = {
+        title: title,
+        artist: artist,
+        coverUrl: currentSongData.coverUrl || null,
+        songUrl: currentSongData.songUrl,
+        // --- 核心修复：在这里添加歌词字段 ---
+        lyrics: currentSongData.lyrics || null, 
+    };
+
+    try {
+        await db.songs.add(songObject);
+        alert('歌曲已成功保存！');
+        navigateBack(); // 返回歌单页面
+        renderMusicPlaylistScreen(); // 重新渲染歌单
+    } catch (error) {
+        console.error("保存歌曲失败:", error);
+        alert("保存歌曲失败，请查看控制台。");
+    }
+}
 
     // --- 新增：音乐播放器核心功能 ---
 
@@ -5416,28 +5421,53 @@ get('photo-widget-input').addEventListener('change', (event) => {
             reader.readAsDataURL(file);
         };
 
-        // 进度条拖动
-        progressSlider.oninput = () => {
-            const newTime = player.duration * (progressSlider.value / 100);
-            get('player-current-time').textContent = formatTime(newTime);
-        };
-        progressSlider.onmousedown = () => {
-            wasPlayingBeforeSeek = !player.paused;
-            if (wasPlayingBeforeSeek) player.pause();
-        };
-        progressSlider.onchange = () => {
-            player.currentTime = player.duration * (progressSlider.value / 100);
-            if (wasPlayingBeforeSeek) player.play();
-        };
+// 进度条拖动
+progressSlider.oninput = () => {
+    // --- 核心修改在这里 ---
+    if (player.duration > 0) { // 检查 duration
+        const newTime = player.duration * (progressSlider.value / 100);
+        get('player-current-time').textContent = formatTime(newTime);
+    }
+    // --- 修改结束 ---
+};
+progressSlider.onmousedown = () => {
+    wasPlayingBeforeSeek = !player.paused;
+    if (wasPlayingBeforeSeek) player.pause();
+};
+progressSlider.onchange = () => {
+    // --- 核心修改在这里 ---
+    if (player.duration > 0) { // 检查 duration
+        player.currentTime = player.duration * (progressSlider.value / 100);
+    }
+    // --- 修改结束 ---
+    if (wasPlayingBeforeSeek) player.play();
+};
     }
 
     async function playSongById(songId) {
-        const player = get('music-player');
-        const song = await db.songs.get(songId);
-        if (!song) return;
+    const player = get('music-player');
+    const song = await db.songs.get(songId);
+    if (!song) return;
 
-        player.src = song.songUrl;
-        player.play().catch(e => console.error("播放失败:", e));
+    // --- 核心修复代码 ---
+    // 1. 释放上一个临时的 Object URL，防止内存泄漏
+    if (musicPlayerState.currentObjectUrl) {
+        URL.revokeObjectURL(musicPlayerState.currentObjectUrl);
+    }
+
+    // 2. 将数据库中的 data:URL 转换回 Blob 对象
+    const response = await fetch(song.songUrl);
+    const blob = await response.blob();
+
+    // 3. 为 Blob 创建一个高效的临时 URL
+    const objectUrl = URL.createObjectURL(blob);
+    musicPlayerState.currentObjectUrl = objectUrl; // 保存起来，以便下次释放
+
+    // 4. 使用这个新的、高效的 URL 来播放
+    player.src = objectUrl;
+    // --- 修复结束 ---
+
+    player.play().catch(e => console.error("播放失败:", e));
 
         musicPlayerState.currentSongId = songId;
 showDynamicIsland(song); // 激活灵动岛
@@ -5460,6 +5490,18 @@ showDynamicIsland(song); // 激活灵动岛
             btn.querySelector('use').setAttribute('href', isPlaying ? '#icon-player-pause' : '#icon-player-play');
         }
     }
+    function togglePlayPause(songId) {
+    const player = get('music-player');
+    if (player.paused) {
+        if (songId) {
+            playSongById(songId);
+        } else {
+            player.play();
+        }
+    } else {
+        player.pause();
+    }
+}
 
     async function playNextSong() {
         const queue = musicPlayerState.songQueue;
@@ -5486,7 +5528,7 @@ showDynamicIsland(song); // 激活灵动岛
         await renderMusicPlayerScreen(prevSong.id);
     }
 
-    function changePlayMode() {
+    async function changePlayMode() {
         const modeBtn = get('player-mode-btn');
         const use = modeBtn.querySelector('use');
 
@@ -5500,12 +5542,16 @@ showDynamicIsland(song); // 激活灵动岛
                 use.setAttribute('href', '#icon-player-shuffle');
                 break;
             case 'shuffle':
-                musicPlayerState.playMode = 'repeat';
-                use.setAttribute('href', '#icon-player-repeat');
-                break;
-        }
+                default: // 使用 default 增强代码健壮性
+            musicPlayerState.playMode = 'repeat';
+            use.setAttribute('href', '#icon-player-repeat');
+            break;
     }
-
+    
+    // 2. 新增这两行，将更改保存到数据库
+    state.musicSettings.playMode = musicPlayerState.playMode;
+    await saveState(); 
+}
     function formatTime(seconds) {
         const minutes = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
