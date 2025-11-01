@@ -4869,54 +4869,70 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- ▼▼▼ 【修改】音乐相关事件绑定 ---
         setupMusicSearchListeners();
         
-        const musicPlayer = get('music-player');
-        musicPlayer.addEventListener('play', () => {
-            musicPlayerState.isPlaying = true;
-            if (musicPlayerState.currentButtonElement) {
-                musicPlayerState.currentButtonElement.classList.add('playing');
-                musicPlayerState.currentButtonElement.querySelector('use').setAttribute('href', '#icon-pause-circle-filled');
-            }
-            if (navHistory[navHistory.length - 1] === 'music-player-screen') {
-                updatePlayPauseButton(true);
-                get('player-record-container').classList.add('playing');
-            }
-        });
-        musicPlayer.addEventListener('loadedmetadata', () => {
-            if (navHistory[navHistory.length - 1] === 'music-player-screen') {
-                get('player-duration').textContent = formatTime(musicPlayer.duration);
-                get('player-progress-slider').max = 100;
-            }
-        });
-        musicPlayer.addEventListener('timeupdate', () => {
-            if (navHistory[navHistory.length - 1] === 'music-player-screen') {
-                get('player-current-time').textContent = formatTime(musicPlayer.currentTime);
-                get('player-progress-slider').value = (musicPlayer.currentTime / musicPlayer.duration) * 100;
-            }
-        });
-        musicPlayer.addEventListener('pause', () => {
-            musicPlayerState.isPlaying = false;
-            if (musicPlayerState.currentButtonElement) {
-                musicPlayerState.currentButtonElement.classList.remove('playing');
-                musicPlayerState.currentButtonElement.querySelector('use').setAttribute('href', '#icon-play-circle-filled');
-            }
-            if (navHistory[navHistory.length - 1] === 'music-player-screen') {
-                updatePlayPauseButton(false);
-                get('player-record-container').classList.remove('playing');
-            }
-        });
-        musicPlayer.addEventListener('ended', () => {
-            if (musicPlayerState.currentButtonElement) {
-                musicPlayerState.currentButtonElement.classList.remove('playing');
-                musicPlayerState.currentButtonElement.querySelector('use').setAttribute('href', '#icon-play-circle-filled');
-            }
-            musicPlayerState.currentSongId = null;
-            musicPlayerState.currentButtonElement = null;
-            if (navHistory[navHistory.length-1] === 'music-player-screen'){
-                playNextSong();
-            }
-        });
-        // --- ▲▲▲ JS修改结束 ▲▲▲ ---
-// --- ▼▼▼ 【在这里粘贴新代码】 ▼▼▼ ---
+        // --- ▼▼▼ 用这段代码替换原来的 musicPlayer 事件监听 ▼▼▼ ---
+const musicPlayer = get('music-player');
+musicPlayer.addEventListener('play', async () => {
+    musicPlayerState.isPlaying = true;
+    const song = await db.songs.get(musicPlayerState.currentSongId);
+    if(song) {
+        updateIslandOnPlay(song);
+    }
+    if (musicPlayerState.currentButtonElement) {
+        musicPlayerState.currentButtonElement.classList.add('playing');
+        musicPlayerState.currentButtonElement.querySelector('use').setAttribute('href', '#icon-pause-circle-filled');
+    }
+    if (navHistory[navHistory.length - 1] === 'music-player-screen') {
+        updatePlayPauseButton(true);
+        get('player-record-container').classList.add('playing');
+    }
+});
+
+musicPlayer.addEventListener('pause', () => {
+    musicPlayerState.isPlaying = false;
+    updateIslandOnPause();
+    if (musicPlayerState.currentButtonElement) {
+        musicPlayerState.currentButtonElement.classList.remove('playing');
+        musicPlayerState.currentButtonElement.querySelector('use').setAttribute('href', '#icon-play-circle-filled');
+    }
+    if (navHistory[navHistory.length - 1] === 'music-player-screen') {
+        updatePlayPauseButton(false);
+        get('player-record-container').classList.remove('playing');
+    }
+});
+
+musicPlayer.addEventListener('ended', () => {
+    hideDynamicIsland();
+    if (musicPlayerState.currentButtonElement) {
+        musicPlayerState.currentButtonElement.classList.remove('playing');
+        musicPlayerState.currentButtonElement.querySelector('use').setAttribute('href', '#icon-play-circle-filled');
+    }
+    musicPlayerState.currentSongId = null;
+    musicPlayerState.currentButtonElement = null;
+    if (navHistory[navHistory.length-1] === 'music-player-screen'){
+        playNextSong();
+    }
+});
+
+musicPlayer.addEventListener('timeupdate', () => {
+    updateIslandProgress();
+    if (navHistory[navHistory.length - 1] === 'music-player-screen') {
+        get('player-current-time').textContent = formatTime(musicPlayer.currentTime);
+        const progressSlider = get('player-progress-slider');
+        if (progressSlider) {
+            progressSlider.value = (musicPlayer.currentTime / musicPlayer.duration) * 100;
+        }
+    }
+});
+
+musicPlayer.addEventListener('loadedmetadata', () => {
+    if (navHistory[navHistory.length - 1] === 'music-player-screen') {
+        get('player-duration').textContent = formatTime(musicPlayer.duration);
+        const progressSlider = get('player-progress-slider');
+        if(progressSlider) progressSlider.max = 100;
+    }
+});
+// --- ▲▲▲ 替换结束 ▲▲▲ ---
+// --- ▼▼▼ 照片小组件上传功能事件绑定 ▼▼▼ ---
 
 // 1. 为 "照片小组件" 的 "本地上传" 按钮添加点击事件
 get('photo-widget-upload-local-btn').addEventListener('click', () => {
@@ -4966,7 +4982,8 @@ get('photo-widget-input').addEventListener('change', (event) => {
     event.target.value = '';
 });
 
-// --- ▲▲▲ 【代码粘贴到这里结束】 ▲▲▲ ---
+// --- ▲▲▲ 照片小组件上传功能事件绑定结束 ▲▲
+setupDynamicIslandListeners();
 
         setTimeout(() => get('home-screen').classList.add('active'), 100);
     }
@@ -5347,6 +5364,7 @@ get('photo-widget-input').addEventListener('change', (event) => {
         player.play().catch(e => console.error("播放失败:", e));
 
         musicPlayerState.currentSongId = songId;
+showDynamicIsland(song); // 激活灵动岛
 
         // 更新播放器界面的UI
         if (navHistory[navHistory.length - 1] === 'music-player-screen') {
@@ -5417,6 +5435,113 @@ get('photo-widget-input').addEventListener('change', (event) => {
         const secs = Math.floor(seconds % 60);
         return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
+// --- ▼▼▼ 全新：灵动岛核心功能 ▼▼▼ ---
+
+function setupDynamicIslandListeners() {
+    const island = get('dynamic-island');
+    const collapsedContent = get('island-collapsed-content'); // 获取收起时的内容区域
+
+    // --- 核心改动在这里 ---
+
+    // 1. 【只】为“收起”状态的灵动岛添加“展开”事件
+    // 这样可以确保只有点击小长条时才会展开
+    collapsedContent.addEventListener('click', () => {
+        // 只有在灵动岛是激活状态且未展开时，才执行展开操作
+        if (island.classList.contains('active') && !island.classList.contains('expanded')) {
+            island.classList.add('expanded');
+        }
+    });
+
+    // 2. 为整个灵动岛添加一个“收起”事件
+    // 只有当用户点击展开后的“背景/空白区域”时，才收起
+    island.addEventListener('click', (e) => {
+        // e.target === island 确保是直接点击了背景，而不是内部的按钮或文字
+        if (e.target === island && island.classList.contains('expanded')) {
+            island.classList.remove('expanded');
+        }
+    });
+
+    // --- 展开后的内部按钮事件（保持不变） ---
+
+    get('island-player-play-pause-btn').onclick = () => {
+         const player = get('music-player');
+         if (player.paused) {
+             player.play();
+         } else {
+             player.pause();
+         }
+    };
+    get('island-player-next-btn').onclick = playNextSong;
+    get('island-player-prev-btn').onclick = playPreviousSong;
+
+    // 进度条拖动逻辑（保持不变）
+    const islandSlider = get('island-player-progress-slider');
+    const player = get('music-player');
+    let islandWasPlaying = false;
+
+    islandSlider.addEventListener('mousedown', () => {
+        islandWasPlaying = !player.paused;
+        if(islandWasPlaying) player.pause();
+    });
+    islandSlider.addEventListener('change', () => {
+        player.currentTime = player.duration * (islandSlider.value / 100);
+        if(islandWasPlaying) player.play();
+    });
+}
+
+// ... 后面的函数 showDynamicIsland, hideDynamicIsland 等保持不变 ...
+
+async function showDynamicIsland(song) {
+    const island = get('dynamic-island');
+    island.classList.add('active');
+
+    // 更新收起状态的UI
+    get('island-album-art').src = song.coverUrl || '';
+
+    // 更新展开状态的UI
+    get('island-player-album-art').src = song.coverUrl || '';
+    get('island-player-title').textContent = song.title;
+    get('island-player-artist').textContent = song.artist;
+}
+
+function hideDynamicIsland() {
+    const island = get('dynamic-island');
+    island.classList.remove('active', 'expanded');
+}
+
+function toggleDynamicIslandExpansion() {
+    const island = get('dynamic-island');
+    if (island.classList.contains('active')) {
+        island.classList.toggle('expanded');
+    }
+}
+
+function updateIslandOnPlay(song) {
+    showDynamicIsland(song);
+    const playPauseBtn = get('island-player-play-pause-btn').querySelector('use');
+    playPauseBtn.setAttribute('href', '#icon-island-pause');
+}
+
+function updateIslandOnPause() {
+    const playPauseBtn = get('island-player-play-pause-btn').querySelector('use');
+    playPauseBtn.setAttribute('href', '#icon-island-play');
+    // 如果你希望暂停时灵动岛也收起，可以在这里调用 hideDynamicIsland()
+    // hideDynamicIsland();
+}
+
+function updateIslandProgress() {
+    const player = get('music-player');
+    const currentTime = player.currentTime;
+    const duration = player.duration;
+
+    if (isNaN(duration)) return;
+
+    // 更新展开视图的进度条和时间
+    get('island-player-current-time').textContent = formatTime(currentTime);
+    get('island-player-duration').textContent = formatTime(duration);
+    get('island-player-progress-slider').value = (currentTime / duration) * 100;
+}
+// --- ▲▲▲ 灵动岛功能结束 ▲▲▲ ---
 
     init();
 });
