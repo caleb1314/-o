@@ -5270,31 +5270,56 @@ function openMusicAddSongScreen(songId = null) {
     get('song-lyrics-input').onchange = (e) => handleFileSelect(e, 'lyrics', '#import-lyrics-btn');
 }
 
-// 通用文件处理函数
+// 通用文件处理函数 (V2 - 增强兼容性版)
 function handleFileSelect(event, key, indicatorSelector) {
     const file = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
+
     reader.onload = (e) => {
-        currentSongData[key] = e.target.result;
+        let result = e.target.result; // 获取 FileReader 读取的原始结果
+
+        // --- ▼▼▼ 核心兼容性处理 ▼▼▼ ---
+        if (key === 'lyrics' && result instanceof ArrayBuffer) {
+            // 如果是歌词文件且结果是 ArrayBuffer，就用 TextDecoder 手动解码
+            try {
+                // 尝试用 UTF-8 解码，这是最常见的编码
+                result = new TextDecoder('utf-8').decode(result);
+            } catch (decodeError) {
+                console.error("UTF-8 decoding failed, trying GBK as fallback...", decodeError);
+                try {
+                    // 如果失败，尝试用 GBK 解码，以兼容一些旧的中文LRC文件
+                    result = new TextDecoder('gbk').decode(result);
+                } catch (gbkError) {
+                     console.error("GBK decoding also failed.", gbkError);
+                     // 最终降级，虽然可能显示乱码，但程序不会崩溃
+                     result = "歌词文件解码失败，请尝试转换为UTF-8编码后重新上传。";
+                }
+            }
+        }
+        // --- ▲▲▲ 处理结束 ▲▲▲ ---
+
+        currentSongData[key] = result; // 存储处理后的结果 (字符串或DataURL)
+        
         const indicator = document.querySelector(indicatorSelector);
         if (key === 'coverUrl') {
-            indicator.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+            indicator.innerHTML = `<img src="${result}" style="width:100%; height:100%; object-fit:cover;">`;
         } else {
             indicator.textContent = `已选择: ${file.name}`;
         }
     };
 
-    // --- 核心修复 ---
-    // 如果是歌词文件，就按文本格式读取
+    // --- ▼▼▼ 核心修改 ▼▼▼ ---
+    // 根据文件类型决定读取方式
     if (key === 'lyrics') {
-        reader.readAsText(file);
+        // 对于歌词文件，我们强制以二进制 ArrayBuffer 读取，以绕过浏览器MIME类型问题
+        reader.readAsArrayBuffer(file);
     } else {
-        // 否则（封面或歌曲），按DataURL格式读取
-        reader.readAsDataURL(file); 
+        // 对于封面或歌曲文件，继续使用 DataURL
+        reader.readAsDataURL(file);
     }
-    // --- 修复结束 ---
+    // --- ▲▲▲ 修改结束 ▲▲▲ ---
     
     event.target.value = ''; // 清空以便再次选择
 }
