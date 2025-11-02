@@ -1813,7 +1813,7 @@ body.dark-mode .dialog-btn:active { background-color: rgba(255,255,255,0.1); }
     --psite-secondary-text: #AAAAAA;
     --psite-accent: #FF9900;
     --psite-border: #333333;
-    background-color: var(--psite-bg);
+    background: var(--psite-bg);
 }
 .psite-header {
     background-color: var(--psite-header-bg);
@@ -1947,6 +1947,7 @@ body.dark-mode .dialog-btn:active { background-color: rgba(255,255,255,0.1); }
     padding: 16px;
     flex: 1;
     overflow-y: auto;
+    min-height: 0;
 }
 .psite-post-main-content {
     color: var(--psite-text);
@@ -3053,4 +3054,57 @@ body.dark-mode .search-result-play-btn:disabled {
 #island-player-play-pause-btn svg {
     width: 28px;
     height: 28px;
+}
+/* --- 音乐播放器页面布局最终修正 --- */
+#music-player-screen .player-main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 30px 20px; /* 上下左右内边距 */
+    gap: 15px; /* 各个模块之间的间距 */
+    box-sizing: border-box;
+    overflow: hidden; /* 防止任何内容溢出 */
+}
+
+#music-player-screen .player-record-container {
+    flex-shrink: 0; /* 防止封面被压缩 */
+    margin: 0 auto; /* 居中 */
+}
+
+#player-lyrics-container {
+    flex-grow: 1; /* 核心：让歌词区域占据所有剩余空间 */
+    flex-shrink: 1; /* 允许歌词区域收缩 */
+    min-height: 0; /* 允许在flex布局中正确收缩的关键 */
+    overflow-y: auto;
+    width: 100%;
+    -webkit-mask-image: linear-gradient(transparent 0%, black 15%, black 85%, transparent 100%);
+    mask-image: linear-gradient(transparent 0%, black 15%, black 85%, transparent 100%);
+}
+#player-lyrics-container::-webkit-scrollbar {
+    display: none;
+}
+
+#player-lyrics-container p {
+    margin: 0;
+    padding: 10px 0; /* 增加行间距 */
+    font-size: 1.1rem;
+    color: var(--secondary-text);
+    transition: all 0.3s ease-in-out;
+    cursor: pointer;
+    opacity: 0.6;
+}
+#player-lyrics-container p.active-lyric {
+    color: var(--primary-text);
+    font-weight: 600;
+    transform: scale(1.05);
+    opacity: 1;
+}
+
+/* 将所有底部控件组合起来 */
+.player-bottom-controls-group {
+    flex-shrink: 0; /* 防止底部控件组被压缩 */
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* 控件组内部的间距 */
 }
