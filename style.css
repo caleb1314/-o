@@ -3155,3 +3155,88 @@ body.dark-mode .search-result-play-btn:disabled {
     background-color: rgba(255, 255, 255, 0.2);
     border-radius: 2px;
 }
+/* --- 音乐播放器布局最终修正 (style.css) --- */
+
+/* 1. 修正主容器布局 */
+#music-player-screen .player-main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 30px 20px;
+    gap: 15px; /* 各个模块之间的间距 */
+    box-sizing: border-box;
+    overflow: hidden; /* 防止任何内容溢出 */
+}
+
+/* 2. 让翻转容器占据所有可用的垂直空间 */
+#player-view-flipper {
+    flex-grow: 1;  /* <-- 关键改动1: 替换 height: 100%，让它自动填充可用空间 */
+    min-height: 0; /* <-- 关键改动2: 允许在flex布局中正确收缩，非常重要！ */
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+    cursor: pointer;
+    display: flex; /* 使用 flex 居中内部的封面 */
+    align-items: center;
+    justify-content: center;
+}
+
+/* 3. 确保封面和歌词容器正确堆叠 */
+#player-record-container,
+#player-lyrics-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+/* 4. 约束封面图片的大小，并添加动画 */
+.player-record-cover {
+    width: 85%; /* 封面宽度占容器的85% */
+    max-width: 320px; /* 最大宽度不超过320px */
+    aspect-ratio: 1 / 1; /* 保持1:1的正方形比例 */
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    object-fit: cover;
+}
+/* 封面旋转动画 */
+@keyframes rotate-cover {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.player-record-container.playing .player-record-cover {
+    animation: rotate-cover 20s linear infinite;
+}
+
+
+/* 5. 修正歌词容器布局 */
+#player-lyrics-container {
+    transform: rotateY(180deg);
+    overflow-y: auto;
+    width: 100%;
+    padding: 0 10px; /* 给歌词左右留出一点边距 */
+    box-sizing: border-box;
+    /* 添加上下渐变遮罩，更有质感 */
+    -webkit-mask-image: linear-gradient(transparent 0%, black 15%, black 85%, transparent 100%);
+    mask-image: linear-gradient(transparent 0%, black 15%, black 85%, transparent 100%);
+}
+#player-lyrics-container::-webkit-scrollbar {
+    display: none; /* 隐藏滚动条 */
+}
+
+
+/* 6. 确保底部控件组不会被压缩 */
+.player-bottom-controls-group {
+    flex-shrink: 0; /* <-- 关键改动3: 防止被挤压 */
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
