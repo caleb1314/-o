@@ -4940,8 +4940,9 @@ ${jsonOutputInstruction}
         // --- ▼▼▼ 【修改】音乐相关事件绑定 ---
         setupMusicSearchListeners();
         
-        // --- ▼▼▼ 用这段代码替换原来的 musicPlayer 事件监听 ▼▼▼ ---
+// --- ▼▼▼ 【修正后】的 musicPlayer 事件监听 ▼▼▼ ---
 const musicPlayer = get('music-player');
+
 musicPlayer.addEventListener('play', async () => {
     musicPlayerState.isPlaying = true;
     const song = await db.songs.get(musicPlayerState.currentSongId);
@@ -4957,36 +4958,65 @@ musicPlayer.addEventListener('play', async () => {
         get('player-record-container').classList.add('playing');
     }
 });
+
+musicPlayer.addEventListener('pause', () => {
+    musicPlayerState.isPlaying = false;
+    updateIslandOnPause(); // 更新灵动岛为暂停状态
+    if (navHistory[navHistory.length - 1] === 'music-player-screen') {
+        updatePlayPauseButton(false);
+        get('player-record-container').classList.remove('playing');
+    }
+});
+
+
 musicPlayer.addEventListener('ended', async () => {
     const player = get('music-player');
     const { playMode } = musicPlayerState;
 
     if (playMode === 'repeat-one') {
-        player.currentTime = 0; // 直接重置播放时间
-        player.play();          // 重新播放
+        player.currentTime = 0;
+        player.play();
     } else {
-        // 其他模式（列表循环、随机播放）走下一首的逻辑
         await playNextSong();
     }
 });
 
+// 【核心修复 #1】 timeupdate 事件
 musicPlayer.addEventListener('timeupdate', () => {
+    const player = get('music-player');
+    
+    // 1. 更新灵动岛进度 (保持不变)
     updateIslandProgress();
+
+    // 2. 如果在播放器页面，则更新所有相关UI
     if (navHistory[navHistory.length - 1] === 'music-player-screen') {
-        get('player-current-time').textContent = formatTime(musicPlayer.currentTime);
+        // 更新当前播放时间
+        get('player-current-time').textContent = formatTime(player.currentTime);
+        
+        // 更新进度条滑块
         const progressSlider = get('player-progress-slider');
-        if (progressSlider && musicPlayer.duration > 0) {
-            progressSlider.value = (musicPlayer.currentTime / musicPlayer.duration) * 100;
+        if (progressSlider && player.duration > 0) {
+            // 只有在用户没有拖动滑块时才更新，防止冲突
+            if (!progressSlider.matches(':active')) {
+                progressSlider.value = (player.currentTime / player.duration) * 100;
+            }
         }
-        updateLyricsHighlight(); // <-- 就是在这里调用歌词更新函数！
+        
+        // 【新增】调用歌词高亮和滚动函数！
+        updateLyricsHighlight();
     }
 });
 
+// 【核心修复 #2】 loadedmetadata 事件
 musicPlayer.addEventListener('loadedmetadata', () => {
+    const player = get('music-player');
     if (navHistory[navHistory.length - 1] === 'music-player-screen') {
-        get('player-duration').textContent = formatTime(musicPlayer.duration);
-        const progressSlider = get('player-progress-slider');
-        if(progressSlider) progressSlider.max = 100;
+        // 【新增】健壮性检查，确保 duration 是一个有效的数字
+        if (player.duration && isFinite(player.duration)) {
+            get('player-duration').textContent = formatTime(player.duration);
+            const progressSlider = get('player-progress-slider');
+            if(progressSlider) progressSlider.max = 100;
+        }
     }
 });
 // --- ▲▲▲ 替换结束 ▲▲▲ ---
@@ -5362,7 +5392,7 @@ async function handleSaveSong() {
         alert("保存歌曲失败，请查看控制台。");
     }
 }
-// 渲染音乐播放器页面 (V3 - 最终布局修复版)
+// 渲染音乐播放器页面 (V2 - 带歌词功能)
 async function renderMusicPlayerScreen(songId) {
     const song = await db.songs.get(songId);
     if (!song) {
@@ -5379,50 +5409,58 @@ async function renderMusicPlayerScreen(songId) {
     const currentModeIcon = modeIcons[musicPlayerState.playMode] || '#icon-player-repeat';
 
     const screen = get('music-player-screen');
-    screen.innerHTML = `
-        <div class="player-header">
-            <div class="back-bar" onclick="navigateBack()"><svg class="svg-icon" width="24" height="24"><use href="#icon-back"/></svg></div>
-            <span class="player-header-title">正在播放</span>
-            <div style="width: 40px;"></div>
-        </div>
-        <div class="player-main">
-            <div class="player-record-container">
+    // ▼▼▼ 用下面这段【修正后】的代码，完整替换你原来的那一整块 ▼▼▼
+screen.innerHTML = `
+    <div class="player-header">
+        <div class="back-bar" onclick="navigateBack()"><svg class="svg-icon" width="24" height="24"><use href="#icon-back"/></svg></div>
+        <span class="player-header-title">正在播放</span>
+        <div style="width: 40px;"></div>
+    </div>
+    <div class="player-main">
+        
+        <!-- 这是正确的、唯一的封面/歌词切换区域 -->
+        <div id="player-view-flipper">
+            <div class="player-record-container" id="player-record-container">
                 <img src="${song.coverUrl || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}" class="player-record-cover" id="player-cover">
             </div>
-            
             <div id="player-lyrics-container">
                 <p>... 歌词加载中 ...</p>
             </div>
-            
-            <!-- ▼▼▼ 将所有底部控件包裹起来 ▼▼▼ -->
-            <div class="player-bottom-controls-group">
-                <div class="player-song-info">
-                    <h2 class="player-song-title" id="player-title">${song.title}</h2>
-                    <p class="player-song-artist" id="player-artist">${song.artist}</p>
-                </div>
-                <div class="player-progress-bar">
-                    <input type="range" id="player-progress-slider" value="0" step="1">
-                    <div class="player-progress-time">
-                        <span id="player-current-time">00:00</span>
-                        <span id="player-duration">00:00</span>
-                    </div>
-                </div>
-                 <div class="player-extra-controls">
-                    <button class="player-extra-btn"><svg class="svg-icon"><use href="#icon-heart"/></svg></button>
-                    <button class="player-extra-btn"><svg class="svg-icon"><use href="#icon-player-comment"/></svg></button>
-                    <button class="player-extra-btn" id="player-mode-btn"><svg class="svg-icon"><use href="${currentModeIcon}"/></svg></button>
-                </div>
-                <div class="player-main-controls">
-                    <button class="player-control-btn" id="player-prev-btn"><svg class="svg-icon"><use href="#icon-player-prev"/></svg></button>
-                    <button class="player-control-btn play-pause" id="player-play-pause-btn"><svg class="svg-icon"><use href="#icon-player-play"/></svg></button>
-                    <button class="player-control-btn" id="player-next-btn"><svg class="svg-icon"><use href="#icon-player-next"/></svg></button>
+        </div>
+        
+        <!-- 这是正确的、唯一的底部控制区域 -->
+              <div class="player-bottom-controls-group">
+            <div class="player-song-info" style="margin-top: auto;">
+                <h2 class="player-song-title" id="player-title">${song.title}</h2>
+                <p class="player-song-artist" id="player-artist">${song.artist}</p>
+            </div>
+            <div class="player-progress-bar">
+                <input type="range" id="player-progress-slider" value="0" step="1">
+                <div class="player-progress-time">
+                    <span id="player-current-time">00:00</span>
+                    <span id="player-duration">00:00</span>
                 </div>
             </div>
-            <!-- ▲▲▲ 包裹结束 ▲▲▲ -->
+             <div class="player-extra-controls">
+                <button class="player-extra-btn"><svg class="svg-icon"><use href="#icon-heart"/></svg></button>
+                <button class="player-extra-btn"><svg class="svg-icon"><use href="#icon-player-comment"/></svg></button>
+                <button class="player-extra-btn" id="player-mode-btn"><svg class="svg-icon"><use href="${currentModeIcon}"/></svg></button>
+            </div>
+            <div class="player-main-controls">
+                <button class="player-control-btn" id="player-prev-btn"><svg class="svg-icon"><use href="#icon-player-prev"/></svg></button>
+                <button class="player-control-btn play-pause" id="player-play-pause-btn"><svg class="svg-icon"><use href="#icon-player-play"/></svg></button>
+                <button class="player-control-btn" id="player-next-btn"><svg class="svg-icon"><use href="#icon-player-next"/></svg></button>
+            </div>
         </div>
-    `;
 
+    </div>
+`;
+
+// ▲▲▲ 替换到这里结束 ▲▲▲
+
+    // ▼▼▼ 渲染歌词 ▼▼▼
     renderLyrics(song.lyrics);
+
     setupPlayerEventListeners(song.id);
 
     if (musicPlayerState.currentSongId !== song.id || get('music-player').paused) {
@@ -5433,46 +5471,115 @@ async function renderMusicPlayerScreen(songId) {
         get('player-record-container').classList.add('playing');
     }
 }
-// 播放指定ID的歌曲 (V3 - 最终修复版)
+// --- ▼▼▼ 请将这段新代码粘贴到你的 script.js 中 ▼▼▼ ---
+
+function setupPlayerEventListeners(songId) {
+    const player = get('music-player');
+    const playPauseBtn = get('player-play-pause-btn');
+    const nextBtn = get('player-next-btn');
+    const prevBtn = get('player-prev-btn');
+    const modeBtn = get('player-mode-btn');
+    const progressSlider = get('player-progress-slider');
+// ▼▼▼ 在这里添加新代码 ▼▼▼
+    const flipper = get('player-view-flipper');
+    if (flipper) {
+        flipper.addEventListener('click', () => {
+            flipper.classList.toggle('show-lyrics');
+        });
+    }
+    // ▲▲▲ 新代码结束 ▲▲▲
+
+    // 为播放/暂停按钮绑定事件
+    if (playPauseBtn) {
+        playPauseBtn.onclick = () => togglePlayPause(songId);
+    }
+
+    // 为下一曲/上一曲按钮绑定事件
+    if (nextBtn) {
+        nextBtn.onclick = playNextSong;
+    }
+    if (prevBtn) {
+        prevBtn.onclick = playPreviousSong;
+    }
+
+    // 为播放模式按钮绑定事件
+    if (modeBtn) {
+        modeBtn.onclick = changePlayMode;
+    }
+
+    // 为进度条绑定事件，允许用户拖动改变播放进度
+    if (progressSlider) {
+        let wasPlaying = false;
+
+        // 手机端和PC端开始拖动
+        const startDrag = () => {
+            wasPlaying = !player.paused;
+            if (wasPlaying) player.pause();
+        };
+
+        // 手机端和PC端结束拖动
+        const endDrag = () => {
+            if (!isNaN(player.duration)) {
+                player.currentTime = player.duration * (progressSlider.value / 100);
+            }
+            if (wasPlaying) player.play();
+        };
+
+        progressSlider.addEventListener('mousedown', startDrag);
+        progressSlider.addEventListener('touchstart', startDrag);
+
+        progressSlider.addEventListener('mouseup', endDrag);
+        progressSlider.addEventListener('touchend', endDrag);
+    }
+}
+
+// --- ▲▲▲ 代码粘贴到这里结束 ▲▲▲ ---
+// 播放指定ID的歌曲 (V3 - 兼容Blob和URL，并增强错误处理)
 async function playSongById(songId) {
     const player = get('music-player');
     const song = await db.songs.get(songId);
-    if (!song) {
-        console.error("歌曲未找到:", songId);
-        return;
-    }
-    // 兼容旧的URL存储和新的Blob存储
-    if (!song.songBlob && !song.songUrl) {
-        alert("找不到歌曲文件！");
+
+    // 1. 数据源检查：必须有 songBlob (本地) 或 songUrl (网络)
+    if (!song || (!song.songBlob && !song.songUrl)) {
+        alert("错误：找不到可播放的歌曲文件或链接！");
         return;
     }
 
-    // 释放上一个临时的 Object URL
+    // 2. 释放上一个Blob URL的内存 (如果有的话)
     if (musicPlayerState.currentObjectUrl) {
         URL.revokeObjectURL(musicPlayerState.currentObjectUrl);
-        musicPlayerState.currentObjectUrl = null;
+        musicPlayerState.currentObjectUrl = null; // 清空引用
     }
 
     let songSource = '';
     if (song.songBlob) {
-        // 如果是Blob，创建Object URL
-        songSource = URL.createObjectURL(song.songBlob);
-        musicPlayerState.currentObjectUrl = songSource; // 保存起来以便释放
+        // 如果是本地文件，创建Blob URL
+        const objectUrl = URL.createObjectURL(song.songBlob);
+        musicPlayerState.currentObjectUrl = objectUrl; // 保存引用以便后续释放
+        songSource = objectUrl;
     } else {
-        // 否则直接使用songUrl (兼容网络歌曲)
+        // 如果是网络链接，直接使用
         songSource = song.songUrl;
     }
-    
+
+    // 3. 设置播放源并播放
     player.src = songSource;
-    player.play().catch(e => console.error("播放失败:", e));
+    player.load(); // 建议在更改src后调用load()
+    
+    try {
+        await player.play();
+        // 播放成功后才更新状态
+        musicPlayerState.currentSongId = songId;
+        showDynamicIsland(song); 
 
-    musicPlayerState.currentSongId = songId;
-    showDynamicIsland(song); 
-
-    // 核心修复：如果播放器页面是当前页，就更新UI
-    if (navHistory[navHistory.length - 1] === 'music-player-screen') {
-        updatePlayerUI(song);
-        renderLyrics(song.lyrics);
+        if (navHistory[navHistory.length - 1] === 'music-player-screen') {
+            updatePlayerUI(song);
+            renderLyrics(song.lyrics);
+        }
+    } catch (error) {
+        // 捕获并向用户显示播放错误，而不是只在控制台打印
+        console.error("播放失败:", error);
+        alert(`无法播放歌曲。\n浏览器错误: ${error.name}\n请检查歌曲文件/链接是否有效，或浏览器是否阻止了自动播放。`);
     }
 }
 
@@ -5513,6 +5620,7 @@ async function playSongById(songId) {
 
         const nextSong = queue[musicPlayerState.currentQueueIndex];
         await playSongById(nextSong.id);
+        await renderMusicPlayerScreen(nextSong.id);
     }
 
     async function playPreviousSong() {
@@ -5522,6 +5630,7 @@ async function playSongById(songId) {
         musicPlayerState.currentQueueIndex = (musicPlayerState.currentQueueIndex - 1 + queue.length) % queue.length;
         const prevSong = queue[musicPlayerState.currentQueueIndex];
         await playSongById(prevSong.id);
+        await renderMusicPlayerScreen(prevSong.id);
     }
 
     async function changePlayMode() {
