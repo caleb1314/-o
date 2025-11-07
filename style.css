@@ -3206,15 +3206,6 @@ body.dark-mode .search-result-play-btn:disabled {
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     object-fit: cover;
 }
-/* 封面旋转动画 */
-@keyframes rotate-cover {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-.player-record-container.playing .player-record-cover {
-    animation: rotate-cover 20s linear infinite;
-}
-
 
 /* 5. 修正歌词容器布局 */
 #player-lyrics-container {
