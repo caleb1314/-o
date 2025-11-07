@@ -4939,8 +4939,7 @@ ${jsonOutputInstruction}
         
         // --- ▼▼▼ 【修改】音乐相关事件绑定 ---
         setupMusicSearchListeners();
-        
-// --- ▼▼▼ 【修正后】的 musicPlayer 事件监听 ▼▼▼ ---
+ // 在 init() 函数里，用下面这段代码替换掉你原来的 musicPlayer 事件监听
 const musicPlayer = get('music-player');
 
 musicPlayer.addEventListener('play', async () => {
@@ -4949,6 +4948,7 @@ musicPlayer.addEventListener('play', async () => {
     if(song) {
         updateIslandOnPlay(song);
     }
+    // 【核心修复】更新歌单列表中的按钮状态
     if (musicPlayerState.currentButtonElement) {
         musicPlayerState.currentButtonElement.classList.add('playing');
         musicPlayerState.currentButtonElement.querySelector('use').setAttribute('href', '#icon-pause-circle-filled');
@@ -4961,15 +4961,25 @@ musicPlayer.addEventListener('play', async () => {
 
 musicPlayer.addEventListener('pause', () => {
     musicPlayerState.isPlaying = false;
-    updateIslandOnPause(); // 更新灵动岛为暂停状态
+    updateIslandOnPause();
+    // 【核心修复】更新歌单列表中的按钮状态
+    if (musicPlayerState.currentButtonElement) {
+        musicPlayerState.currentButtonElement.classList.remove('playing');
+        musicPlayerState.currentButtonElement.querySelector('use').setAttribute('href', '#icon-play-circle-filled');
+    }
     if (navHistory[navHistory.length - 1] === 'music-player-screen') {
         updatePlayPauseButton(false);
         get('player-record-container').classList.remove('playing');
     }
 });
 
-
 musicPlayer.addEventListener('ended', async () => {
+    // 【核心修复】歌曲结束时，同样需要更新按钮状态
+    if (musicPlayerState.currentButtonElement) {
+        musicPlayerState.currentButtonElement.classList.remove('playing');
+        musicPlayerState.currentButtonElement.querySelector('use').setAttribute('href', '#icon-play-circle-filled');
+    }
+    
     const player = get('music-player');
     const { playMode } = musicPlayerState;
 
@@ -5233,15 +5243,37 @@ get('photo-widget-input').addEventListener('change', (event) => {
                     </button>
                 </div>
             `;
-                // 【重要改动】现在整个列表项都可以点击来打开播放器
-                item.onclick = async () => {
-                    // 设置播放队列
+// 在 renderMusicPlaylistScreen 函数中找到这部分
+// ...
+            // 【重要改动】现在整个列表项都可以点击来打开播放器
+            item.onclick = async (event) => {
+                // 如果点击的是播放按钮本身
+                if (event.target.closest('.song-play-btn')) {
+                    event.stopPropagation(); // 阻止事件冒泡到父元素，防止重复触发
+                    const button = event.target.closest('.song-play-btn');
+                    
+                    // 如果点击的正是当前播放的歌曲，则切换播放/暂停
+                    if (musicPlayerState.currentSongId === song.id) {
+                        togglePlayPause();
+                    } else { // 否则，播放新歌曲
+                        // 重置上一个按钮的状态
+                        if (musicPlayerState.currentButtonElement) {
+                            musicPlayerState.currentButtonElement.classList.remove('playing');
+                            musicPlayerState.currentButtonElement.querySelector('use').setAttribute('href', '#icon-play-circle-filled');
+                        }
+                        // 更新当前按钮
+                        musicPlayerState.currentButtonElement = button;
+                        await playSongById(song.id);
+                    }
+                } else { // 如果点击的是列表项的其他区域，则直接打开播放器
                     musicPlayerState.songQueue = await db.songs.toArray();
                     const songIndex = musicPlayerState.songQueue.findIndex(s => s.id === song.id);
                     musicPlayerState.currentQueueIndex = songIndex;
                     navigateTo('music-player-screen', { songId: song.id });
-                };
-                content.appendChild(item);
+                }
+            };
+            content.appendChild(item);
+// ...
             });
         }
 
@@ -5595,33 +5627,31 @@ async function playSongById(songId) {
             btn.querySelector('use').setAttribute('href', isPlaying ? '#icon-player-pause' : '#icon-player-play');
         }
     }
-    function togglePlayPause(songId) {
+// 用这个更简洁的函数替换你原来的 togglePlayPause
+function togglePlayPause() {
     const player = get('music-player');
     if (player.paused) {
-        if (songId) {
-            playSongById(songId);
-        } else {
-            player.play();
-        }
+        player.play();
     } else {
         player.pause();
     }
 }
 
-    async function playNextSong() {
-        const queue = musicPlayerState.songQueue;
-        if (queue.length === 0) return;
+  async function playNextSong() {
+    const queue = musicPlayerState.songQueue;
+    if (queue.length === 0) return;
 
-        if (musicPlayerState.playMode === 'shuffle') {
-            musicPlayerState.currentQueueIndex = Math.floor(Math.random() * queue.length);
-        } else {
-            musicPlayerState.currentQueueIndex = (musicPlayerState.currentQueueIndex + 1) % queue.length;
-        }
-
-        const nextSong = queue[musicPlayerState.currentQueueIndex];
-        await playSongById(nextSong.id);
-        await renderMusicPlayerScreen(nextSong.id);
+    if (musicPlayerState.playMode === 'shuffle') {
+        musicPlayerState.currentQueueIndex = Math.floor(Math.random() * queue.length);
+    } else {
+        musicPlayerState.currentQueueIndex = (musicPlayerState.currentQueueIndex + 1) % queue.length;
     }
+
+    const nextSong = queue[musicPlayerState.currentQueueIndex];
+    
+    // 【核心修复】直接播放，不再重新渲染整个页面
+    await playSongById(nextSong.id);
+}
 
     async function playPreviousSong() {
         const queue = musicPlayerState.songQueue;
@@ -5712,6 +5742,7 @@ function setupDynamicIslandListeners() {
     });
     islandSlider.addEventListener('change', () => {
         player.currentTime = player.duration * (islandSlider.value / 100);
+        updateLyricsHighlight();
         if(islandWasPlaying) player.play();
     });
 }
