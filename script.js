@@ -4297,7 +4297,7 @@ ${jsonOutputInstruction}
     async function init() {
         // --- 动态创建所有页面结构 ---
         get('home-screen').innerHTML = `<div class="home-screen-content"><div class="time-widget"><div id="home-time"></div><div id="home-date"></div></div><div class="app-swiper-container"><div class="app-page"></div><div class="app-page"></div></div><div class="home-dock"></div></div>`;
-        get('settings-screen').innerHTML = `<div class="settings-header"><div class="back-bar" onclick="navigateBack()"><svg class="svg-icon" width="12" height="21"><use href="#icon-back"/></svg> 返回</div><h1>设置</h1></div><div class="settings-content"><div class="settings-group"><div class="settings-item" onclick="navigateTo('user-profile-edit-screen')"><div class="settings-item-content"><span class="label">我的人设 (全局)</span><svg class="chevron" width="8" height="13"><use href="#icon-chevron-right"/></svg></div></div><div class="settings-item" onclick="navigateTo('user-persona-management-screen')"><div class="settings-item-content"><span class="label">用户面具管理</span><svg class="chevron" width="8" height="13"><use href="#icon-chevron-right"/></svg></div></div></div><div class="settings-group"><div class="settings-item" onclick="navigateTo('api-settings-screen')"><div class="icon-bg" style="background-color: #007AFF;"><svg class="svg-icon"><use href="#icon-key"/></svg></div><div class="settings-item-content"><span class="label">API 与模型设置</span><span id="api-status-value" class="value">未配置</span><svg class="chevron" width="8" height="13"><use href="#icon-chevron-right"/></svg></div></div><div class="settings-item" onclick="navigateTo('global-beautification-screen')"><div class="icon-bg" style="background-color: #FF9500;"><svg class="svg-icon"><use href="#icon-paint-brush"/></svg></div><div class="settings-item-content"><span class="label">全局美化</span><svg class="chevron" width="8" height="13"><use href="#icon-chevron-right"/></svg></div></div></div><div class="settings-group"><div class="settings-item"><div class="settings-item-content"><span class="label">暗色模式</span><label class="ios-switch"><input type="checkbox" id="dark-mode-switch"><span class="slider"></span></label></div></div></div><div class="settings-group"><div class="settings-item"><div class="icon-bg" style="background-color: #5856D6;"><svg class="svg-icon"><use href="#icon-data"/></svg></div><div class="settings-item-content"><span class="label">数据管理</span></div></div><div class="settings-item" onclick="exportAllData()"><div class="settings-item-content"><span class="label">导出全部数据</span></div></div><div class="settings-item" onclick="get('import-data-input').click()"><div class="settings-item-content"><span class="label">导入数据</span></div></div><div class="settings-item" id="clear-all-data-btn"><div class="settings-item-content" style="border:none;"><span class="label destructive">清空所有数据</span></div></div></div></div>`;
+        get('settings-screen').innerHTML = `<div class="settings-header"><div class="back-bar" onclick="navigateBack()"><svg class="svg-icon" width="12" height="21"><use href="#icon-back"/></svg> 返回</div><h1>设置</h1></div><div class="settings-content"><div class="settings-group"><div class="settings-item" onclick="navigateTo('user-profile-edit-screen')"><div class="settings-item-content"><span class="label">我的人设 (全局)</span><svg class="chevron" width="8" height="13"><use href="#icon-chevron-right"/></svg></div></div><div class="settings-item" onclick="navigateTo('user-persona-management-screen')"><div class="settings-item-content"><span class="label">用户面具管理</span><svg class="chevron" width="8" height="13"><use href="#icon-chevron-right"/></svg></div></div></div><div class="settings-group"><div class="settings-item" onclick="navigateTo('api-settings-screen')"><div class="icon-bg" style="background-color: #007AFF;"><svg class="svg-icon"><use href="#icon-key"/></svg></div><div class="settings-item-content"><span class="label">API 与模型设置</span><span id="api-status-value" class="value">未配置</span><svg class="chevron" width="8" height="13"><use href="#icon-chevron-right"/></svg></div></div><div class="settings-item" onclick="navigateTo('global-beautification-screen')"><div class="icon-bg" style="background-color: #FF9500;"><svg class="svg-icon"><use href="#icon-paint-brush"/></svg></div><div class="settings-item-content"><span class="label">全局美化</span><svg class="chevron" width="8" height="13"><use href="#icon-chevron-right"/></svg></div></div></div><div class="settings-group"><div class="settings-item"><div class="settings-item-content"><span class="label">暗色模式</span><label class="ios-switch"><input type="checkbox" id="dark-mode-switch"><span class="slider"></span></label></div></div></div><div class="settings-group"><div class="settings-item"><div class="icon-bg" style="background-color: #5856D6;"><svg class="svg-icon"><use href="#icon-data"/></svg></div><div class="settings-item-content"><span class="label">数据管理</span></div></div><div class="settings-item" onclick="exportAllData()"><div class="settings-item-content"><span class="label">导出全部数据</span></div></div><div class="settings-item" onclick="get('import-data-input').click()"><div class="settings-item-content"><span class="label">导入数据</span></div></div><div class="settings-item" onclick="handleClearAllData()"><div class="settings-item-content" style="border:none;"><span class="label destructive">清空所有数据</span></div></div></div></div>`;
         get('music-screen').innerHTML = `
             <div class="music-header">
                 <div class="back-bar" onclick="navigateBack()"><svg class="svg-icon" width="12" height="21"><use href="#icon-back"></use></svg></div>
@@ -5078,25 +5078,6 @@ musicPlayer.addEventListener('loadedmetadata', () => {
 // --- ▲▲▲ 替换结束 ▲▲▲ ---
 
 setupDynamicIslandListeners();
-// 【新增】为“清空所有数据”按钮绑定事件
-    get('clear-all-data-btn').addEventListener('click', () => {
-        showIosConfirm(
-            '清空所有数据',
-            '警告：此操作将彻底删除所有角色、聊天记录、世界书、预设、设置和表情包。数据无法恢复，确定要继续吗？',
-            async () => {
-                try {
-                    // Dexie.js 提供了简单的方法来删除整个数据库
-                    await db.delete();
-                    alert('所有数据已清除。应用即将刷新。');
-                    // 刷新页面，让数据库重建
-                    location.reload();
-                } catch (error) {
-                    console.error("删除数据库失败:", error);
-                    alert("清除数据失败，请查看控制台获取更多信息。");
-                }
-            }
-        );
-    });
         setTimeout(() => get('home-screen').classList.add('active'), 100);
     }
 // --- ▼▼▼ 照片小组件上传功能事件绑定 ▼▼▼ ---
@@ -5922,7 +5903,24 @@ function renderLyrics(lrcText) {
         container.innerHTML = `<p style="opacity: 1;">暂无歌词</p>`;
     }
 }
-
+function handleClearAllData() {
+    showIosConfirm(
+        '清空所有数据',
+        '警告：此操作将彻底删除所有角色、聊天记录、世界书、预设、设置和表情包。数据无法恢复，确定要继续吗？',
+        async () => {
+            try {
+                // Dexie.js 提供了简单的方法来删除整个数据库
+                await db.delete();
+                alert('所有数据已清除。应用即将刷新。');
+                // 刷新页面，让数据库重建
+                location.reload();
+            } catch (error) {
+                console.error("删除数据库失败:", error);
+                alert("清除数据失败，请查看控制台获取更多信息。");
+            }
+        }
+    );
+}
 // 更新歌词高亮和滚动
 function updateLyricsHighlight() {
     const player = get('music-player');
