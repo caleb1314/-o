@@ -5637,7 +5637,11 @@ function togglePlayPause() {
     }
 }
 
-  async function playNextSong() {
+  // --- 找到这个旧函数 ---
+// async function playNextSong() { ... }
+
+// --- 用下面的新代码替换它 ---
+async function playNextSong() {
     const queue = musicPlayerState.songQueue;
     if (queue.length === 0) return;
 
@@ -5648,20 +5652,25 @@ function togglePlayPause() {
     }
 
     const nextSong = queue[musicPlayerState.currentQueueIndex];
-    
-    // 【核心修复】直接播放，不再重新渲染整个页面
-    await playSongById(nextSong.id);
+
+    // 【核心修复】: 切换歌曲后，重新渲染播放器页面以加载新歌词
+    await renderMusicPlayerScreen(nextSong.id);
 }
 
-    async function playPreviousSong() {
-        const queue = musicPlayerState.songQueue;
-        if (queue.length === 0) return;
+// --- 找到这个旧函数 ---
+// async function playPreviousSong() { ... }
 
-        musicPlayerState.currentQueueIndex = (musicPlayerState.currentQueueIndex - 1 + queue.length) % queue.length;
-        const prevSong = queue[musicPlayerState.currentQueueIndex];
-        await playSongById(prevSong.id);
-        await renderMusicPlayerScreen(prevSong.id);
-    }
+// --- 用下面的新代码替换它 ---
+async function playPreviousSong() {
+    const queue = musicPlayerState.songQueue;
+    if (queue.length === 0) return;
+
+    musicPlayerState.currentQueueIndex = (musicPlayerState.currentQueueIndex - 1 + queue.length) % queue.length;
+    const prevSong = queue[musicPlayerState.currentQueueIndex];
+
+    // 【核心修复】: 切换歌曲后，重新渲染播放器页面以加载新歌词
+    await renderMusicPlayerScreen(prevSong.id);
+}
 
     async function changePlayMode() {
         const modeBtn = get('player-mode-btn');
