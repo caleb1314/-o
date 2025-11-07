@@ -223,8 +223,20 @@
             <div id="music-player-screen" class="page"></div>
             <!-- 新增：音乐添加/编辑页面 -->
             <div id="music-add-song-screen" class="page"></div>
+            <!-- ▼▼▼ 【全新】手动输入歌词弹窗 ▼▼▼ -->
+<div id="manual-lyrics-dialog" class="ios-dialog-overlay">
+    <div class="ios-dialog" style="width: 320px;">
+        <div class="dialog-title">手动输入歌词</div>
+        <div class="dialog-content" style="padding: 10px 16px;">
+            <textarea id="manual-lyrics-input" rows="10" style="width: 100%; font-size: 12px; line-height: 1.5; resize: none;" placeholder="请粘贴LRC格式的歌词...&#10;例如:&#10;[00:33.37]滴入我回忆&#10;[00:38.40]爱又像一场旅行"></textarea>
         </div>
-        
+        <div class="dialog-buttons">
+            <button id="manual-lyrics-cancel-btn" class="dialog-btn">取消</button>
+            <button id="manual-lyrics-confirm-btn" class="dialog-btn">确认</button>
+        </div>
+    </div>
+</div>
+<!-- ▲▲▲ 弹窗结束 ▲▲▲ -->
         <!-- 音乐App侧边栏 -->
         <div id="music-sidebar-overlay" class="music-sidebar-overlay"></div>
         <div id="music-sidebar" class="music-sidebar">
