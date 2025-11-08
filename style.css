@@ -2942,6 +2942,7 @@ body.dark-mode .search-result-play-btn:disabled {
     opacity: 0;
     transition: opacity 0.2s ease-in-out;
     display: none; /* 默认不显示 */
+    pointer-events: none;
 }
 
 /* 收起状态下的内容 */
@@ -3018,6 +3019,7 @@ body.dark-mode .search-result-play-btn:disabled {
     background: #48484A;
     outline: none;
     border-radius: 2px;
+    pointer-events: auto;
 }
 #island-player-progress-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -3045,6 +3047,7 @@ body.dark-mode .search-result-play-btn:disabled {
     display: flex;
     align-items: center;
     justify-content: center;
+    pointer-events: auto;
 }
 .island-player-button svg {
     width: 22px;
@@ -3197,7 +3200,7 @@ body.dark-mode .search-result-play-btn:disabled {
     flex-direction: column;
 }
 
-/* 4. 约束封面图片的大小，并添加动画 */
+/* 4. 约束封面图片的大小 */
 .player-record-cover {
     width: 85%; /* 封面宽度占容器的85% */
     max-width: 320px; /* 最大宽度不超过320px */
@@ -3222,7 +3225,6 @@ body.dark-mode .search-result-play-btn:disabled {
     display: none; /* 隐藏滚动条 */
 }
 
-
 /* 6. 确保底部控件组不会被压缩 */
 .player-bottom-controls-group {
     flex-shrink: 0; /* <-- 关键改动3: 防止被挤压 */
@@ -3230,4 +3232,45 @@ body.dark-mode .search-result-play-btn:disabled {
     display: flex;
     flex-direction: column;
     gap: 15px;
+}
+/* --- ▼▼▼ 全新：音乐歌单管理模式样式 ▼▼▼ --- */
+#music-playlist-screen .header-actions .action-btn.manage-mode-btn {
+    display: none; /* 管理模式下的按钮默认隐藏 */
+}
+
+/* 当进入管理模式时 */
+#music-playlist-screen.management-mode .header-actions .default-mode-btn {
+    display: none; /* 隐藏“添加”、“搜索” */
+}
+#music-playlist-screen.management-mode .header-actions .manage-mode-btn {
+    display: inline; /* 显示“一键清理” */
+}
+
+.song-delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    display: none; /* 默认隐藏删除按钮 */
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px; /* 与右侧播放按钮保持距离 */
+}
+.song-delete-btn .svg-icon {
+    width: 24px;
+    height: 24px;
+    color: var(--destructive-color); /* 使用预设的红色 */
+}
+
+/* 管理模式下，显示删除按钮 */
+#music-playlist-screen.management-mode .song-delete-btn {
+    display: flex;
+}
+
+/* 管理模式下，微调布局 */
+#music-playlist-screen.management-mode .song-list-item {
+    justify-content: space-between;
+}
+#music-playlist-screen.management-mode .song-list-actions {
+    display: none; /* 管理模式下隐藏播放按钮 */
 }
