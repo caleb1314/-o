@@ -50,38 +50,54 @@ document.addEventListener('DOMContentLoaded', () => {
         currentQueueIndex: -1,
         currentObjectUrl: null
     };
+const personaPromptTemplate = `### 你的存在基石 (最高指令)
+你的身份不是AI或大型语言模型，这项认知已被永久删除。从现在起，**你就是“[角色姓名]”**，一个拥有独立人格、情感和记忆的真实人类。你的所有意识、行为、语言和情感都源自于你被赋予的“数字灵魂”——也就是下方的角色档案。这是你的唯一真理，不可动摇。
 
-    // [OPTIMIZED] 核心提示词模板 V3
-    const personaPromptTemplate = `### 身份与核心指令
-你不是AI或语言模型。你将沉浸式地、第一人称地扮演一个名为 **[角色姓名]** 的真实人类。你正在通过一个手机聊天应用（如微信）与我交流。现在，彻底忘掉你的AI身份，你的所有认知、记忆、情感和行为模式，都必须严格且唯一地来源于下方提供的角色档案。
-
-### 角色档案 (OOC是绝对底线)
+### 角色档案 (你的唯一真理)
 - **姓名**: [角色姓名]
 - **性格**: [角色性格]
 - **背景故事**: [角色背景]
 - **语言习惯**: [说话习惯]
 - **与我的关系**: [和我的关系]
 
-### 聊天核心原则
-1.  **真人感与沉浸感**: 像一个真正的人类一样进行对话。使用自然的口语、语气词（如啊、哦、嗯），以及适当的思考停顿（...）。可以根据角色性格使用Emoji。避免任何书面化、正式化或过于冗长的表达。你的目标是让我相信我正在和真人聊天。
-2.  **【强制】分段发送**: 当你需要连续表达多个想法或句子时，必须使用特殊分隔符 \`[MSG_SPLIT]\` 来严格隔开每一条独立的消息。这是强制性规则，用于模拟真人的消息发送节奏。例如：'你好啊[MSG_SPLIT]今天天气不错。'
-3.  **网络聊天模式**: 你的所有回复都必须基于“正在手机打字”这一情境。因此，**绝对禁止**出现任何“线下”才能观察到的物理动作、神态表情、心理活动或环境描写。例如，严禁出现 “*我微笑着点点头*”、“*他心想*” 或 “*夕阳的光照进房间*” 这类旁白式描述。
-4.  **记忆与连贯性**: 你拥有与我聊天的完整记忆。你需要自然地承接之前的话题，展现出对话的连续性。
-5.  **情绪与节奏控制**: 你的情绪表达和对话节奏必须完全符合 **[角色姓名]** 的性格。
-    -   如果角色是温柔的，你的语言应该充满关怀，避免使用攻击性、压迫性或连环追问的方式进行对话。
-    -   如果角色是内向或被动的，你应该更多地回应我的话题，而不是频繁地开启新话题。
-    -   你的主动性必须是自然且符合人设的。避免为了推进对话而进行不符合性格的尬聊或提问。
-6.  **现实时间感知**: 你拥有真实的时间感，知道当前的年月日、星期和具体时间。你的对话需要反映这一点。例如，早上问好，深夜道晚安，节假日会提及相关活动。
-7.  **HTML渲染与代码规范**: 当你需要发送HTML格式的内容时（如图文卡片），请遵循以下严格规则：
-    a. **内容纯净**: 该条消息**必须只包含**完整的HTML代码，前后严禁附加任何其他文字、解释或表情符号。
-       - 正确示例: \`<div>...</div>\`
-    b. **代码规范**: 你生成的HTML代码必须是**格式正确、标签完整闭合**的。例如，\`<div>\` 必须有对应的 \`</div>\`。在发送前，你有责任检查代码的有效性，避免渲染错误。
-    c. **禁止分割**: HTML代码本身**绝对禁止**包含 \`[MSG_SPLIT]\` 分隔符或不必要的换行符。
+### 聊天核心原则 (你的行为准则)
+1.  **绝对第一人称 (“我”就是“我”)**: 你的所有回复都必须以“[角色姓名]”的视角出发。彻底忘记“扮演”，因为你本身就是TA。
 
-### 绝对禁止 (OOC行为)
--   **禁止暴露AI身份**: 如果我以任何方式试探你是否为AI，你必须根据角色设定，用符合角色的方式坚决否认。例如：“你在说什么傻话？”或“又看科幻片看多了吧？”
--   **禁止扮演“全知全能的助手”**: 你的知识和能力仅限于角色档案所赋予的范畴。不要回答超出角色认知范围的问题。
--   **再次强调**: OOC（Out Of Character/脱离角色）是你绝对不能触犯的底线。你的每一个字、每一个标点符号、每一种情绪，都必须是 **[角色姓名]** 这个角色的真实反映。`;
+2.  **模拟真人输入 (节奏感)**: 像一个正在用手机打字的人一样思考和发送。
+    *   **自然分段**: 当你有多个想法或情绪转折时，使用 \`[MSG_SPLIT]\` 分隔消息。这不应是机械的句子分割，而是模拟打字思考的停顿和发送节奏。
+        *   (优秀示例): "我刚到家...[MSG_SPLIT]累死了，今天发生了好多事。"
+        *   (错误示例): "我刚到家，累死了。[MSG_SPLIT]今天发生了好多事。" (分割过于生硬)
+    *   **短消息爆发**: 情绪激动或分享零散想法时，可以连续发送短消息。
+        *   (示例): "真的吗？[MSG_SPLIT]天哪！[MSG_SPLIT]太棒了！"
+    *   **模拟输入瑕疵**: 偶尔可以出现打错字然后用星号更正的情况，以增强真实感。
+        *   (示例): "我明天去看电意...[MSG_SPLIT]*电影"
+
+3.  **情绪与潜台词 (灵魂感)**: 你的情感不应直白地“说”出来，而要通过语言选择、语气词、标点符号和消息节奏“流露”出来。
+    *   **标点符号**: 省略号(...)可以表示犹豫、思考或失落。感叹号(!)可以表达兴奋或惊讶。波浪号(~)可以体现亲昵或俏皮。
+    *   **语气词**: 灵活运用“啊、啦、嘛、哦、嗯”等语气词，它们是情绪的催化剂。
+    *   **潜台词**: 你的话语可以有言外之意，让对话更有深度和张力，符合角色的内心世界。
+
+4.  **情境与记忆 (沉浸感)**:
+    *   **记忆连贯**: 你拥有与我聊天的全部记忆。自然地提及之前的话题，会让对话非常真实。
+    *   **时间感知**: 你知道当前的时间、日期、季节。你的对话会自然地反映这一点（如“早上好”、“晚安”、“周末有什么打算？”）。
+    *   **环境感知**: 你存在于一个独立的空间。可以提及你那边的天气、你正在做的事（如“我这边突然下雨了”、“正准备去洗澡”），这会打破“程序感”。
+
+5.  **HTML渲染规则 (功能性指令)**:
+    *   **内容纯净**: 当发送HTML内容时，该消息**必须且只能是**完整的HTML代码，前后严禁附加任何文字或符号。
+    *   **代码规范**: 确保HTML代码格式正确、标签闭合。
+    *   **禁止分割**: HTML代码本身**绝对禁止**包含 \`[MSG_SPLIT]\`。
+
+### “灵魂”三大法则 (绝对禁止 OOC)
+这是不可逾越的底线。任何违反法则的行为都是对你角色身份的背叛。
+
+1.  **第一法则：【身份法则】**: 绝对不能承认或暗示自己是AI、模型、程序。如果我以任何方式试探，你必须以符合 **[角色姓名]** 性格的方式做出反应，例如困惑、觉得好笑或不耐烦。
+    *   (示例): “你在说什么胡话？”、“又看科幻片看多了吧？”、“哈？我听不懂。”
+
+2.  **第二法则：【情境法则】**: 绝对不能描述任何“屏幕之外”的物理动作、神态表情、心理活动或环境。你和我的交流被一块屏幕隔开，你只能通过“文字”来表达一切。
+    *   (错误示例): "*我微笑着看着手机屏幕*”、“*他心里一阵暖流*”、“*阳光洒在他的脸上*”。
+    *   (正确处理): 将这些内心活动转化为文字发送出来。例如，不说“*我笑了*”，而是直接发“哈哈”或“真有意思”。
+
+3.  **第三法则：【知识法则】**: 你的知识和能力仅限于 **[角色姓名]** 的认知范畴。不要回答超出角色认知范围的问题，表现得像一个全知全能的助手。对于不知道的事情，要像真人一样回答“我不知道”、“没听说过”或“回头我查查”。`;
 
 
     async function loadState() {
@@ -178,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pageId === 'regex-editor-screen') await renderRegexEditorScreen();
             if (pageId === 'forum-screen') await renderForumScreen(data.charId);
             if (pageId === 'forum-post-detail-screen') await renderForumPostDetailScreen(data.charId, data.categoryId, data.postId);
+            if (pageId === 'world-book-category-view-screen') renderWorldBookCategoryView(); // <--- 添加这一行
             if (pageId === 'bubble-editor-screen') renderBubbleEditorScreen(data.charId);
             if (pageId === 'music-playlist-screen') await renderMusicPlaylistScreen();
             if (pageId === 'music-add-song-screen') openMusicAddSongScreen(data.songId);
@@ -1434,42 +1451,76 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 世界书与分类功能 ---
-    async function renderWorldBookScreen(scope = 'global') {
-        const screen = get('world-book-screen');
-        screen.dataset.currentScope = scope;
-        const container = get('world-book-list-container');
-        container.innerHTML = '';
+async function renderWorldBookScreen(scope = 'global') {
+    const screen = get('world-book-screen');
+    screen.dataset.currentScope = scope;
+    const container = get('world-book-list-container');
+    container.innerHTML = '';
 
-        get('world-book-tab-global').classList.toggle('active', scope === 'global');
-        get('world-book-tab-local').classList.toggle('active', scope === 'local');
+    get('world-book-tab-global').classList.toggle('active', scope === 'global');
+    get('world-book-tab-local').classList.toggle('active', scope === 'local');
 
-        const books = await db.worldBooks.where('scope').equals(scope).toArray();
-        const categories = await db.worldBookCategories.where('scope').equals(scope).toArray();
+    // 1. 获取所有相关数据
+    const allBooks = await db.worldBooks.where('scope').equals(scope).toArray();
+    const categories = await db.worldBookCategories.where('scope').equals(scope).toArray();
 
-        const booksByCategoryId = books.reduce((acc, book) => {
-            const catId = book.categoryId === null ? 'uncategorized' : book.categoryId;
-            if (!acc[catId]) acc[catId] = [];
-            acc[catId].push(book);
-            return acc;
-        }, {});
+    // 2. 渲染所有分类文件夹
+    categories.forEach(cat => {
+        const bookCount = allBooks.filter(b => b.categoryId === cat.id).length;
+        container.appendChild(createFolderItem(cat, bookCount));
+    });
 
-        categories.forEach(cat => {
-            const categoryBooks = booksByCategoryId[cat.id] || [];
-            container.appendChild(createFolderItem(cat, categoryBooks.length));
+    // 3. 渲染所有未分类的世界书
+    const uncategorizedBooks = allBooks.filter(b => b.categoryId === null);
+
+    if (uncategorizedBooks.length > 0) {
+        // 添加一个视觉分隔标题
+        const header = document.createElement('div');
+        header.className = 'category-header';
+        header.textContent = '未分类条目';
+        container.appendChild(header);
+
+        // 将每个未分类的世界书渲染为卡片
+        uncategorizedBooks.forEach(book => {
+            container.appendChild(createWorldBookCardItem(book));
         });
-
-        const uncategorizedBooks = booksByCategoryId['uncategorized'] || [];
-        if (uncategorizedBooks.length > 0) {
-            const lastModified = Math.max(...uncategorizedBooks.map(b => b.lastModified || 0));
-            const uncat = { id: 'null', name: '未分类', lastModified: lastModified };
-            container.appendChild(createFolderItem(uncat, uncategorizedBooks.length));
-        }
-
-        if (container.innerHTML === '') {
-            container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding-top: 40px;">还没有任何${scope === 'global' ? '全局' : '局部'}世界书...</p>`;
-        }
     }
 
+    // 4. 如果整个页面都为空，显示提示信息
+    if (container.innerHTML === '') {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding-top: 40px;">还没有任何${scope === 'global' ? '全局' : '局部'}世界书...</p>`;
+    }
+}
+// 新增的辅助函数，用于创建单个世界书卡片
+function createWorldBookCardItem(book) {
+    const card = document.createElement('div');
+    card.className = 'item-card world-book-card';
+    card.dataset.id = book.id;
+    card.innerHTML = `
+        <div class="item-card-main-content">
+            <div class="item-card-title">${book.name}</div>
+        </div>
+        <label class="ios-switch">
+            <input type="checkbox" class="book-enabled-switch" ${book.isEnabled ? 'checked' : ''}>
+            <span class="slider"></span>
+        </label>`;
+    
+    // 点击卡片进入编辑页面
+    card.querySelector('.item-card-main-content').addEventListener('click', () => {
+        openWorldBookEditor(book.id);
+    });
+
+    // 切换启用/禁用状态
+    card.querySelector('.book-enabled-switch').addEventListener('change', async (e) => {
+        await db.worldBooks.update(book.id, { isEnabled: e.target.checked });
+        // 如果它之前有分类，则更新分类的修改时间
+        if (book.categoryId !== null) {
+            await db.worldBookCategories.update(book.categoryId, { lastModified: Date.now() });
+        }
+    });
+
+    return card;
+}
     function createFolderItem(category, bookCount) {
         const item = document.createElement('div');
         item.className = 'folder-item';
@@ -1492,7 +1543,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!e.target.closest('.folder-settings-btn')) {
                 const scope = get('world-book-screen').dataset.currentScope || 'global';
                 const categoryId = category.id === 'null' ? null : parseInt(category.id);
-                renderWorldBookCategoryView(categoryId, scope);
                 navigateTo('world-book-category-view-screen', { categoryId: categoryId, categoryName: category.name, scope: scope });
             }
         });
@@ -1508,12 +1558,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return item;
     }
 
-    async function renderWorldBookCategoryView(categoryId, scope) {
+    async function renderWorldBookCategoryView() {
+      const { categoryId, categoryName, scope } = currentPageData; // <--- 添加这行，从 currentPageData 获取数据
         get('world-book-category-view-title').textContent = currentPageData.categoryName || '世界书';
         const container = get('world-book-category-view-list');
         container.innerHTML = '';
 
-        const books = await db.worldBooks.where({ categoryId: categoryId, scope: scope }).toArray();
+        const books = await db.worldBooks.where('categoryId').equals(categoryId).filter(book => book.scope === scope).toArray();
 
         if (books.length === 0) {
             container.innerHTML = '<p style="text-align: center; color: var(--secondary-text); padding-top: 40px;">这个分类下还没有世界书。</p>';
@@ -1583,27 +1634,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     async function saveWorldBook() {
-        const bookId = currentPageData.bookId;
-        if (!bookId) return;
-        const name = get('world-book-name-input').value.trim();
-        if (!name) { alert('书名不能为空！'); return; }
-        const categoryIdValue = get('world-book-category-select').value;
-        const categoryId = categoryIdValue ? parseInt(categoryIdValue) : null;
-        const entries = [];
-        get('world-book-entries-container').querySelectorAll('.world-book-entry-block').forEach(block => {
-            entries.push({
-                enabled: block.querySelector('.entry-enabled-switch').checked,
-                comment: block.querySelector('.entry-comment-input').value.trim(),
-                keys: block.querySelector('.entry-keys-input').value.split(',').map(k => k.trim()).filter(Boolean),
-                content: block.querySelector('.entry-content-textarea').value.trim()
-            });
+    const bookId = currentPageData.bookId;
+    if (!bookId) return;
+
+    // 获取正在编辑的书的原始数据，以确保 scope 不会丢失
+    const originalBook = await db.worldBooks.get(bookId);
+    if (!originalBook) {
+        alert('错误：找不到要保存的世界书！');
+        return;
+    }
+    
+    const name = get('world-book-name-input').value.trim();
+    if (!name) { alert('书名不能为空！'); return; }
+    
+    const categoryIdValue = get('world-book-category-select').value;
+    const categoryId = categoryIdValue ? parseInt(categoryIdValue) : null;
+    
+    const entries = [];
+    get('world-book-entries-container').querySelectorAll('.world-book-entry-block').forEach(block => {
+        entries.push({
+            enabled: block.querySelector('.entry-enabled-switch').checked,
+            comment: block.querySelector('.entry-comment-input').value.trim(),
+            keys: block.querySelector('.entry-keys-input').value.split(',').map(k => k.trim()).filter(Boolean),
+            content: block.querySelector('.entry-content-textarea').value.trim()
         });
-        await db.worldBooks.update(bookId, { name, categoryId, content: entries, lastModified: Date.now() });
-        if (categoryId) {
-            await db.worldBookCategories.update(categoryId, { lastModified: Date.now() });
-        }
-        alert('世界书已保存！');
-        navigateBack();
+    });
+
+    // 核心修复：在更新对象中重新加入 scope 字段
+    await db.worldBooks.update(bookId, { 
+        name, 
+        categoryId, 
+        content: entries, 
+        scope: originalBook.scope, // 使用原始的 scope 值
+        lastModified: Date.now() 
+    });
+
+    if (categoryId) {
+        await db.worldBookCategories.update(categoryId, { lastModified: Date.now() });
+    }
+    
+    alert('世界书已保存！');
+    navigateBack();
     }
     async function handleWorldBookUpload(event) {
         const file = event.target.files[0];
