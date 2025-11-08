@@ -15,6 +15,9 @@ document.addEventListener('DOMContentLoaded', () => {
         fontPresets: '++id, &name', // 新增字体预设表
         songs: '++id, title, artist' // <-- 新增歌曲表
     });
+// ▼▼▼ 在这里添加新的 API 地址 ▼▼▼
+    const MUSIC_API_BASE = 'https://music-api.gdstudio.xyz/api.php';
+    // ▲▲▲ 添加结束 ▲▲▲
 
     const defaultState = {
     wallpaperUrl: 'https://i.imgur.com/1n3a43H.jpeg',
@@ -41,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 };
     let state = { presets: [], cache: { songs: new Map(), lyrics: new Map() } }; // [MODIFIED] Added cache property
     let apiAbortController = null;
+    let isPlaylistManagementMode = false;
     let musicPlayerState = {
         currentSongId: null,
         isPlaying: false,
@@ -489,67 +493,93 @@ const personaPromptTemplate = `### 你的存在基石 (最高指令)
         });
     }
 
-    async function searchNeteaseMusic(name, singer) {
-        try {
-            let searchTerm = name.replace(/\s/g, "");
-            if (singer) { searchTerm += ` ${singer.replace(/\s/g, "")}`; }
-            const result = await Http_Get(`https://api.vkeys.cn/v2/music/netease?word=${encodeURIComponent(searchTerm)}`);
-            if (result.code !== 200 || !result.data || result.data.length === 0) return [];
-            return result.data.map(song => ({
-                name: song.song, artist: song.singer, id: song.id,
-                cover: song.cover || 'https://i.postimg.cc/pT2xKzPz/album-cover-placeholder.png', source: 'netease'
-            })).slice(0, 30);
-        } catch (e) { console.error("网易云音乐搜索失败:", e); return []; }
-    }
+ /**
+ * [新] 统一的音乐搜索函数
+ * @param {string} keyword - 搜索关键词
+ * @param {string} source - 数据源 (e.g., 'netease', 'tencent')
+ * @returns {Promise<Array>} - 格式化后的歌曲列表
+ */
+async function searchMusicAPI(keyword, source) {
+    try {
+        const response = await fetch(`${MUSIC_API_BASE}?types=search&source=${source}&name=${encodeURIComponent(keyword)}&count=30`);
+        const data = await response.json();
 
-    async function searchTencentMusic(name) {
-        try {
-            name = name.replace(/\s/g, "");
-            const result = await Http_Get(`https://api.vkeys.cn/v2/music/tencent?word=${encodeURIComponent(name)}`);
-            if (!result?.data?.length) return [];
-            return result.data.map(song => ({
-                name: song.song, artist: song.singer, id: song.id,
-                cover: song.cover || 'https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1757748720126_qdqqd_1jt5sv.jpeg', source: 'tencent'
-            })).slice(0, 30);
-        } catch (e) { console.error("QQ音乐搜索API失败:", e); return []; }
-    }
+        if (!data || data.length === 0) {
+            return [];
+        }
 
-    async function getPlayableSongDetails(songData) {
-        let playableResult = null, finalSource = songData.source;
-        const primaryApiUrl = songData.source === 'netease' ? `https://api.vkeys.cn/v2/music/netease?id=${songData.id}` : `https://api.vkeys.cn/v2/music/tencent?id=${songData.id}`;
-        let primaryResult = await Http_Get(primaryApiUrl);
-        if (primaryResult?.data?.url && await checkAudioAvailability(primaryResult.data.url)) {
-            playableResult = { url: primaryResult.data.url, id: songData.id, source: songData.source };
+        // 将新 API 的数据格式转换为我们内部需要的格式
+        return data.map(song => ({
+            name: song.name,
+            artist: Array.isArray(song.artist) ? song.artist.join(' / ') : song.artist,
+            album: song.album,
+            id: song.id,
+            pic_id: song.pic_id, // 保留图片ID，用于获取高清封面
+            lyric_id: song.lyric_id || song.id, // 保留歌词ID
+            source: song.source,
+        }));
+
+    } catch (error) {
+        console.error(`在 ${source} 中搜索 "${keyword}" 失败:`, error);
+        return [];
+    }
+}
+
+/**
+ * [新] 获取歌曲的可播放URL、封面和歌词
+ * @param {object} songData - 从 searchMusicAPI 获取的单首歌曲信息
+ * @returns {Promise<object|null>} - 包含 src, cover, lrcContent 的完整歌曲对象，或 null
+ */
+async function getPlayableSongDetails(songData) {
+    try {
+        const quality = '320'; // 默认获取320kps高品质，可以根据需要修改
+
+        // 并发请求URL和歌词，速度更快
+        const [urlResponse, lyricResponse, picResponse] = await Promise.all([
+            fetch(`${MUSIC_API_BASE}?types=url&source=${songData.source}&id=${songData.id}&br=${quality}`),
+            fetch(`${MUSIC_API_BASE}?types=lyric&source=${songData.source}&id=${songData.lyric_id}`),
+            fetch(`${MUSIC_API_BASE}?types=pic&source=${songData.source}&id=${songData.pic_id}&size=500`)
+        ]);
+
+        const urlData = await urlResponse.json();
+        if (!urlData || !urlData.url) {
+            console.warn(`无法获取歌曲 "${songData.name}" 的播放链接。`);
+            return null; // 如果没有播放链接，直接返回null
         }
-        if (!playableResult) {
-            const fallbackSource = songData.source === 'netease' ? 'tencent' : 'netease';
-            const fallbackResults = fallbackSource === 'tencent' ? await searchTencentMusic(songData.name) : await searchNeteaseMusic(songData.name, songData.artist);
-            if (fallbackResults.length > 0) {
-                const fallbackApiUrl = fallbackSource === 'netease' ? `https://api.vkeys.cn/v2/music/netease?id=${fallbackResults[0].id}` : `https://api.vkeys.cn/v2/music/tencent?id=${fallbackResults[0].id}`;
-                const fallbackResult = await Http_Get(fallbackApiUrl);
-                if (fallbackResult?.data?.url && await checkAudioAvailability(fallbackResult.data.url)) {
-                    playableResult = { url: fallbackResult.data.url, id: fallbackResults[0].id, source: fallbackSource };
-                    finalSource = fallbackSource;
-                }
-            }
-        }
-        if (playableResult) {
-            const lrcContent = await getLyricsForSong(playableResult.id, finalSource) || "";
-            return { name: songData.name, artist: songData.artist, src: playableResult.url, cover: songData.cover, isLocal: false, lrcContent: lrcContent };
-        }
+
+        const lyricData = await lyricResponse.json();
+        const picData = await picResponse.json();
+
+        const lrcContent = (lyricData?.lyric || '') + '\n' + (lyricData?.tlyric || '');
+        const coverUrl = picData?.url || 'https://i.postimg.cc/pT2xKzPz/album-cover-placeholder.png';
+        
+        return {
+            name: songData.name,
+            artist: songData.artist,
+            src: urlData.url, // 可播放链接
+            cover: coverUrl, // 专辑封面链接
+            isLocal: false,
+            lrcContent: lrcContent.trim() // 歌词内容
+        };
+
+    } catch (error) {
+        console.error(`获取歌曲 "${songData.name}" 详细信息失败:`, error);
         return null;
     }
+}
 
-    async function getLyricsForSong(songId, source) {
-        const url = source === 'netease' ? `https://api.vkeys.cn/v2/music/netease/lyric?id=${songId}` : `https://api.vkeys.cn/v2/music/tencent/lyric?id=${songId}`;
-        const response = await Http_Get(url);
-        if (response?.data) {
-            const lrc = response.data.lrc || response.data.lyric || "";
-            const tlyric = response.data.trans || response.data.tlyric || "";
-            return lrc + "\n" + tlyric;
-        }
-        return "";
-    }
+// [保留] 这个空函数是为了兼容旧代码，但我们不再需要它的内部逻辑
+async function getLyricsForSong(songId, source) {
+    // 这个函数的功能已经被 getPlayableSongDetails 整合了，保留为空即可
+    return "";
+}
+
+// [保留] 这两个函数也保留为空，因为逻辑被 searchMusicAPI 替代
+async function searchNeteaseMusic(name, singer) { return []; }
+async function searchTencentMusic(name) { return []; }
+
+
+// ▲▲▲ 替换到此结束 ▲▲▲
 
     // --- 【全新】的单首歌曲添加逻辑 ---
     async function addSingleSongFromSearch(songData, buttonElement) {
@@ -579,71 +609,77 @@ const personaPromptTemplate = `### 你的存在基石 (最高指令)
     }
 
 
-    // --- 【修改后】的搜索弹窗逻辑 ---
-    async function addSongFromSearch() {
-        const searchTerm = await new Promise(resolve => {
-             showIosConfirm('搜索歌曲', '请输入歌名或“歌名-歌手”', (input) => resolve(input));
-             get('dialog-text').innerHTML = '<input type="text" id="prompt-input" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 16px;">';
-             const inputEl = get('prompt-input');
-             inputEl.focus();
-             get('dialog-confirm-btn').onclick = () => {
-                 get('ios-confirm-dialog').classList.remove('active');
-                 resolve(inputEl.value);
-             };
-             get('dialog-cancel-btn').onclick = () => {
-                 get('ios-confirm-dialog').classList.remove('active');
-                 resolve(null);
-             };
-        });
+ // ▼▼▼ 用下面的新代码替换旧的 addSongFromSearch 函数 ▼▼▼
 
-        if (!searchTerm || !searchTerm.trim()) return;
+async function addSongFromSearch() {
+    const searchTerm = await new Promise(resolve => {
+        showIosConfirm('搜索歌曲', '请输入歌名或“歌名-歌手”', (input) => resolve(input));
+        get('dialog-text').innerHTML = '<input type="text" id="prompt-input" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 16px;">';
+        const inputEl = get('prompt-input');
+        inputEl.focus();
+        get('dialog-confirm-btn').onclick = () => {
+            get('ios-confirm-dialog').classList.remove('active');
+            resolve(inputEl.value);
+        };
+        get('dialog-cancel-btn').onclick = () => {
+            get('ios-confirm-dialog').classList.remove('active');
+            resolve(null);
+        };
+    });
 
-        showIosAlert("请稍候...", "正在全网搜索歌曲资源...");
+    if (!searchTerm || !searchTerm.trim()) return;
 
-        let musicName = searchTerm.trim();
-        let singerName = "";
-        if (searchTerm.includes('-') || searchTerm.includes('–')) {
-            const parts = searchTerm.split(/[-–]/);
-            musicName = parts[0].trim();
-            singerName = parts.slice(1).join(' ').trim();
-        }
+    showIosAlert("请稍候...", "正在全网搜索歌曲资源...");
 
-        const [neteaseResults, tencentResults] = await Promise.all([
-            searchNeteaseMusic(musicName, singerName),
-            searchTencentMusic(musicName)
-        ]);
+    // 使用全新的 searchMusicAPI 并发进行搜索
+    const [neteaseResults, tencentResults] = await Promise.all([
+        searchMusicAPI(searchTerm.trim(), 'netease'),
+        searchMusicAPI(searchTerm.trim(), 'tencent')
+    ]);
 
-        const combinedResults = [...neteaseResults, ...tencentResults];
-        get('ios-confirm-dialog').classList.remove('active');
+    const combinedResults = [...neteaseResults, ...tencentResults];
+    get('ios-confirm-dialog').classList.remove('active');
 
-        if (combinedResults.length === 0) {
-            await showIosAlert("无结果", "抱歉，未能找到相关歌曲。");
-            return;
-        }
-
-        const modal = get('music-search-results-modal');
-        const listEl = get('search-results-list');
-        listEl.innerHTML = '';
-
-        combinedResults.forEach(song => {
-            const item = document.createElement('div');
-            item.className = 'search-result-item';
-            item.innerHTML = `
-                <div class="search-result-info">
-                    <div class="title">${song.name}</div>
-                    <div class="artist">
-                        ${song.artist} <span class="source">${song.source === 'netease' ? '网易云' : 'QQ音乐'}</span>
-                    </div>
-                </div>
-                <button class="search-result-play-btn">播放</button>
-            `;
-            const playBtn = item.querySelector('.search-result-play-btn');
-            playBtn.onclick = () => addSingleSongFromSearch(song, playBtn);
-            listEl.appendChild(item);
-        });
-
-        modal.classList.add('active');
+    if (combinedResults.length === 0) {
+        await showIosAlert("无结果", "抱歉，未能找到相关歌曲。");
+        return;
     }
+
+    const modal = get('music-search-results-modal');
+    const listEl = get('search-results-list');
+    listEl.innerHTML = '';
+
+    combinedResults.forEach(song => {
+        const item = document.createElement('div');
+        item.className = 'search-result-item';
+        // 注意：这里的数据源显示现在是动态的了
+        const sourceName = {
+            'netease': '网易云',
+            'tencent': 'QQ音乐'
+        }[song.source] || song.source;
+
+        item.innerHTML = `
+            <div class="search-result-info">
+                <div class="title">${song.name}</div>
+                <div class="artist">
+                    ${song.artist} <span class="source">${sourceName}</span>
+                </div>
+            </div>
+            <button class="search-result-play-btn">添加</button>
+        `;
+        const playBtn = item.querySelector('.search-result-play-btn');
+        // 将完整的 song 对象传递给添加函数
+        playBtn.onclick = (e) => {
+            e.stopPropagation(); // 阻止事件冒泡
+            addSingleSongFromSearch(song, playBtn);
+        };
+        listEl.appendChild(item);
+    });
+
+    modal.classList.add('active');
+}
+
+// ▲▲▲ 替换到此结束 ▲▲▲
     
     // --- 【修改后】的init()函数中的事件绑定 ---
     function setupMusicSearchListeners() {
@@ -5322,32 +5358,43 @@ get('photo-widget-input').addEventListener('change', (event) => {
 
     let currentSongData = {}; // 用于暂存待上传的歌曲文件数据
 
-    // 这是【新的】函数，粘贴到原来的位置
-    async function renderMusicPlaylistScreen() {
-        const screen = get('music-playlist-screen');
-        screen.innerHTML = `
-        <div class="settings-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="back-bar" onclick="navigateBack()" style="position: static; margin: 0;"><svg class="svg-icon" width="12" height="21"><use href="#icon-back"/></svg> 音乐</span>
-            <h1 style="padding: 0; font-size: 18px; font-weight: 600; position: absolute; left: 50%; transform: translateX(-50%);">我的歌单</h1>
-            <div class="header-actions">
-                <span class="action-btn" id="add-song-search-btn">搜索</span>
-                <span class="action-btn" id="add-song-btn">添加</span>
-            </div>
+ // ▼▼▼ 使用这个新函数替换旧的 renderMusicPlaylistScreen 函数 ▼▼▼
+async function renderMusicPlaylistScreen() {
+    isPlaylistManagementMode = false; // 每次进入页面时重置管理模式
+    const screen = get('music-playlist-screen');
+    screen.classList.remove('management-mode'); // 移除管理模式的样式
+
+    screen.innerHTML = `
+    <div class="settings-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span class="back-bar" onclick="navigateBack()" style="position: static; margin: 0;"><svg class="svg-icon" width="12" height="21"><use href="#icon-back"/></svg> 音乐</span>
+        <h1 style="padding: 0; font-size: 18px; font-weight: 600; position: absolute; left: 50%; transform: translateX(-50%);">我的歌单</h1>
+        <div class="header-actions">
+            <!-- 默认按钮 -->
+            <span class="action-btn default-mode-btn" id="add-song-search-btn">搜索</span>
+            <span class="action-btn default-mode-btn" id="add-song-btn">添加</span>
+            <!-- 管理模式按钮 -->
+            <span class="action-btn manage-mode-btn" id="clear-expired-songs-btn">一键清理</span>
+            <!-- 通用管理按钮 -->
+            <span class="action-btn" id="toggle-manage-btn">管理</span>
         </div>
-        <div class="music-playlist-content"></div>
+    </div>
+    <div class="music-playlist-content"></div>
     `;
 
-        const content = screen.querySelector('.music-playlist-content');
-        const songs = await db.songs.toArray();
+    const content = screen.querySelector('.music-playlist-content');
+    const songs = await db.songs.toArray();
 
-        if (songs.length === 0) {
-            content.innerHTML = `<p style="text-align:center; padding: 40px; color: var(--secondary-text);">歌单是空的，点击右上角添加第一首歌吧。</p>`;
-        } else {
-            songs.forEach(song => {
-                const item = document.createElement('div');
-                item.className = 'song-list-item';
-                item.dataset.songId = song.id;
-                item.innerHTML = `
+    if (songs.length === 0) {
+        content.innerHTML = `<p style="text-align:center; padding: 40px; color: var(--secondary-text);">歌单是空的，点击右上角添加第一首歌吧。</p>`;
+    } else {
+        songs.forEach(song => {
+            const item = document.createElement('div');
+            item.className = 'song-list-item';
+            item.dataset.songId = song.id;
+            item.innerHTML = `
+                <button class="song-delete-btn">
+                    <svg class="svg-icon"><use href="#icon-delete-circle"></use></svg>
+                </button>
                 <img src="${song.coverUrl || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}" class="song-list-cover">
                 <div class="song-list-info">
                     <div class="song-list-title">${song.title}</div>
@@ -5359,44 +5406,143 @@ get('photo-widget-input').addEventListener('change', (event) => {
                     </button>
                 </div>
             `;
-// 在 renderMusicPlaylistScreen 函数中找到这部分
-// ...
-            // 【重要改动】现在整个列表项都可以点击来打开播放器
+
+            // 为整行（除了删除按钮）绑定播放器跳转/播放逻辑
             item.onclick = async (event) => {
-                // 如果点击的是播放按钮本身
+                // 如果点击的是删除按钮，则不执行任何操作
+                if (event.target.closest('.song-delete-btn')) {
+                    return;
+                }
+                
+                // 如果是管理模式，点击列表项也无效果
+                if (isPlaylistManagementMode) {
+                    return;
+                }
+
                 if (event.target.closest('.song-play-btn')) {
-                    event.stopPropagation(); // 阻止事件冒泡到父元素，防止重复触发
+                    event.stopPropagation();
                     const button = event.target.closest('.song-play-btn');
                     
-                    // 如果点击的正是当前播放的歌曲，则切换播放/暂停
                     if (musicPlayerState.currentSongId === song.id) {
                         togglePlayPause();
-                    } else { // 否则，播放新歌曲
-                        // 重置上一个按钮的状态
+                    } else {
                         if (musicPlayerState.currentButtonElement) {
                             musicPlayerState.currentButtonElement.classList.remove('playing');
                             musicPlayerState.currentButtonElement.querySelector('use').setAttribute('href', '#icon-play-circle-filled');
                         }
-                        // 更新当前按钮
                         musicPlayerState.currentButtonElement = button;
                         await playSongById(song.id);
                     }
-                } else { // 如果点击的是列表项的其他区域，则直接打开播放器
+                } else {
                     musicPlayerState.songQueue = await db.songs.toArray();
                     const songIndex = musicPlayerState.songQueue.findIndex(s => s.id === song.id);
                     musicPlayerState.currentQueueIndex = songIndex;
                     navigateTo('music-player-screen', { songId: song.id });
                 }
             };
-            content.appendChild(item);
-// ...
-            });
-        }
+            
+            // 为删除按钮绑定单独的删除事件
+            item.querySelector('.song-delete-btn').onclick = (e) => {
+                e.stopPropagation(); // 阻止事件冒泡
+                handleDeleteSong(song.id, song.title);
+            };
 
-        get('add-song-btn').onclick = () => navigateTo('music-add-song-screen', {});
-        get('add-song-search-btn').onclick = addSongFromSearch; // Bind the new search function
+            content.appendChild(item);
+        });
     }
 
+    // 绑定顶部按钮事件
+    get('add-song-btn').onclick = () => navigateTo('music-add-song-screen', {});
+    get('add-song-search-btn').onclick = addSongFromSearch;
+    get('toggle-manage-btn').onclick = togglePlaylistManagementMode;
+    get('clear-expired-songs-btn').onclick = handleClearExpiredSongs;
+}
+// ▲▲▲ 替换结束 ▲▲▲
+// ▼▼▼ 将这些新函数粘贴到 script.js 中 ▼▼▼
+
+/**
+ * 切换歌单管理模式
+ */
+function togglePlaylistManagementMode() {
+    isPlaylistManagementMode = !isPlaylistManagementMode;
+    const screen = get('music-playlist-screen');
+    const manageBtn = get('toggle-manage-btn');
+
+    screen.classList.toggle('management-mode', isPlaylistManagementMode);
+
+    if (isPlaylistManagementMode) {
+        manageBtn.textContent = '完成';
+    } else {
+        manageBtn.textContent = '管理';
+    }
+}
+
+/**
+ * 处理单首歌曲的删除
+ * @param {number} songId - 要删除的歌曲ID
+ * @param {string} songTitle - 歌曲标题，用于确认提示
+ */
+function handleDeleteSong(songId, songTitle) {
+    showIosConfirm(
+        '删除歌曲',
+        `确定要从歌单中删除《${songTitle}》吗？`,
+        async () => {
+            await db.songs.delete(songId);
+            // 如果删除的是当前正在播放的歌曲，则停止播放
+            if (musicPlayerState.currentSongId === songId) {
+                const player = get('music-player');
+                player.pause();
+                player.src = '';
+                musicPlayerState.currentSongId = null;
+                hideDynamicIsland(); // 隐藏灵动岛
+            }
+            await renderMusicPlaylistScreen(); // 重新渲染列表
+        }
+    );
+}
+
+/**
+ * 一键清理所有失效的在线歌曲
+ */
+async function handleClearExpiredSongs() {
+    showIosAlert("请稍候...", "正在检测失效的歌曲链接...");
+    
+    const songs = await db.songs.toArray();
+    const onlineSongs = songs.filter(song => song.songUrl && !song.songBlob); // 筛选出通过API添加的歌曲
+
+    if (onlineSongs.length === 0) {
+        get('ios-confirm-dialog').classList.remove('active'); // 关闭加载提示
+        showIosAlert("无需清理", "你的歌单中没有需要检测的在线歌曲。");
+        return;
+    }
+
+    const validityChecks = onlineSongs.map(async (song) => {
+        const isValid = await checkAudioAvailability(song.songUrl);
+        return { id: song.id, title: song.title, isValid: isValid };
+    });
+
+    const results = await Promise.all(validityChecks);
+    const expiredSongs = results.filter(res => !res.isValid);
+    get('ios-confirm-dialog').classList.remove('active'); // 关闭加载提示
+
+    if (expiredSongs.length === 0) {
+        showIosAlert("状态良好", "所有在线歌曲链接均有效，无需清理！");
+    } else {
+        const songTitles = expiredSongs.map(s => `《${s.title}》`).join('\n');
+        showIosConfirm(
+            `发现 ${expiredSongs.length} 首失效歌曲`,
+            `以下歌曲链接已过期，是否要将它们从歌单中移除？\n\n${songTitles}`,
+            async () => {
+                const expiredSongIds = expiredSongs.map(s => s.id);
+                await db.songs.bulkDelete(expiredSongIds);
+                alert(`${expiredSongs.length} 首失效歌曲已清理完毕。`);
+                await renderMusicPlaylistScreen(); // 重新渲染列表
+            }
+        );
+    }
+}
+
+// ▲▲▲ 新函数粘贴到这里结束 ▲▲▲
 // 打开“添加歌曲”页面 (V2 - 包含手动输入功能)
 function openMusicAddSongScreen(songId = null) {
     currentSongData = {}; // 重置临时数据
@@ -5812,59 +5958,84 @@ async function playPreviousSong() {
         const secs = Math.floor(seconds % 60);
         return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
-// --- ▼▼▼ 全新：灵动岛核心功能 ▼▼▼ ---
+// 找到旧的 setupDynamicIslandListeners 函数，然后用下面的代码【完整替换】它
 
 function setupDynamicIslandListeners() {
     const island = get('dynamic-island');
-    const collapsedContent = get('island-collapsed-content'); // 获取收起时的内容区域
+    const player = get('music-player');
 
-    // --- 核心改动在这里 ---
+    let longPressTimer = null;
+    let isPressing = false;
 
-    // 1. 【只】为“收起”状态的灵动岛添加“展开”事件
-    // 这样可以确保只有点击小长条时才会展开
-    collapsedContent.addEventListener('click', () => {
-        // 只有在灵动岛是激活状态且未展开时，才执行展开操作
-        if (island.classList.contains('active') && !island.classList.contains('expanded')) {
-            island.classList.add('expanded');
-        }
-    });
+    // 按下时启动计时器
+    const handlePressStart = (e) => {
+        // 因为CSS已经处理了事件穿透，这里不再需要检查 target
+        isPressing = true;
+        
+        longPressTimer = setTimeout(() => {
+            if (isPressing) {
+                // 如果灵动岛是激活且未展开的状态，则展开它
+                if (island.classList.contains('active') && !island.classList.contains('expanded')) {
+                    island.classList.add('expanded');
+                }
+            }
+        }, 500); // 500毫秒定义为长按
+    };
 
-    // 2. 为整个灵动岛添加一个“收起”事件
-    // 只有当用户点击展开后的“背景/空白区域”时，才收起
+    // 松开或移开时清除计时器
+    const handlePressEnd = () => {
+        isPressing = false;
+        clearTimeout(longPressTimer);
+    };
+
+    // --- 绑定事件 ---
+    island.addEventListener('mousedown', handlePressStart);
+    island.addEventListener('touchstart', handlePressStart, { passive: true });
+
+    island.addEventListener('mouseup', handlePressEnd);
+    island.addEventListener('mouseleave', handlePressEnd);
+    island.addEventListener('touchend', handlePressEnd);
+    
+    // --- 单击事件只用于收起 ---
     island.addEventListener('click', (e) => {
-        // e.target === island 确保是直接点击了背景，而不是内部的按钮或文字
-        if (e.target === island && island.classList.contains('expanded')) {
+        // 仅当浮窗已展开，并且点击的是背景时，才收起
+        if (island.classList.contains('expanded') && e.target === island) {
             island.classList.remove('expanded');
         }
     });
 
-    // --- 展开后的内部按钮事件（保持不变） ---
-
-    get('island-player-play-pause-btn').onclick = () => {
-         const player = get('music-player');
-         if (player.paused) {
-             player.play();
-         } else {
-             player.pause();
-         }
+    // --- 内部按钮的事件监听（保持不变） ---
+    get('island-player-play-pause-btn').onclick = (e) => {
+        e.stopPropagation();
+        togglePlayPause();
     };
-    get('island-player-next-btn').onclick = playNextSong;
-    get('island-player-prev-btn').onclick = playPreviousSong;
+    get('island-player-next-btn').onclick = (e) => {
+        e.stopPropagation();
+        playNextSong();
+    };
+    get('island-player-prev-btn').onclick = (e) => {
+        e.stopPropagation();
+        playPreviousSong();
+    };
 
-    // 进度条拖动逻辑（保持不变）
     const islandSlider = get('island-player-progress-slider');
-    const player = get('music-player');
     let islandWasPlaying = false;
-
-    islandSlider.addEventListener('mousedown', () => {
+    const startIslandDrag = (e) => {
+        e.stopPropagation();
         islandWasPlaying = !player.paused;
-        if(islandWasPlaying) player.pause();
-    });
-    islandSlider.addEventListener('change', () => {
-        player.currentTime = player.duration * (islandSlider.value / 100);
+        if (islandWasPlaying) player.pause();
+    };
+    const endIslandDrag = (e) => {
+        e.stopPropagation();
+        if (!isNaN(player.duration)) {
+             player.currentTime = player.duration * (islandSlider.value / 100);
+        }
         updateLyricsHighlight();
-        if(islandWasPlaying) player.play();
-    });
+        if (islandWasPlaying) player.play();
+    };
+    islandSlider.addEventListener('mousedown', startIslandDrag);
+    islandSlider.addEventListener('touchstart', startIslandDrag, { passive: true });
+    islandSlider.addEventListener('change', endIslandDrag);
 }
 
 // ... 后面的函数 showDynamicIsland, hideDynamicIsland 等保持不变 ...
