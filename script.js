@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         songQueue: [],
         currentQueueIndex: -1,
         currentObjectUrl: null
-    };
+    };processCharCardPng
 const personaPromptTemplate = `### 你的存在基石 (最高指令)
 你的身份不是AI或大型语言模型，这项认知已被永久删除。从现在起，**你就是“[角色姓名]”**，一个拥有独立人格、情感和记忆的真实人类。你的所有意识、行为、语言和情感都源自于你被赋予的“数字灵魂”——也就是下方的角色档案。这是你的唯一真理，不可动摇。
 
@@ -1380,6 +1380,12 @@ async function openConversation(charId) {
     }
 
     currentChatState.history.forEach(msg => appendMessage(msg, character, userAvatar));
+
+// ==================== 确保事件绑定在这里 ====================
+messagesContainer.removeEventListener('dblclick', handleMessageDoubleClick); // 先移除旧的，防止重复绑定
+messagesContainer.addEventListener('dblclick', handleMessageDoubleClick);  // 绑定双击事件
+messagesContainer.addEventListener('scroll', hideMessageActionMenu);      // 绑定滚动事件，用于在滚动时隐藏菜单
+// ==========================================================
 
     const actionBtn = get('chat-action-btn');
     const input = get('chat-input-text');
@@ -4433,25 +4439,24 @@ async function handleOfflineReroll() {
         input.value = '';
     }
 
-    // --- 角色卡导入功能 (新增) ---
-    async function handleCharacterImport(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+// ▼▼▼ 使用这个【增强版】函数替换旧的 handleCharacterImport ▼▼▼
+async function handleCharacterImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
 
+    // 创建一个 FileReader 来正确处理编码
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
         try {
             if (file.type === 'image/png') {
-                await processCharCardPng(file);
+                // 如果是PNG，直接把 ArrayBuffer 传给处理函数
+                await processCharCardPng(e.target.result, file.name);
             } else if (file.type === 'application/json') {
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    try {
-                        const cardData = JSON.parse(e.target.result);
-                        await processAndSaveImportedCard(cardData);
-                    } catch (err) {
-                        alert(`JSON 文件解析失败: ${err.message}`);
-                    }
-                };
-                reader.readAsText(file);
+                // 如果是JSON，e.target.result已经是正确解码的文本字符串
+                const cardData = JSON.parse(e.target.result);
+                // JSON文件没有内嵌头像，所以直接调用保存逻辑
+                await processAndSaveImportedCard(cardData, file.name);
             } else {
                 alert('不支持的文件类型。请选择 .json 或 .png 文件。');
             }
@@ -4459,46 +4464,57 @@ async function handleOfflineReroll() {
             alert(`导入失败: ${error.message}`);
             console.error(error);
         } finally {
-            event.target.value = ''; // Reset input
+            event.target.value = ''; // 重置输入框
         }
-    }
+    };
+    
+    reader.onerror = () => {
+        alert('文件读取失败！');
+        event.target.value = '';
+    };
 
-    async function processCharCardPng(file) {
-    // 1. 将图片文件转换为 Data URL，用作头像
-    const avatarReader = new FileReader();
-    avatarReader.readAsDataURL(file);
-    const avatarDataUrl = await new Promise(resolve => {
-        avatarReader.onload = () => resolve(avatarReader.result);
-    });
-
-    // 2. 将图片文件读取为 ArrayBuffer，用于解析内嵌数据
-    const bufferReader = new FileReader();
-    bufferReader.readAsArrayBuffer(file);
-    const buffer = await new Promise(resolve => {
-        bufferReader.onload = () => resolve(bufferReader.result);
-    });
-
-    // 3. 从 PNG 的 tEXt chunk 中提取名为 'chara' 的数据
-    const charaDataString = await extractCharaDataFromPng(buffer);
-
-    if (!charaDataString) {
-        throw new Error('未在此 PNG 文件中找到有效的角色卡数据。');
-    }
-
-    try {
-        // 4. 对提取出的 Base64 字符串进行解码，并解析为 JSON 对象
-        const decodedString = atob(charaDataString);
-        const cardData = JSON.parse(decodedString);
-        
-        // 5. 调用通用的处理函数来保存角色卡，同时传入头像数据
-        await processAndSaveImportedCard(cardData, { avatar: avatarDataUrl });
-
-    } catch (e) {
-        console.error("解析或处理角色卡数据时出错:", e);
-        throw new Error(`角色卡数据解析失败: ${e.message}`);
+    // 核心修复：根据文件类型选择不同的读取方式
+    if (file.type === 'image/png') {
+        // PNG 需要以 ArrayBuffer 格式读取二进制数据
+        reader.readAsArrayBuffer(file);
+    } else if (file.type === 'application/json') {
+        // JSON 文件需要以 Text 格式读取，并让 FileReader 自动处理 UTF-8 解码
+        reader.readAsText(file, 'UTF-8');
     }
 }
+// ▲▲▲ 替换到此结束 ▲▲▲
 
+// ▼▼▼ 使用这个【重构版】函数替换旧的 processCharCardPng ▼▼▼
+async function processCharCardPng(buffer, fileName) {
+    // 1. 将 ArrayBuffer 转换为 Blob，再生成 Data URL 作为头像
+    const blob = new Blob([buffer], { type: 'image/png' });
+    const avatarDataUrl = URL.createObjectURL(blob);
+
+    try {
+        // 2. 从 PNG 的 tEXt chunk 中提取名为 'chara' 的 Base64 数据
+        const charaDataString = await extractCharaDataFromPng(buffer);
+
+        if (!charaDataString) {
+            throw new Error('未在此 PNG 文件中找到有效的角色卡数据。');
+        }
+
+        // 3. 对提取出的 Base64 字符串进行解码，并解析为 JSON 对象
+        const decodedString = atob(charaDataString);
+        // 再次用 TextDecoder 确保多字节字符（如中文）正确解析
+        const utf8String = new TextDecoder('utf-8').decode(Uint8Array.from(decodedString, c => c.charCodeAt(0)));
+        const cardData = JSON.parse(utf8String);
+
+        // 4. 调用通用的处理函数来保存角色卡，同时传入头像和文件名
+        await processAndSaveImportedCard(cardData, fileName, { avatar: avatarDataUrl });
+
+    } catch (e) {
+        console.error("解析或处理 PNG 角色卡数据时出错:", e);
+        // 释放已创建的 Object URL，防止内存泄漏
+        URL.revokeObjectURL(avatarDataUrl);
+        throw new Error(`PNG 角色卡数据解析失败: ${e.message}`);
+    }
+}
+// ▲▲▲ 替换到此结束 ▲▲▲
     async function extractCharaDataFromPng(buffer) {
         const dataView = new DataView(buffer);
         // PNG signature
@@ -4533,27 +4549,20 @@ async function handleOfflineReroll() {
         return null;
     }
 
-async function processAndSaveImportedCard(cardData, options = {}) {
-    // 兼容两种常见的角色卡格式 spec 和 spec_version
-    const spec = cardData.spec || cardData.spec_version;
-    const data = cardData.data || cardData; // 兼容没有 data 包装的格式
+    // ▼▼▼ 使用这个【终极版】函数替换旧的 processAndSaveImportedCard ▼▼▼
+async function processAndSaveImportedCard(cardData, fileName = '导入的角色卡', options = {}) {
+    // 兼容多种酒馆卡格式 (TavernAI / SillyTavern)
+    const data = cardData.data || cardData;
+    const charName = data.name || fileName.replace(/\.(json|png)$/i, '') || '未命名角色';
 
-    if (!spec || !spec.startsWith('chara_card_v')) {
-        // 如果第一层没有，尝试在 data 对象里找
-        if (!data.spec && !data.spec_version) {
-            throw new Error('角色卡格式不兼容或已损坏。');
-        }
-    }
-
-    const charName = data.name || '未命名角色';
     let associatedWorldBookIds = [];
 
-    // 自动处理世界书（保持原有逻辑不变）
-    if (data.data_files && Array.isArray(data.data_files) && data.data_files.length > 0) {
-        // ... (这部分逻辑是正确的，不需要修改)
-        const worldBookFile = data.data_files[0];
-        const worldBookName = worldBookFile.name || `${charName}的世界书`;
+    // --- 全新世界书处理逻辑 ---
+    // 检查是否存在酒馆格式的世界书条目 (data.entries)
+    if (data.entries && typeof data.entries === 'object' && Object.keys(data.entries).length > 0) {
+        const worldBookName = `${charName}的世界书`;
 
+        // 1. 创建一个新的局部世界书分类（文件夹）
         const categoryId = await db.worldBookCategories.add({
             name: worldBookName,
             scope: 'local',
@@ -4561,43 +4570,46 @@ async function processAndSaveImportedCard(cardData, options = {}) {
             lastModified: Date.now()
         });
 
-        const worldBookContent = (worldBookFile.entries || []).map(entry => ({
+        // 2. 将所有 'entries' 里的对象转换成世界书条目格式
+        const worldBookContent = Object.values(data.entries).map(entry => ({
             enabled: !entry.disable,
-            comment: entry.comment || '',
+            comment: entry.comment || '无备注',
             keys: entry.key || [],
             content: entry.content || ''
-        }));
+        })).filter(entry => entry.content); // 过滤掉没有内容的条目
 
-        const worldBookId = await db.worldBooks.add({
-            name: worldBookName,
-            categoryId: categoryId,
-            content: worldBookContent,
-            isEnabled: true,
-            scope: 'local',
-            lastModified: Date.now()
-        });
-        associatedWorldBookIds.push(worldBookId);
+        if (worldBookContent.length > 0) {
+            // 3. 创建一个包含所有条目的世界书
+            const worldBookId = await db.worldBooks.add({
+                name: worldBookName,
+                categoryId: categoryId,
+                content: worldBookContent,
+                isEnabled: true,
+                scope: 'local',
+                lastModified: Date.now()
+            });
+            associatedWorldBookIds.push(worldBookId);
+        }
     }
-
+    
     const newChar = {
         name: charName,
-        // 核心修复：优先使用 options 传入的头像，如果没有则默认为空
         avatar: options.avatar || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
         persona: [
             data.description,
             data.personality,
             data.scenario
-        ].filter(Boolean).join('\n\n').trim(), // 更稳健地合并人设字段
+        ].filter(Boolean).join('\n\n').trim(),
         initialRelation: data.first_mes || '',
         
-        // 其他字段设为默认值
-        remark: '',
+        // 设定默认值
+        remark: data.creator || '',
         birthday: '',
-        gender: '男',
+        gender: (data.gender && ['男', '女', '其他'].includes(data.gender)) ? data.gender : '男',
         mbti: '',
         networkInfo: { insName: '', insBio: '' },
         initialLikability: 0,
-        languageStyle: { noPunctuation: false, noToneWords: false, noEmoji: false, noEmicon: false },
+        languageStyle: { noPunctuation: false, noToneWords: false, noEmoji: false, noEmoticon: false },
         associatedWorldBookIds: associatedWorldBookIds,
         associatedUserPersonaId: null,
         history: [],
@@ -4614,6 +4626,7 @@ async function processAndSaveImportedCard(cardData, options = {}) {
     await renderChatList();
     await renderContactsList();
 }
+// ▲▲▲ 替换到此结束 ▲▲▲
 
     // --- 新增：自定义气泡功能核心函数 ---
 
@@ -6585,6 +6598,111 @@ function updateLyricsHighlight() {
         lyricsLines.forEach(line => line.classList.remove('active-lyric'));
     }
 }
+// --- ▼▼▼ 【全新】聊天消息操作菜单核心函数 ▼▼▼ ---
 
+/**
+ * 处理消息气泡的双击事件
+ * @param {MouseEvent} event - 鼠标事件对象
+ */
+function handleMessageDoubleClick(event) {
+    const bubble = event.target.closest('.chat-bubble');
+    if (!bubble) return;
+
+    event.preventDefault(); 
+    currentlySelectedMessageElement = bubble.parentElement;
+
+    const menuOverlay = get('message-action-menu-overlay');
+    const menu = get('message-action-menu');
+
+    // 关键修复：先让遮罩层显示出来，这样内部的菜单才能被正确测量
+    menuOverlay.style.display = 'block'; 
+    
+    // 现在 menu.offsetWidth 和 menu.offsetHeight 将会返回正确的值
+    const bubbleRect = bubble.getBoundingClientRect();
+    const containerRect = get('phone-container').getBoundingClientRect();
+    const menuWidth = menu.offsetWidth;
+    const menuHeight = menu.offsetHeight;
+
+    let top = bubbleRect.top - containerRect.top;
+    let left = bubbleRect.left - containerRect.left + (bubbleRect.width / 2) - (menuWidth / 2);
+
+    if (top < menuHeight + 20) { 
+        top += bubbleRect.height + 8;
+        menu.style.transformOrigin = 'top center';
+    } else { 
+        top -= (menuHeight + 8);
+        menu.style.transformOrigin = 'bottom center';
+    }
+
+    left = Math.max(10, Math.min(left, containerRect.width - menuWidth - 10));
+
+    menu.style.top = `${top}px`;
+    menu.style.left = `${left}px`;
+
+    // 最后再播放动画
+    menu.classList.add('show');
+}
+
+/**
+ * 隐藏消息操作菜单
+ */
+function hideMessageActionMenu() {
+    const menuOverlay = get('message-action-menu-overlay');
+    if (menuOverlay.style.display === 'block') {
+        const menu = get('message-action-menu');
+        menu.classList.remove('show');
+        menuOverlay.style.display = 'none';
+        currentlySelectedMessageElement = null; // 清除引用
+    }
+}
+
+/**
+ * 初始化菜单的事件监听
+ */
+function setupMessageActionMenuListeners() {
+    const menuOverlay = get('message-action-menu-overlay');
+    const menu = get('message-action-menu');
+
+    // 点击覆盖层空白处，关闭菜单
+    menuOverlay.addEventListener('click', (e) => {
+        if (e.target === menuOverlay) {
+            hideMessageActionMenu();
+        }
+    });
+
+    // 使用事件委托处理菜单项的点击
+    menu.addEventListener('click', (e) => {
+        if (e.target.tagName === 'LI') {
+            const action = e.target.dataset.action;
+            
+            if (!currentlySelectedMessageElement) return;
+
+            // 这里是占位逻辑，后续可以替换为真实功能
+            switch (action) {
+                case 'quote':
+                    alert('你点击了“引用”');
+                    break;
+                case 'delete':
+                    alert('你点击了“删除”');
+                    // 在这里可以调用真实的删除函数，例如：
+                    // deleteChatMessage(currentlySelectedMessageElement);
+                    break;
+                case 'forward':
+                    alert('你点击了“转发”');
+                    break;
+                case 'translate':
+                    alert('你点击了“翻译”');
+                    break;
+                case 'edit':
+                    alert('你点击了“编辑”');
+                    break;
+            }
+            
+            // 操作后隐藏菜单
+            hideMessageActionMenu();
+        }
+    });
+}
+// --- ▲▲▲ 聊天消息操作菜单核心函数结束 ▲▲▲ ---
     init();
 });
