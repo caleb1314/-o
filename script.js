@@ -4549,17 +4549,45 @@ async function processCharCardPng(buffer, fileName) {
         return null;
     }
 
-    // ▼▼▼ 使用这个【终极版】函数替换旧的 processAndSaveImportedCard ▼▼▼
+// ▼▼▼ 使用这个【终极兼容版】函数，完整替换你旧的 processAndSaveImportedCard 函数 ▼▼▼
 async function processAndSaveImportedCard(cardData, fileName = '导入的角色卡', options = {}) {
     // 兼容多种酒馆卡格式 (TavernAI / SillyTavern)
     const data = cardData.data || cardData;
     const charName = data.name || fileName.replace(/\.(json|png)$/i, '') || '未命名角色';
 
     let associatedWorldBookIds = [];
+    let worldBookContent = [];
 
-    // --- 全新世界书处理逻辑 ---
-    // 检查是否存在酒馆格式的世界书条目 (data.entries)
-    if (data.entries && typeof data.entries === 'object' && Object.keys(data.entries).length > 0) {
+    // --- 全新：更强大的世界书处理逻辑 ---
+    // 优先级 1: 检查 SillyTavern 的 character_book 格式
+    if (data.character_book && data.character_book.entries && typeof data.character_book.entries === 'object') {
+        console.log("检测到 'character_book' 格式世界书...");
+        worldBookContent = Object.values(data.character_book.entries).map(entry => ({
+            enabled: !entry.disable,
+            comment: entry.comment || '无备注',
+            keys: entry.key || [],
+            content: entry.content || ''
+        })).filter(entry => entry.content);
+    } 
+    // 优先级 2: 检查 TavernAI 的 'world' 字符串格式
+    else if (data.world && typeof data.world === 'string' && data.world.trim() !== '') {
+        console.log("检测到 'world' 字符串格式世界书，正在解析...");
+        worldBookContent = parseWorldBookString(data.world);
+    } 
+    // 优先级 3: 兼容旧的 'entries' 格式 (通常用于预设文件)
+    else if (data.entries && typeof data.entries === 'object' && Object.keys(data.entries).length > 0) {
+        console.log("检测到 'entries' 格式世界书...");
+        worldBookContent = Object.values(data.entries).map(entry => ({
+            enabled: !entry.disable,
+            comment: entry.comment || '无备注',
+            keys: entry.key || [],
+            content: entry.content || ''
+        })).filter(entry => entry.content);
+    }
+    // --- 世界书处理逻辑结束 ---
+
+    // 如果成功提取到了世界书内容，就创建对应的分类和世界书
+    if (worldBookContent.length > 0) {
         const worldBookName = `${charName}的世界书`;
 
         // 1. 创建一个新的局部世界书分类（文件夹）
@@ -4570,28 +4598,20 @@ async function processAndSaveImportedCard(cardData, fileName = '导入的角色�
             lastModified: Date.now()
         });
 
-        // 2. 将所有 'entries' 里的对象转换成世界书条目格式
-        const worldBookContent = Object.values(data.entries).map(entry => ({
-            enabled: !entry.disable,
-            comment: entry.comment || '无备注',
-            keys: entry.key || [],
-            content: entry.content || ''
-        })).filter(entry => entry.content); // 过滤掉没有内容的条目
-
-        if (worldBookContent.length > 0) {
-            // 3. 创建一个包含所有条目的世界书
-            const worldBookId = await db.worldBooks.add({
-                name: worldBookName,
-                categoryId: categoryId,
-                content: worldBookContent,
-                isEnabled: true,
-                scope: 'local',
-                lastModified: Date.now()
-            });
-            associatedWorldBookIds.push(worldBookId);
-        }
+        // 2. 创建一个包含所有条目的世界书
+        const worldBookId = await db.worldBooks.add({
+            name: worldBookName,
+            categoryId: categoryId,
+            content: worldBookContent,
+            isEnabled: true,
+            scope: 'local',
+            lastModified: Date.now()
+        });
+        associatedWorldBookIds.push(worldBookId);
+        console.log(`成功为角色创建了包含 ${worldBookContent.length} 个条目的世界书！`);
     }
     
+    // 创建新角色的逻辑保持不变
     const newChar = {
         name: charName,
         avatar: options.avatar || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
@@ -4602,7 +4622,6 @@ async function processAndSaveImportedCard(cardData, fileName = '导入的角色�
         ].filter(Boolean).join('\n\n').trim(),
         initialRelation: data.first_mes || '',
         
-        // 设定默认值
         remark: data.creator || '',
         birthday: '',
         gender: (data.gender && ['男', '女', '其他'].includes(data.gender)) ? data.gender : '男',
@@ -4610,7 +4629,7 @@ async function processAndSaveImportedCard(cardData, fileName = '导入的角色�
         networkInfo: { insName: '', insBio: '' },
         initialLikability: 0,
         languageStyle: { noPunctuation: false, noToneWords: false, noEmoji: false, noEmoticon: false },
-        associatedWorldBookIds: associatedWorldBookIds,
+        associatedWorldBookIds: associatedWorldBookIds, // 这里现在会自动关联新建的世界书
         associatedUserPersonaId: null,
         history: [],
         offlineHistory: [],
@@ -4626,8 +4645,7 @@ async function processAndSaveImportedCard(cardData, fileName = '导入的角色�
     await renderChatList();
     await renderContactsList();
 }
-// ▲▲▲ 替换到此结束 ▲▲▲
-
+// ▲▲▲ 替换结束 ▲▲▲
     // --- 新增：自定义气泡功能核心函数 ---
 
     async function renderBubbleEditorScreen(charId) {
@@ -5757,7 +5775,47 @@ get('photo-widget-input').addEventListener('change', (event) => {
     // --- 新增：音乐歌单功能核心代码 ---
 
     let currentSongData = {}; // 用于暂存待上传的歌曲文件数据
+// ▼▼▼ 在 script.js 中添加这个全新的辅助函数 ▼▼▼
+function parseWorldBookString(worldString) {
+    if (!worldString || typeof worldString !== 'string') return [];
+    
+    const entries = [];
+    // 使用正则表达式按 "---" 分隔符（允许前后有空格和换行）来分割条目
+    const entryBlocks = worldString.split(/\n\s*---\s*\n/); 
 
+    for (const block of entryBlocks) {
+        if (!block.trim()) continue; // 跳过空块
+
+        const lines = block.trim().split('\n');
+        const entry = { keys: [], comment: '', content: '', enabled: true };
+        let contentStarted = false;
+        let contentLines = [];
+
+        for (const line of lines) {
+            // 匹配 "Keys:" 或 "关键词:" 等
+            const keyMatch = line.match(/^(?:Keys|关键词|关键字)\s*:\s*(.*)$/i);
+            // 匹配 "Comment:" 或 "备注:" 等
+            const commentMatch = line.match(/^(?:Comment|备注)\s*:\s*(.*)$/i);
+
+            if (!contentStarted && keyMatch) {
+                entry.keys = keyMatch[1].split(',').map(k => k.trim()).filter(Boolean);
+            } else if (!contentStarted && commentMatch) {
+                entry.comment = commentMatch[1].trim();
+            } else {
+                // 一旦遇到不匹配的行，就认为正文内容开始了
+                contentStarted = true;
+                contentLines.push(line);
+            }
+        }
+        
+        entry.content = contentLines.join('\n').trim();
+        if (entry.content) {
+            entries.push(entry);
+        }
+    }
+    return entries;
+}
+// ▲▲▲ 新函数添加结束 ▲▲▲
  // ▼▼▼ 使用这个新函数替换旧的 renderMusicPlaylistScreen 函数 ▼▼▼
 async function renderMusicPlaylistScreen() {
     isPlaylistManagementMode = false; // 每次进入页面时重置管理模式
