@@ -676,7 +676,14 @@ async function addSongFromSearch() {
         };
         listEl.appendChild(item);
     });
-
+// 每次打开弹窗前，都重新为“关闭”按钮绑定功能
+    get('cancel-music-search-btn').onclick = () => {
+        modal.classList.remove('active');
+        // 如果当前在歌单页，关闭后刷新列表以显示新添加的歌曲
+        if (navHistory[navHistory.length - 1] === 'music-playlist-screen') {
+            renderMusicPlaylistScreen();
+        }
+    };
     modal.classList.add('active');
 }
 
@@ -685,13 +692,7 @@ async function addSongFromSearch() {
     // --- 【修改后】的init()函数中的事件绑定 ---
     function setupMusicSearchListeners() {
         get('add-song-search-btn').addEventListener('click', addSongFromSearch);
-        get('cancel-music-search-btn').addEventListener('click', () => {
-            get('music-search-results-modal').classList.remove('active');
-            // 当关闭搜索弹窗后，如果当前页面是歌单页，则刷新
-            if (navHistory[navHistory.length - 1] === 'music-playlist-screen') {
-                renderMusicPlaylistScreen();
-            }
-        });
+        
     }
 
     // --- 设置页逻辑 ---
