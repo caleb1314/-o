@@ -3274,3 +3274,9 @@ body.dark-mode .search-result-play-btn:disabled {
 #music-playlist-screen.management-mode .song-list-actions {
     display: none; /* 管理模式下隐藏播放按钮 */
 }
+/* --- API 预设按钮样式 --- */
+.preset-actions .btn {
+    padding: 10px 12px;
+    font-size: 1rem;
+    min-height: auto;
+}
