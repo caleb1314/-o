@@ -1380,6 +1380,10 @@ async function openConversation(charId) {
         navigateBack();
         return;
     }
+// --- ★★★ 核心修复：在这里加载初始好感度！ ★★★ ---
+    currentLikability = character.initialLikability || 0;
+    console.log(`对话开始，已加载初始好感度: ${currentLikability}`);
+    // --- ★★★ 修复结束 ★★★ ---
 
     currentChatState = { charId, history: character.history || [], isReceiving: false };
 
@@ -1419,22 +1423,17 @@ messagesContainer.addEventListener('scroll', hideMessageActionMenu);      // 绑
 
     input.value = ''; // 每次打开都清空输入框
     input.style.height = 'auto'; // 重置高度
+// 为输入框绑定事件，并调整其高度
+input.removeEventListener('input', updateChatButtonStateAndHeight); // 先移除旧的监听器
+input.addEventListener('input', updateChatButtonStateAndHeight);   // 再添加新的
 
-    // 为输入框绑定事件
-    const handleInput = () => {
-        if (input.value.trim()) {
-            actionBtn.querySelector('use').setAttribute('href', '#icon-chat-send');
-            actionBtn.classList.remove('get-reply');
-        } else {
-            actionBtn.querySelector('use').setAttribute('href', '#icon-chat-reply');
-            actionBtn.classList.add('get-reply');
-        }
-        input.style.height = 'auto';
-        input.style.height = (input.scrollHeight) + 'px';
-    };
-
-    input.removeEventListener('input', handleInput); // 先移除旧的监听器
-    input.addEventListener('input', handleInput);   // 再添加新的
+// 创建一个包装函数来同时处理按钮状态和输入框高度
+function updateChatButtonStateAndHeight() {
+    updateChatButtonState(); // 调用我们的新全局函数
+    // 保持高度自适应逻辑
+    input.style.height = 'auto';
+    input.style.height = (input.scrollHeight) + 'px';
+}
 
     actionBtn.onclick = handleSendOrReceive;
     input.onkeydown = (e) => {
@@ -1490,9 +1489,37 @@ messagesContainer.addEventListener('scroll', hideMessageActionMenu);      // 绑
         messagesContainer.appendChild(msgDiv);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
+    // ▼▼▼ 在这里粘贴新函数 ▼▼▼
 
+/**
+ * [新] 检查聊天输入框状态并更新发送按钮的图标和功能
+ */
+function updateChatButtonState() {
+    const input = get('chat-input-text');
+    const actionBtn = get('chat-action-btn');
+    
+    // 如果正在接收消息，则强制显示停止按钮（最高优先级）
+    if (currentChatState.isReceiving) {
+        actionBtn.querySelector('use').setAttribute('href', '#icon-chat-stop');
+        actionBtn.classList.add('receiving');
+        actionBtn.classList.remove('get-reply');
+        return; // 直接返回，不执行后续逻辑
+    }
+    
+    // 检查输入框内容
+    if (input.value.trim()) {
+        actionBtn.querySelector('use').setAttribute('href', '#icon-chat-send');
+        actionBtn.classList.remove('get-reply');
+        actionBtn.classList.remove('receiving'); // 确保移除加载状态
+    } else {
+        actionBtn.querySelector('use').setAttribute('href', '#icon-chat-reply');
+        actionBtn.classList.add('get-reply');
+        actionBtn.classList.remove('receiving'); // 确保移除加载状态
+    }
+}
 
-// ▼▼▼ 使用这个【最终整合版】函数，完整替换旧的 handleSendOrReceive 函数 ▼▼▼
+// ▲▲▲ 新函数粘贴结束 ▲▲▲
+// ▼▼▼ 用这个新版本完整替换旧的 handleSendOrReceive 函数 ▼▼▼
 
 async function handleSendOrReceive() {
     const actionBtn = get('chat-action-btn');
@@ -1507,27 +1534,26 @@ async function handleSendOrReceive() {
     }
 
     if (userInput) {
-        // ★★★ 已整合：给用户消息添加时间戳 ★★★
+        // --- 发送用户消息 ---
         const msg = { role: 'user', content: userInput, timestamp: Date.now() }; 
         appendMessage(msg, character, userAvatar);
         currentChatState.history.push(msg);
         input.value = '';
         input.style.height = 'auto';
 
-        actionBtn.querySelector('use').setAttribute('href', '#icon-chat-reply');
-        actionBtn.classList.add('get-reply');
+        updateChatButtonState(); // ★ 发送后立刻更新按钮状态
+
         await db.characters.update(currentChatState.charId, { history: currentChatState.history, timestamp: Date.now() });
 
     } else {
+        // --- 请求AI回复 ---
         if (currentChatState.isReceiving) {
             if (apiAbortController) apiAbortController.abort();
-            return; // 直接返回，后续逻辑在finally中处理
+            return; // 中止请求，finally会处理后续
         }
 
-        actionBtn.querySelector('use').setAttribute('href', '#icon-chat-stop');
-        actionBtn.classList.add('receiving');
-        actionBtn.classList.remove('get-reply');
         currentChatState.isReceiving = true;
+        updateChatButtonState(); // ★ AI开始回复前，更新按钮为“停止”状态
 
         try {
             const promptMessages = await buildPrompt(character);
@@ -1535,8 +1561,7 @@ async function handleSendOrReceive() {
             
             const aiMessages = aiResponse.split('[MSG_SPLIT]').filter(m => m.trim() !== '');
             for (const msgContent of aiMessages) {
-                if (!currentChatState.isReceiving) break;
-                // ★★★ 已整合：给AI消息也添加时间戳 ★★★
+                if (!currentChatState.isReceiving) break; // 检查是否在循环中被中止
                 const msg = { role: 'assistant', content: msgContent.trim(), timestamp: Date.now() };
                 appendMessage(msg, character, userAvatar);
                 currentChatState.history.push(msg);
@@ -1548,7 +1573,6 @@ async function handleSendOrReceive() {
                 const likabilityChange = await updateLikability(character, lastUserMessage.content);
                 currentLikability += likabilityChange;
                 currentLikability = Math.max(-999, Math.min(999, currentLikability));
-                console.log(`好感度变化: ${likabilityChange} -> 新的好感度: ${currentLikability}`);
                 await db.characters.update(currentChatState.charId, { initialLikability: currentLikability });
             }
 
@@ -1559,14 +1583,18 @@ async function handleSendOrReceive() {
             }
         } finally {
             currentChatState.isReceiving = false;
-            actionBtn.querySelector('use').setAttribute('href', '#icon-chat-reply');
-            actionBtn.classList.remove('receiving');
-            actionBtn.classList.add('get-reply');
+            
+            // ★ ★ ★ 最终修复点！ ★ ★ ★
+            // AI回复结束后，再次调用新函数，它会根据输入框内容智能判断按钮状态
+            updateChatButtonState(); 
+
             await db.characters.update(currentChatState.charId, { history: currentChatState.history, timestamp: Date.now() });
         }
     }
 }
-// ▲▲▲ 替换到此结束 ▲▲▲
+
+// ▲▲▲ 替换结束 ▲▲▲
+
     async function getActiveWorldBookEntries(charId) {
         const entries = [];
         const enabledGlobalCategories = await db.worldBookCategories.where({ scope: 'global', isEnabled: 1 }).toArray();
@@ -4278,7 +4306,6 @@ async function handleOfflineReroll() {
             navigateBack();
             return;
         }
-currentLikability = character.initialLikability || 0
         const categories = [
             { id: 'daily', name: '日常吐槽' },
             { id: 'rules', name: '规则怪谈' },
