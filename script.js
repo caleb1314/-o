@@ -13,7 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
         stickers: '++id, categoryId, url, remark, order',
         regexRules: '++id, name, findRegex, replaceString, isEnabled',
         fontPresets: '++id, &name', // 新增字体预设表
-        songs: '++id, title, artist' // <-- 新增歌曲表
+        songs: '++id, title, artist',// <-- 新增歌曲表
+        apiPresets: '++id, &name'
     });
 // ▼▼▼ 在这里添加新的 API 地址 ▼▼▼
     const MUSIC_API_BASE = 'https://music-api.gdstudio.xyz/api.php';
@@ -694,8 +695,176 @@ async function addSongFromSearch() {
     }
 
     // --- 设置页逻辑 ---
+    // ▼▼▼ 在这里粘贴所有新函数 ▼▼▼
+
+/**
+ * 从数据库加载API预设并填充到下拉菜单中
+ */
+async function renderApiPresetsDropdown() {
+    const select = get('api-preset-select');
+    const presets = await db.apiPresets.toArray();
+    
+    // 保留当前选中的值
+    const currentSelection = select.value;
+    
+    select.innerHTML = '<option value="">-- 手动配置 --</option>';
+    presets.forEach(preset => {
+        const option = document.createElement('option');
+        option.value = preset.id;
+        option.textContent = preset.name;
+        select.appendChild(option);
+    });
+
+    // 恢复之前的选中状态
+    select.value = currentSelection;
+}
+
+/**
+ * 当用户从下拉菜单选择一个预设时的处理函数
+ */
+async function handlePresetSelectionChange() {
+    const select = get('api-preset-select');
+    const presetId = select.value ? parseInt(select.value) : null;
+    const updateBtn = get('update-preset-btn');
+    const deleteBtn = get('delete-preset-btn');
+
+    if (presetId) {
+        const preset = await db.apiPresets.get(presetId);
+        if (preset) {
+            populateApiSettingsForm(preset);
+            // 自动尝试连接并获取模型
+            await connectAndFetchModels(false); 
+            updateBtn.style.display = 'block';
+            deleteBtn.style.display = 'block';
+        }
+    } else {
+        // 用户选择了“手动配置”
+        populateApiSettingsForm(defaultState.api); // 清空或恢复默认
+        get('api-model-select').innerHTML = '<option>请先连接</option>';
+        get('api-model-select').disabled = true;
+        updateBtn.style.display = 'none';
+        deleteBtn.style.display = 'none';
+    }
+}
+
+/**
+ * 使用预设数据填充API设置表单
+ * @param {object} preset - 包含API设置的对象
+ */
+function populateApiSettingsForm(preset) {
+    get('api-url-input').value = preset.url || '';
+    get('api-key-input').value = preset.key || '';
+    
+    // 稍后在连接成功后会设置模型，这里先清空
+    const modelSelect = get('api-model-select');
+    modelSelect.innerHTML = preset.model ? `<option value="${preset.model}">${preset.model}</option>` : '<option>请先连接</option>';
+
+    setSvgSliderValue('temperature-slider-container', preset.temperature ?? 1.0);
+    get('temperature-value').textContent = (preset.temperature ?? 1.0).toFixed(1);
+
+    setSvgSliderValue('top-p-slider-container', preset.top_p ?? 1.0);
+    get('top-p-value').textContent = (preset.top_p ?? 1.0).toFixed(2);
+
+    setSvgSliderValue('freq-penalty-slider-container', preset.frequency_penalty ?? 0.0);
+    get('freq-penalty-value').textContent = (preset.frequency_penalty ?? 0.0).toFixed(1);
+}
+
+/**
+ * 将当前表单中的配置保存为新的预设
+ */
+async function handleSaveAsPreset() {
+    const presetName = prompt("请输入新预设的名称:");
+    if (!presetName || !presetName.trim()) {
+        alert("预设名称不能为空！");
+        return;
+    }
+
+    const newPreset = {
+        name: presetName.trim(),
+        url: get('api-url-input').value,
+        key: get('api-key-input').value,
+        model: get('api-model-select').value,
+        temperature: get('temperature-slider-container').value,
+        top_p: get('top-p-slider-container').value,
+        frequency_penalty: get('freq-penalty-slider-container').value,
+    };
+
+    try {
+        const newId = await db.apiPresets.add(newPreset);
+        await renderApiPresetsDropdown();
+        get('api-preset-select').value = newId; // 自动选中新创建的预设
+        get('update-preset-btn').style.display = 'block';
+        get('delete-preset-btn').style.display = 'block';
+        alert(`预设 "${presetName}" 已保存！`);
+    } catch (e) {
+        if (e.name === 'ConstraintError') {
+            alert('错误：已存在同名的预设。');
+        } else {
+            alert('保存失败: ' + e);
+        }
+    }
+}
+
+/**
+ * 更新当前选中的预设
+ */
+async function handleUpdatePreset() {
+    const select = get('api-preset-select');
+    const presetId = select.value ? parseInt(select.value) : null;
+
+    if (!presetId) {
+        alert("没有选中的预设可更新。");
+        return;
+    }
+
+    const updatedPreset = {
+        name: select.options[select.selectedIndex].text, // 保持名称不变
+        url: get('api-url-input').value,
+        key: get('api-key-input').value,
+        model: get('api-model-select').value,
+        temperature: get('temperature-slider-container').value,
+        top_p: get('top-p-slider-container').value,
+        frequency_penalty: get('freq-penalty-slider-container').value,
+    };
+
+    await db.apiPresets.update(presetId, updatedPreset);
+    alert(`预设 "${updatedPreset.name}" 已更新！`);
+}
+
+
+/**
+ * 删除当前选中的预设
+ */
+async function handleDeletePreset() {
+    const select = get('api-preset-select');
+    const presetId = select.value ? parseInt(select.value) : null;
+    const presetName = select.options[select.selectedIndex].text;
+
+    if (!presetId) {
+        alert("没有选中的预设可删除。");
+        return;
+    }
+
+    showIosConfirm(
+        '删除预设',
+        `确定要删除预设 "${presetName}" 吗？`,
+        async () => {
+            await db.apiPresets.delete(presetId);
+            await renderApiPresetsDropdown(); // 刷新下拉列表
+            handlePresetSelectionChange(); // 重置表单
+            alert(`预设 "${presetName}" 已删除。`);
+        }
+    );
+}
     function setupSettingsListeners() {
+      renderApiPresetsDropdown();
         get('connect-api-btn').addEventListener('click', () => connectAndFetchModels(true));
+        // ▼▼▼ 在 setupSettingsListeners 函数中添加新的事件监听 ▼▼▼
+    get('api-preset-select').addEventListener('change', handlePresetSelectionChange);
+    get('save-as-preset-btn').addEventListener('click', handleSaveAsPreset);
+    get('update-preset-btn').addEventListener('click', handleUpdatePreset);
+    get('delete-preset-btn').addEventListener('click', handleDeletePreset);
+    // ▲▲▲ 新增事件监听结束 ▲▲▲
         get('save-api-settings-btn').addEventListener('click', async () => {
             state.api.url = get('api-url-input').value;
             state.api.key = get('api-key-input').value;
@@ -1177,59 +1346,77 @@ async function addSongFromSearch() {
 
     // --- 聊天界面核心逻辑 ---
     let currentChatState = { charId: null, history: [], isReceiving: false };
-    async function openConversation(charId) {
-        navigateTo('chat-conversation-screen', { charId });
-        await applyCustomBubbleStyles(charId);
-        const character = await db.characters.get(charId);
-        if (!character) { alert('角色不存在'); navigateBack(); return; }
+    // script.js
 
-        currentChatState = { charId, history: character.history || [], isReceiving: false };
-
-        get('chat-header-title').textContent = character.remark || character.name;
-        const chatScreen = get('chat-conversation-screen');
-        const messagesContainer = chatScreen.querySelector('.chat-messages-container');
-        messagesContainer.innerHTML = '';
-
-        if (character.chatBackgroundUrl) {
-            chatScreen.style.backgroundImage = `url(${character.chatBackgroundUrl})`;
-            chatScreen.style.backgroundColor = '';
-        } else {
-            chatScreen.style.backgroundImage = 'none';
-            chatScreen.style.backgroundColor = 'var(--chat-bg-color)';
-        }
-
-        let userAvatar = state.user.avatar;
-        if (character.associatedUserPersonaId) {
-            const persona = await db.userPersonas.get(character.associatedUserPersonaId);
-            if (persona) userAvatar = persona.avatar;
-        }
-
-        currentChatState.history.forEach(msg => appendMessage(msg, character, userAvatar));
-
-        const actionBtn = get('chat-action-btn');
-        const input = get('chat-input-text');
-
-        actionBtn.querySelector('use').setAttribute('href', '#icon-chat-reply');
-        actionBtn.classList.add('get-reply');
-        actionBtn.classList.remove('receiving');
-
-        input.addEventListener('input', () => {
-            if (input.value.trim()) {
-                actionBtn.querySelector('use').setAttribute('href', '#icon-chat-send');
-                actionBtn.classList.remove('get-reply');
-            } else {
-                actionBtn.querySelector('use').setAttribute('href', '#icon-chat-reply');
-                actionBtn.classList.add('get-reply');
-            }
-            input.style.height = 'auto';
-            input.style.height = (input.scrollHeight) + 'px';
-        });
-
-        actionBtn.onclick = handleSendOrReceive;
-        input.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendOrReceive(); } };
-
-        get('chat-settings-btn').onclick = () => navigateTo('chat-settings-screen', { charId });
+async function openConversation(charId) {
+    navigateTo('chat-conversation-screen', { charId });
+    await applyCustomBubbleStyles(charId);
+    const character = await db.characters.get(charId);
+    if (!character) {
+        alert('角色不存在');
+        navigateBack();
+        return;
     }
+
+    currentChatState = { charId, history: character.history || [], isReceiving: false };
+
+    get('chat-header-title').textContent = character.remark || character.name;
+    const chatScreen = get('chat-conversation-screen');
+    const messagesContainer = chatScreen.querySelector('.chat-messages-container');
+    messagesContainer.innerHTML = '';
+
+    if (character.chatBackgroundUrl) {
+        chatScreen.style.backgroundImage = `url(${character.chatBackgroundUrl})`;
+        chatScreen.style.backgroundColor = '';
+    } else {
+        chatScreen.style.backgroundImage = 'none';
+        chatScreen.style.backgroundColor = 'var(--chat-bg-color)';
+    }
+
+    let userAvatar = state.user.avatar;
+    if (character.associatedUserPersonaId) {
+        const persona = await db.userPersonas.get(character.associatedUserPersonaId);
+        if (persona) userAvatar = persona.avatar;
+    }
+
+    currentChatState.history.forEach(msg => appendMessage(msg, character, userAvatar));
+
+    const actionBtn = get('chat-action-btn');
+    const input = get('chat-input-text');
+
+    actionBtn.querySelector('use').setAttribute('href', '#icon-chat-reply');
+    actionBtn.classList.add('get-reply');
+    actionBtn.classList.remove('receiving');
+
+    input.value = ''; // 每次打开都清空输入框
+    input.style.height = 'auto'; // 重置高度
+
+    // 为输入框绑定事件
+    const handleInput = () => {
+        if (input.value.trim()) {
+            actionBtn.querySelector('use').setAttribute('href', '#icon-chat-send');
+            actionBtn.classList.remove('get-reply');
+        } else {
+            actionBtn.querySelector('use').setAttribute('href', '#icon-chat-reply');
+            actionBtn.classList.add('get-reply');
+        }
+        input.style.height = 'auto';
+        input.style.height = (input.scrollHeight) + 'px';
+    };
+
+    input.removeEventListener('input', handleInput); // 先移除旧的监听器
+    input.addEventListener('input', handleInput);   // 再添加新的
+
+    actionBtn.onclick = handleSendOrReceive;
+    input.onkeydown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSendOrReceive();
+        }
+    };
+
+    get('chat-settings-btn').onclick = () => navigateTo('chat-settings-screen', { charId });
+} // <--- 这才是函数唯一的、正确的结束大括号
 
     async function appendMessage(msg, character, currentUserAvatar) {
         const messagesContainer = get('chat-conversation-screen').querySelector('.chat-messages-container');
@@ -2025,75 +2212,100 @@ function createWorldBookCardItem(book) {
         get('wb-association-cancel-btn').onclick = () => dialog.classList.remove('active');
     }
 
-    // --- 聊天功能面板 (优化版) ---
-    function renderChatActionPanel() {
-        const features = [
-            { name: '图片', iconId: 'icon-panel-image' }, { name: '拍摄', iconId: 'icon-panel-camera' }, { name: '视频通话', iconId: 'icon-panel-video' }, { name: '位置', iconId: 'icon-panel-location' },
-            { name: '语音', iconId: 'icon-panel-voice' }, { name: '红包', iconId: 'icon-panel-redpacket' }, { name: '礼物', iconId: 'icon-panel-gift' }, { name: '链接', iconId: 'icon-panel-link' },
-            { name: '一起听', iconId: 'icon-panel-listen' }, { name: '游戏', iconId: 'icon-panel-game' }, { name: '心声', iconId: 'icon-panel-heartvoice' }, { name: '视奸', iconId: 'icon-panel-stalk' },
-            { name: '捡手机', iconId: 'icon-panel-pickup' }, { name: '查手机', iconId: 'icon-panel-checkphone' }, { name: '亲密关系', iconId: 'icon-panel-intimacy' }, { name: '重Roll', iconId: 'icon-panel-reroll' },
-            { name: '换装', iconId: 'icon-panel-clothes' }, { name: '番茄钟', iconId: 'icon-panel-pomodoro' }, { name: '破译密码', iconId: 'icon-panel-decode' }, { name: '亲属卡', iconId: 'icon-panel-card' },
-            { name: '备忘录', iconId: 'icon-panel-memo' }
-        ];
 
-        const itemsPerPage = 12;
-        const columns = 4;
-        const pageCount = Math.ceil(features.length / itemsPerPage);
-        const swiperWrapper = get('panel-swiper-wrapper');
-        const pagination = get('panel-pagination');
-        swiperWrapper.innerHTML = '';
-        pagination.innerHTML = '';
+// ▼▼▼ 使用下面这个【修改后】的函数，完整替换你原来的 renderChatActionPanel 函数 ▼▼▼
 
-        for (let i = 0; i < pageCount; i++) {
-            const pageDiv = document.createElement('div');
-            pageDiv.className = 'panel-page';
+function renderChatActionPanel() {
+    const features = [
+        { name: '图片', iconId: 'icon-panel-image' }, { name: '拍摄', iconId: 'icon-panel-camera' }, { name: '视频通话', iconId: 'icon-panel-video' }, { name: '位置', iconId: 'icon-panel-location' },
+        { name: '语音', iconId: 'icon-panel-voice' }, { name: '红包', iconId: 'icon-panel-redpacket' }, { name: '礼物', iconId: 'icon-panel-gift' }, { name: '链接', iconId: 'icon-panel-link' },
+        { name: '一起听', iconId: 'icon-panel-listen' }, { name: '游戏', iconId: 'icon-panel-game' }, { name: '心声', iconId: 'icon-panel-heartvoice' }, { name: '视奸', iconId: 'icon-panel-stalk' },
+        { name: '捡手机', iconId: 'icon-panel-pickup' }, { name: '查手机', iconId: 'icon-panel-checkphone' }, { name: '亲密关系', iconId: 'icon-panel-intimacy' }, { name: '重Roll', iconId: 'icon-panel-reroll' },
+        { name: '换装', iconId: 'icon-panel-clothes' }, { name: '番茄钟', iconId: 'icon-panel-pomodoro' }, { name: '破译密码', iconId: 'icon-panel-decode' }, { name: '亲属卡', iconId: 'icon-panel-card' },
+        { name: '备忘录', iconId: 'icon-panel-memo' }
+    ];
 
-            const rowsContainer = document.createElement('div');
-            rowsContainer.className = 'panel-rows-container';
+    const itemsPerPage = 12;
+    const columns = 4;
+    const pageCount = Math.ceil(features.length / itemsPerPage);
+    const swiperWrapper = get('panel-swiper-wrapper');
+    const pagination = get('panel-pagination');
+    swiperWrapper.innerHTML = '';
+    pagination.innerHTML = '';
 
-            const pageFeatures = features.slice(i * itemsPerPage, (i + 1) * itemsPerPage);
+    for (let i = 0; i < pageCount; i++) {
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'panel-page';
 
-            let currentRow = null;
+        const rowsContainer = document.createElement('div');
+        rowsContainer.className = 'panel-rows-container';
 
-            pageFeatures.forEach((feature, index) => {
-                if (index % columns === 0) {
-                    currentRow = document.createElement('div');
-                    currentRow.className = 'panel-row';
-                    rowsContainer.appendChild(currentRow);
-                }
+        const pageFeatures = features.slice(i * itemsPerPage, (i + 1) * itemsPerPage);
 
-                const item = document.createElement('div');
-                item.className = 'panel-item';
-                item.innerHTML = `
-                    <div class="panel-item-icon-wrapper">
-                        <svg class="svg-icon"><use href="#${feature.iconId}"></use></svg>
-                    </div>
-                    <span class="panel-item-label">${feature.name}</span>
-                `;
-                item.addEventListener('click', () => alert(`“${feature.name}”功能开发中...`));
-                if (currentRow) {
-                    currentRow.appendChild(item);
-                }
-            });
+        let currentRow = null;
 
-            if (currentRow && currentRow.children.length < columns) {
-                const placeholdersNeeded = columns - currentRow.children.length;
-                for (let j = 0; j < placeholdersNeeded; j++) {
-                    const placeholder = document.createElement('div');
-                    placeholder.className = 'panel-item';
-                    placeholder.style.visibility = 'hidden';
-                    currentRow.appendChild(placeholder);
-                }
+        pageFeatures.forEach((feature, index) => {
+            if (index % columns === 0) {
+                currentRow = document.createElement('div');
+                currentRow.className = 'panel-row';
+                rowsContainer.appendChild(currentRow);
             }
 
-            pageDiv.appendChild(rowsContainer);
-            swiperWrapper.appendChild(pageDiv);
+            const item = document.createElement('div');
+            item.className = 'panel-item';
+            item.innerHTML = `
+                <div class="panel-item-icon-wrapper">
+                    <svg class="svg-icon"><use href="#${feature.iconId}"></use></svg>
+                </div>
+                <span class="panel-item-label">${feature.name}</span>
+            `;
 
-            const dot = document.createElement('div');
-            dot.className = 'panel-dot' + (i === 0 ? ' active' : '');
-            pagination.appendChild(dot);
+            // --- 核心修改在这里 ---
+            if (feature.name === '查手机') {
+                item.addEventListener('click', () => {
+                    const charId = currentChatState.charId;
+                    if (charId) {
+                        // 1. 关闭功能面板，优化体验
+                        const actionPanel = get('chat-action-panel');
+                        actionPanel.classList.remove('active');
+                        get('chat-conversation-screen').querySelector('.chat-messages-container').style.paddingBottom = '10px';
+
+                        // 2. 调用已有的函数来渲染并跳转
+                        renderCheckPhoneScreen(charId);
+                        navigateTo('check-phone-home-screen', { charId });
+                    } else {
+                        alert('错误：无法获取当前角色信息。');
+                    }
+                });
+            } else {
+                // 对其他所有按钮保持原来的“开发中”提示
+                item.addEventListener('click', () => alert(`“${feature.name}”功能开发中...`));
+            }
+            // --- 修改结束 ---
+
+            if (currentRow) {
+                currentRow.appendChild(item);
+            }
+        });
+
+        if (currentRow && currentRow.children.length < columns) {
+            const placeholdersNeeded = columns - currentRow.children.length;
+            for (let j = 0; j < placeholdersNeeded; j++) {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'panel-item';
+                placeholder.style.visibility = 'hidden';
+                currentRow.appendChild(placeholder);
+            }
         }
+
+        pageDiv.appendChild(rowsContainer);
+        swiperWrapper.appendChild(pageDiv);
+
+        const dot = document.createElement('div');
+        dot.className = 'panel-dot' + (i === 0 ? ' active' : '');
+        pagination.appendChild(dot);
     }
+}
 
     // --- 表情包面板逻辑 ---
     let isStickerManagementMode = false;
@@ -3483,77 +3695,184 @@ ${jsonOutputInstruction}
         contentDiv.scrollTop = contentDiv.scrollHeight;
         return msgDiv;
     }
+async function getOfflineReply() {
+    const sendBtn = get('offline-send-btn');
+    const rerollBtn = get('offline-reroll-btn'); // 获取重生成按钮
+    const charId = state.offlineSettings.activeCharId;
 
-    async function handleOfflineSend() {
-        const sendBtn = get('offline-send-btn');
-        const input = get('offline-mode-input');
-        const userInput = input.value.trim();
-        const charId = state.offlineSettings.activeCharId;
-
-        if (isOfflineReceiving) {
-            if (apiAbortController) {
-                apiAbortController.abort();
-            }
-            isOfflineReceiving = false;
-            sendBtn.innerHTML = `<svg><use href="#icon-chat-send"></use></svg>`;
-            return;
-        }
-
-        if (!charId) {
-            alert("请先选择一个聊天角色。");
-            return;
-        }
-
-        if (userInput) {
-            appendOfflineMessage('user', userInput);
-            const character = await db.characters.get(charId);
-            const newHistory = character.offlineHistory || [];
-            newHistory.push({ role: 'user', content: userInput });
-            await db.characters.update(charId, { offlineHistory: newHistory });
-            input.value = '';
-            input.style.height = 'auto';
-        }
-
-        isOfflineReceiving = true;
-        sendBtn.innerHTML = `<svg><use href="#icon-chat-cancel"></use></svg>`;
-
-        try {
-            const character = await db.characters.get(charId);
-            const promptMessages = await buildOfflinePrompt(character);
-
-            let fullContent = '';
-            if (state.offlineSettings.enableStreaming) {
-                const charMsgDiv = appendOfflineMessage('char', '');
-                const contentSpan = charMsgDiv.querySelector('span:first-child');
-                const timeSpan = charMsgDiv.querySelector('.timestamp');
-
-                await sendApiRequest(promptMessages, (chunk) => {
-                    fullContent += chunk;
-                    let processedContent = applyRegexRules(fullContent);
-                    contentSpan.innerText = processedContent;
-                    timeSpan.innerText = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: false });
-                    get('offline-mode-content').scrollTop = get('offline-mode-content').scrollHeight;
-                });
-
-            } else {
-                fullContent = await sendApiRequest(promptMessages);
-                appendOfflineMessage('char', applyRegexRules(fullContent));
-            }
-
-            const finalHistory = character.offlineHistory || [];
-            finalHistory.push({ role: 'char', content: fullContent }); // 保存原始未处理的回复
-            await db.characters.update(charId, { offlineHistory: finalHistory });
-
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                appendOfflineMessage('char', `出错了: ${error.message}`);
-            }
-        } finally {
-            isOfflineReceiving = false;
-            sendBtn.innerHTML = `<svg><use href="#icon-chat-send"></use></svg>`;
-        }
+    if (!charId) {
+        alert("请先选择一个聊天角色。");
+        return;
     }
 
+    isOfflineReceiving = true;
+    sendBtn.innerHTML = `<svg><use href="#icon-chat-cancel"></use></svg>`;
+    rerollBtn.disabled = true; // 禁用重生成按钮
+
+    try {
+        const character = await db.characters.get(charId);
+        const promptMessages = await buildOfflinePrompt(character);
+
+        let fullContent = '';
+        if (state.offlineSettings.enableStreaming) {
+            const charMsgDiv = appendOfflineMessage('char', '');
+            const contentSpan = charMsgDiv.querySelector('span:first-child');
+            const timeSpan = charMsgDiv.querySelector('.timestamp');
+
+            await sendApiRequest(promptMessages, (chunk) => {
+                fullContent += chunk;
+                let processedContent = applyRegexRules(fullContent);
+                contentSpan.innerText = processedContent;
+                timeSpan.innerText = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: false });
+                get('offline-mode-content').scrollTop = get('offline-mode-content').scrollHeight;
+            });
+
+        } else {
+            fullContent = await sendApiRequest(promptMessages);
+            appendOfflineMessage('char', applyRegexRules(fullContent));
+        }
+
+        const finalHistory = character.offlineHistory || [];
+        finalHistory.push({ role: 'char', content: fullContent }); // 保存原始未处理的回复
+        await db.characters.update(charId, { offlineHistory: finalHistory });
+
+    } catch (error) {
+        if (error.name !== 'AbortError') {
+            appendOfflineMessage('char', `出错了: ${error.message}`);
+        }
+    } finally {
+        isOfflineReceiving = false;
+        sendBtn.innerHTML = `<svg><use href="#icon-chat-send"></use></svg>`;
+        rerollBtn.disabled = false; // 恢复重生成按钮
+    }
+}
+  // ==================== 开始替换区域 ====================
+
+// 这是新的辅助函数，负责获取AI回复
+async function getOfflineReply() {
+    const sendBtn = get('offline-send-btn');
+    const rerollBtn = get('offline-reroll-btn'); // 获取重生成按钮
+    const charId = state.offlineSettings.activeCharId;
+
+    if (!charId) {
+        alert("请先选择一个聊天角色。");
+        return;
+    }
+
+    isOfflineReceiving = true;
+    sendBtn.innerHTML = `<svg><use href="#icon-chat-cancel"></use></svg>`;
+    rerollBtn.disabled = true; // 禁用重生成按钮
+
+    try {
+        const character = await db.characters.get(charId);
+        const promptMessages = await buildOfflinePrompt(character);
+
+        let fullContent = '';
+        if (state.offlineSettings.enableStreaming) {
+            const charMsgDiv = appendOfflineMessage('char', '');
+            const contentSpan = charMsgDiv.querySelector('span:first-child');
+            const timeSpan = charMsgDiv.querySelector('.timestamp');
+
+            await sendApiRequest(promptMessages, (chunk) => {
+                fullContent += chunk;
+                let processedContent = applyRegexRules(fullContent);
+                contentSpan.innerText = processedContent;
+                timeSpan.innerText = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: false });
+                get('offline-mode-content').scrollTop = get('offline-mode-content').scrollHeight;
+            });
+
+        } else {
+            fullContent = await sendApiRequest(promptMessages);
+            appendOfflineMessage('char', applyRegexRules(fullContent));
+        }
+
+        const finalHistory = character.offlineHistory || [];
+        finalHistory.push({ role: 'char', content: fullContent }); // 保存原始未处理的回复
+        await db.characters.update(charId, { offlineHistory: finalHistory });
+
+    } catch (error) {
+        if (error.name !== 'AbortError') {
+            appendOfflineMessage('char', `出错了: ${error.message}`);
+        }
+    } finally {
+        isOfflineReceiving = false;
+        sendBtn.innerHTML = `<svg><use href="#icon-chat-send"></use></svg>`;
+        rerollBtn.disabled = false; // 恢复重生成按钮
+    }
+}
+
+// 这是修改后的主函数，负责处理用户发送和调用上面的辅助函数
+async function handleOfflineSend() {
+    const input = get('offline-mode-input');
+    const userInput = input.value.trim();
+    const charId = state.offlineSettings.activeCharId;
+
+    if (isOfflineReceiving) {
+        if (apiAbortController) apiAbortController.abort();
+        return;
+    }
+
+    if (!charId && !userInput) {
+        alert("请先选择一个聊天角色。");
+        return;
+    }
+
+    if (userInput) {
+        appendOfflineMessage('user', userInput);
+        const character = await db.characters.get(charId);
+        const newHistory = character.offlineHistory || [];
+        newHistory.push({ role: 'user', content: userInput });
+        await db.characters.update(charId, { offlineHistory: newHistory });
+        input.value = '';
+        input.style.height = 'auto';
+    }
+
+    // 如果历史记录不为空，则获取AI回复
+    const character = await db.characters.get(charId);
+    if ((character.offlineHistory || []).length > 0) {
+        await getOfflineReply();
+    }
+}
+
+// ==================== 结束替换区域 ====================
+// --- 粘贴到这里 ---
+
+async function handleOfflineReroll() {
+    // 1. 安全检查：如果正在接收消息，则不执行任何操作
+    if (isOfflineReceiving) {
+        return;
+    }
+
+    const charId = state.offlineSettings.activeCharId;
+    if (!charId) {
+        alert('请先选择一个角色。');
+        return;
+    }
+
+    const character = await db.characters.get(charId);
+    const history = character.offlineHistory || [];
+
+    // 2. 检查历史记录，确保最后一条是AI的回复
+    if (history.length === 0 || history[history.length - 1].role !== 'char') {
+        alert('最后一条消息不是AI生成的，无法重新生成。');
+        return;
+    }
+
+    // 3. 从数据中移除最后一条AI回复
+    history.pop();
+    await db.characters.update(charId, { offlineHistory: history });
+
+    // 4. 从界面上移除最后一条消息的DOM元素
+    const messageElements = document.querySelectorAll('#offline-mode-content .offline-message');
+    if (messageElements.length > 0) {
+        messageElements[messageElements.length - 1].remove();
+    }
+
+    // 5. 调用现有的函数来获取新的AI回复
+    await getOfflineReply();
+}
+
+// --- 粘贴到这里 ---
     async function buildOfflinePrompt(character) {
         const messages = [];
         let history = character.offlineHistory || [];
@@ -4466,7 +4785,50 @@ ${jsonOutputInstruction}
         get('user-profile-edit-screen').innerHTML = `<div class="settings-header"><div class="back-bar" onclick="navigateBack()"><svg class="svg-icon" width="12" height="21"><use href="#icon-back"/></svg> 设置</div><h1>全局人设</h1></div><div class="settings-content profile-edit-content"><div class="avatar-section" id="profile-edit-avatar-section"><img id="profile-edit-avatar" class="profile-edit-avatar"><span class="upload-avatar-text">编辑头像</span></div><div class="profile-form"><div class="form-group"><label for="profile-edit-name">昵称</label><input type="text" id="profile-edit-name"></div><div class="form-group"><label for="profile-edit-gender">性别</label><select id="profile-edit-gender"><option>男</option><option>女</option><option>其他</option></select></div><div class="form-group"><label for="profile-edit-birthday">生日</label><input type="date" id="profile-edit-birthday"><div id="birthday-info" style="font-size: 14px; color: var(--secondary-text); margin-top: 8px;"></div></div><div class="form-group"><label for="profile-edit-persona">我的人设</label><textarea id="profile-edit-persona"></textarea></div><button id="save-profile-btn" class="btn btn-primary">保存</button></div></div>`;
         get('user-persona-editor-screen').innerHTML = `<div class="settings-header"><div class="back-bar" onclick="navigateBack()"><svg class="svg-icon" width="12" height="21"><use href="#icon-back"/></svg> 返回</div><h1>编辑面具</h1></div><div class="settings-content profile-edit-content"><div class="avatar-section" id="persona-edit-avatar-section"><img id="persona-edit-avatar" class="profile-edit-avatar"><span class="upload-avatar-text">编辑头像</span></div><div class="profile-form"><div class="form-group"><label for="persona-edit-name">面具名称</label><input type="text" id="persona-edit-name"></div><div class="form-group"><label for="persona-edit-gender">性别</label><select id="persona-edit-gender"><option>男</option><option>女</option><option>其他</option></select></div><div class="form-group"><label for="persona-edit-birthday">生日</label><input type="date" id="persona-edit-birthday"><div id="persona-birthday-info" style="font-size: 14px; color: var(--secondary-text); margin-top: 8px;"></div></div><div class="form-group"><label for="persona-edit-persona">人设</label><textarea id="persona-edit-persona"></textarea></div><button id="save-persona-btn" class="btn btn-primary">保存面具</button></div></div>`;
         get('user-persona-management-screen').innerHTML = `<div class="settings-header"><div class="back-bar" onclick="navigateBack()"><svg class="svg-icon" width="12" height="21"><use href="#icon-back"/></svg> 设置</div><h1>用户面具管理</h1></div><div class="settings-content"><div id="user-persona-list-container"></div><button id="add-new-persona-btn" class="btn btn-primary" style="margin-top: 20px;">添加新面具</button></div>`;
-        get('api-settings-screen').innerHTML = `<div class="settings-header"><div class="back-bar" onclick="navigateBack()"><svg class="svg-icon" width="12" height="21"><use href="#icon-back"/></svg> 设置</div><h1>API 与模型设置</h1></div><div class="settings-content"><div class="settings-group"><div class="group-header">API 连接</div><div class="form-group"><label for="api-url-input">API URL</label><input type="text" id="api-url-input" placeholder="例如: https://api.openai.com"></div><div class="form-group"><label for="api-key-input">API Key</label><input type="password" id="api-key-input"></div><button id="connect-api-btn" class="btn btn-secondary">连接并获取模型</button><div class="form-group" style="margin-top: 20px;"><label for="api-model-select">模型</label><select id="api-model-select" disabled><option>请先连接</option></select></div></div><div class="settings-group"><div class="group-header">模型参数</div><div class="form-group slider-group"><div class="label-row"><label>Temperature</label><span id="temperature-value">1.0</span></div><div id="temperature-slider-container" class="svg-slider-container"></div></div><div class="form-group slider-group"><div class="label-row"><label>Top P</label><span id="top-p-value">1.0</span></div><div id="top-p-slider-container" class="svg-slider-container"></div></div><div class="form-group slider-group"><div class="label-row"><label>Frequency Penalty</label><span id="freq-penalty-value">0.0</span></div><div id="freq-penalty-slider-container" class="svg-slider-container"></div></div></div><div class="settings-group"><div class="group-header">线下模式设置</div><div class="form-group slider-group"><div class="label-row"><label>字数限制</label><span id="word-count-value">800</span></div><div id="word-count-slider-container" class="svg-slider-container"></div></div><div class="settings-item" style="padding-left: 0;"><div class="settings-item-content" style="border: none;"><span class="label">流式输出</span><label class="ios-switch"><input type="checkbox" id="streaming-output-switch"><span class="slider"></span></label></div></div></div><button id="save-api-settings-btn" class="btn btn-primary">保存设置</button></div>`;
+        get('api-settings-screen').innerHTML = `
+    <div class="settings-header">
+        <div class="back-bar" onclick="navigateBack()"><svg class="svg-icon" width="12" height="21"><use href="#icon-back"/></svg> 设置</div>
+        <h1>API 与模型设置</h1>
+    </div>
+    <div class="settings-content">
+        <!-- ▼▼▼ 新增的预设管理模块 ▼▼▼ -->
+        <div class="settings-group">
+            <div class="group-header">API 预设</div>
+            <div class="form-group">
+                <label for="api-preset-select">选择预设</label>
+                <select id="api-preset-select">
+                    <option value="">-- 手动配置 --</option>
+                </select>
+            </div>
+            <div class="preset-actions" style="display: flex; gap: 10px; margin-top: 10px; padding: 0 16px 16px;">
+                <button id="save-as-preset-btn" class="btn btn-secondary" style="flex:1;">另存为预设</button>
+                <button id="update-preset-btn" class="btn btn-secondary" style="flex:1; display: none;">更新预设</button>
+                <button id="delete-preset-btn" class="btn destructive" style="flex:1; display: none; background-color: var(--destructive-color);">删除预设</button>
+            </div>
+        </div>
+        <!-- ▲▲▲ 新增结束 ▲▲▲ -->
+
+        <div class="settings-group">
+            <div class="group-header">API 连接</div>
+            <div class="form-group"><label for="api-url-input">API URL</label><input type="text" id="api-url-input" placeholder="例如: https://api.openai.com"></div>
+            <div class="form-group"><label for="api-key-input">API Key</label><input type="password" id="api-key-input"></div>
+            <button id="connect-api-btn" class="btn btn-secondary">连接并获取模型</button>
+            <div class="form-group" style="margin-top: 20px;"><label for="api-model-select">模型</label><select id="api-model-select" disabled><option>请先连接</option></select></div>
+        </div>
+        <div class="settings-group">
+            <div class="group-header">模型参数</div>
+            <div class="form-group slider-group"><div class="label-row"><label>Temperature</label><span id="temperature-value">1.0</span></div><div id="temperature-slider-container" class="svg-slider-container"></div></div>
+            <div class="form-group slider-group"><div class="label-row"><label>Top P</label><span id="top-p-value">1.0</span></div><div id="top-p-slider-container" class="svg-slider-container"></div></div>
+            <div class="form-group slider-group"><div class="label-row"><label>Frequency Penalty</label><span id="freq-penalty-value">0.0</span></div><div id="freq-penalty-slider-container" class="svg-slider-container"></div></div>
+        </div>
+        <div class="settings-group">
+            <div class="group-header">线下模式设置</div>
+            <div class="form-group slider-group"><div class="label-row"><label>字数限制</label><span id="word-count-value">800</span></div><div id="word-count-slider-container" class="svg-slider-container"></div></div>
+            <div class="settings-item" style="padding-left: 0;"><div class="settings-item-content" style="border: none;"><span class="label">流式输出</span><label class="ios-switch"><input type="checkbox" id="streaming-output-switch"><span class="slider"></span></label></div></div>
+        </div>
+        <button id="save-api-settings-btn" class="btn btn-primary">保存当前设置</button>
+    </div>
+`;
         get('check-phone-char-list-screen').innerHTML = `<div class="settings-header"><div class="back-bar" onclick="navigateBack()"><svg class="svg-icon" width="12" height="21"><use href="#icon-back"/></svg> 返回</div><h1>选择要查看的手机</h1></div><div class="settings-content" id="check-phone-char-list-container"></div>`;
         get('check-phone-home-screen').innerHTML = `<div class="settings-header"><div class="back-bar" onclick="navigateBack()"><svg class="svg-icon" width="12" height="21"><use href="#icon-back"/></svg> 返回</div><h1 id="ai-phone-title">TA的手机</h1></div><div class="page-content"><div class="ai-phone-app-grid"></div></div>`;
         get('check-phone-diary-screen').innerHTML = `<div class="settings-header" style="display: flex; justify-content: space-between; align-items: center;"><div class="back-bar" onclick="navigateBack()" style="position: static; margin: 0; flex-basis: 60px;"><svg class="svg-icon" width="12" height="21"><use href="#icon-back"/></svg> 返回</div><h1 style="padding: 0; font-size: 18px; font-weight: 600; position: absolute; left: 50%; transform: translateX(-50%);">日记</h1><div class="header-actions"><div id="diary-lock-icon" style="cursor: pointer;"><svg class="svg-icon" width="24" height="24" style="color: var(--primary-text);"><use href="#icon-lock"/></svg></div><button id="generate-diary-btn" style="background:none; border:none; padding:0; cursor:pointer;"><svg class="svg-icon" width="24" height="24" style="color: var(--primary-text);"><use href="#icon-generate"/></svg></button><span class="action-btn" id="diary-manage-btn" style="padding:0;">管理</span></div></div><div class="settings-content" id="diary-list-container"></div>`;
@@ -4663,7 +5025,7 @@ ${jsonOutputInstruction}
                  <svg class="svg-icon" width="16" height="16"><use href="#icon-sidebar-toggle"/></svg>
             </div>
             <div class="offline-mode-footer">
-                <button class="footer-icon-btn" title="重新生成"><svg><use href="#icon-panel-reroll"></use></svg></button>
+                <button id="offline-reroll-btn" class="footer-icon-btn" title="重新生成"><svg><use href="#icon-panel-reroll"></use></svg></button>
                 <textarea id="offline-mode-input" rows="1" placeholder="输入你的行动..."></textarea>
                 <button id="offline-send-btn" class="footer-icon-btn" title="发送"><svg><use href="#icon-chat-send"></use></svg></button>
             </div>`;
@@ -5031,6 +5393,8 @@ ${jsonOutputInstruction}
 
         const offlineSendBtn = get('offline-send-btn');
         offlineSendBtn.addEventListener('click', handleOfflineSend);
+        get('offline-reroll-btn').addEventListener('click', handleOfflineReroll); // <-- 添加这一行
+
         get('offline-mode-input').addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -5185,6 +5549,7 @@ musicPlayer.addEventListener('loadedmetadata', () => {
 // --- ▲▲▲ 替换结束 ▲▲▲ ---
 
 setupDynamicIslandListeners();
+setupMessageActionMenuListeners();
         setTimeout(() => get('home-screen').classList.add('active'), 100);
     }
 // --- ▼▼▼ 照片小组件上传功能事件绑定 ▼▼▼ ---
