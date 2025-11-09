@@ -1046,16 +1046,16 @@ async function handleDeletePreset() {
         get('ai-phone-title').textContent = `${character.name}的手机`;
 
         const apps = [
-            { name: 'QQ', icon: 'https://i.postimg.cc/MTC3Tkw8/IMG-6436.jpg', target: '' },
-            { name: '相册', icon: 'https://i.postimg.cc/HWf1JKzn/IMG-6435.jpg', target: '' },
-            { name: '浏览器', icon: 'https://i.postimg.cc/KzC2gTq6/IMG-7276.jpg', target: '' },
-            { name: '淘宝', icon: 'https://i.postimg.cc/L6R7x16R/IMG-7278.jpg', target: '' },
-            { name: '备忘录', icon: 'https://i.postimg.cc/J0b6Nym4/IMG-7279.jpg', target: '' },
-            { name: '日记', icon: 'https://i.postimg.cc/DZ541sbt/IMG-7280.jpg', target: 'check-phone-diary-screen' },
-            { name: '足迹', icon: 'https://i.postimg.cc/Jz2Tz0dw/IMG-7281.jpg', target: '' },
-            { name: 'P站', icon: 'https://i.postimg.cc/WbF8kzz9/IMG-7282.jpg', target: 'psite-screen' },
-            { name: '音乐', icon: 'https://i.postimg.cc/WbF8kzz9/IMG-7282.jpg', target: '' },
-            { name: '设置', icon: 'https://is1-ssl.mzstatic.com/image/thumb/Purple112/v4/64/9d/21/649d21e8-a151-6136-3914-256e54f15d9a/AppIcon-0-0-1x_U007emarketing-0-0-0-7-0-0-sRGB-0-0-0-GLES2_U002c0-512MB-85-220-0-0.png/1200x630wa.png', target: '' },
+            { name: 'QQ', icon: 'https://file.uhsea.com/2511/d8591ef7166019c5e2703e3e3e2eb35dYU.jpg', target: '' },
+            { name: '相册', icon: 'https://file.uhsea.com/2511/d8591ef7166019c5e2703e3e3e2eb35dYU.jpg', target: '' },
+            { name: '浏览器', icon: 'https://file.uhsea.com/2511/d8591ef7166019c5e2703e3e3e2eb35dYU.jpg', target: '' },
+            { name: '淘宝', icon: 'https://file.uhsea.com/2511/d8591ef7166019c5e2703e3e3e2eb35dYU.jpg', target: '' },
+            { name: '备忘录', icon: 'https://file.uhsea.com/2511/d8591ef7166019c5e2703e3e3e2eb35dYU.jpg', target: '' },
+            { name: '日记', icon: 'https://file.uhsea.com/2511/d8591ef7166019c5e2703e3e3e2eb35dYU.jpg', target: 'check-phone-diary-screen' },
+            { name: '足迹', icon: 'https://file.uhsea.com/2511/d8591ef7166019c5e2703e3e3e2eb35dYU.jpg', target: '' },
+            { name: 'P站', icon: 'https://file.uhsea.com/2511/d8591ef7166019c5e2703e3e3e2eb35dYU.jpg', target: 'psite-screen' },
+            { name: '音乐', icon: 'https://file.uhsea.com/2511/d8591ef7166019c5e2703e3e3e2eb35dYU.jpg', target: '' },
+            { name: '设置', icon: 'https://file.uhsea.com/2511/d8591ef7166019c5e2703e3e3e2eb35dYU.jpg', target: '' },
         ];
         const container = get('check-phone-home-screen').querySelector('.ai-phone-app-grid');
         container.innerHTML = apps.map(app => `
