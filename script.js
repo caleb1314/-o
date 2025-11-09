@@ -4464,24 +4464,40 @@ async function handleOfflineReroll() {
     }
 
     async function processCharCardPng(file) {
-        // 1. 先将图片转为DataURL用作头像
-        const avatarReader = new FileReader();
-        avatarReader.readAsDataURL(file);
-        const avatarDataUrl = await new Promise(resolve => avatarReader.onload = () => resolve(avatarReader.result));
+    // 1. 将图片文件转换为 Data URL，用作头像
+    const avatarReader = new FileReader();
+    avatarReader.readAsDataURL(file);
+    const avatarDataUrl = await new Promise(resolve => {
+        avatarReader.onload = () => resolve(avatarReader.result);
+    });
 
-        // 2. 再读取为ArrayBuffer用于解析
-        const bufferReader = new FileReader();
-        bufferReader.readAsArrayBuffer(file);
-        const buffer = await new Promise(resolve => bufferReader.onload = () => resolve(bufferReader.result));
+    // 2. 将图片文件读取为 ArrayBuffer，用于解析内嵌数据
+    const bufferReader = new FileReader();
+    bufferReader.readAsArrayBuffer(file);
+    const buffer = await new Promise(resolve => {
+        bufferReader.onload = () => resolve(bufferReader.result);
+    });
 
-        // 3. 提取数据
-        const charaDataString = await extractCharaDataFromPng(buffer);
-        if (!charaDataString) {
-            throw new Error('未在此PNG文件中找到有效的角色卡数据 (chara chunk)。');
-        }
+    // 3. 从 PNG 的 tEXt chunk 中提取名为 'chara' 的数据
+    const charaDataString = await extractCharaDataFromPng(buffer);
 
-
+    if (!charaDataString) {
+        throw new Error('未在此 PNG 文件中找到有效的角色卡数据。');
     }
+
+    try {
+        // 4. 对提取出的 Base64 字符串进行解码，并解析为 JSON 对象
+        const decodedString = atob(charaDataString);
+        const cardData = JSON.parse(decodedString);
+        
+        // 5. 调用通用的处理函数来保存角色卡，同时传入头像数据
+        await processAndSaveImportedCard(cardData, { avatar: avatarDataUrl });
+
+    } catch (e) {
+        console.error("解析或处理角色卡数据时出错:", e);
+        throw new Error(`角色卡数据解析失败: ${e.message}`);
+    }
+}
 
     async function extractCharaDataFromPng(buffer) {
         const dataView = new DataView(buffer);
@@ -4517,81 +4533,87 @@ async function handleOfflineReroll() {
         return null;
     }
 
-    async function processAndSaveImportedCard(cardData, options = {}) {
-        const { spec, data } = cardData;
-        if (!spec || !spec.startsWith('chara_card_v') || !data) {
+async function processAndSaveImportedCard(cardData, options = {}) {
+    // 兼容两种常见的角色卡格式 spec 和 spec_version
+    const spec = cardData.spec || cardData.spec_version;
+    const data = cardData.data || cardData; // 兼容没有 data 包装的格式
+
+    if (!spec || !spec.startsWith('chara_card_v')) {
+        // 如果第一层没有，尝试在 data 对象里找
+        if (!data.spec && !data.spec_version) {
             throw new Error('角色卡格式不兼容或已损坏。');
         }
-
-        const charName = data.name || '未命名角色';
-
-        let associatedWorldBookIds = [];
-
-        // 自动处理世界书
-        if (data.data_files && Array.isArray(data.data_files) && data.data_files.length > 0) {
-            const worldBookFile = data.data_files[0]; // 假设只有一个世界书文件
-            const worldBookName = worldBookFile.name || `${charName}的世界书`;
-
-            // 1. 创建一个新的局部世界书分类
-            const categoryId = await db.worldBookCategories.add({
-                name: worldBookName,
-                scope: 'local',
-                isEnabled: true,
-                lastModified: Date.now()
-            });
-
-            // 2. 解析并创建世界书条目
-            const worldBookContent = worldBookFile.entries.map(entry => ({
-                enabled: !entry.disable,
-                comment: entry.comment || '',
-                keys: entry.key || [],
-                content: entry.content || ''
-            }));
-
-            const worldBookId = await db.worldBooks.add({
-                name: worldBookName,
-                categoryId: categoryId,
-                content: worldBookContent,
-                isEnabled: true,
-                scope: 'local',
-                lastModified: Date.now()
-            });
-
-            associatedWorldBookIds.push(worldBookId);
-        }
-
-        const newChar = {
-            name: charName,
-            avatar: options.avatar || '', // 使用PNG的DataURL作为头像
-            persona: data.description || '',
-            initialRelation: data.first_mes || '',
-            // Tavern卡中的 'personality' 和 'scenario' 可以合并到 'persona' 中
-            // 这里简单处理，可以根据需要调整
-            persona: `${data.description || ''}\n\n${data.personality || ''}\n\n${data.scenario || ''}`.trim(),
-            // 其他字段设为默认值
-            remark: '',
-            birthday: '',
-            gender: '男',
-            mbti: '',
-            networkInfo: { insName: '', insBio: '' },
-            initialLikability: 0,
-            languageStyle: { noPunctuation: false, noToneWords: false, noEmoji: false, noEmoticon: false },
-            associatedWorldBookIds: associatedWorldBookIds,
-            associatedUserPersonaId: null,
-            history: [],
-            offlineHistory: [],
-            diaries: { normal: [], secret: [] },
-            enableHtmlRendering: false,
-            psiteData: { userId: null, notes: [], favorites: [], history: [] },
-            forumData: {},
-            timestamp: Date.now()
-        };
-
-        await db.characters.add(newChar);
-        alert(`角色“${charName}”已成功导入！`);
-        await renderChatList();
-        await renderContactsList();
     }
+
+    const charName = data.name || '未命名角色';
+    let associatedWorldBookIds = [];
+
+    // 自动处理世界书（保持原有逻辑不变）
+    if (data.data_files && Array.isArray(data.data_files) && data.data_files.length > 0) {
+        // ... (这部分逻辑是正确的，不需要修改)
+        const worldBookFile = data.data_files[0];
+        const worldBookName = worldBookFile.name || `${charName}的世界书`;
+
+        const categoryId = await db.worldBookCategories.add({
+            name: worldBookName,
+            scope: 'local',
+            isEnabled: true,
+            lastModified: Date.now()
+        });
+
+        const worldBookContent = (worldBookFile.entries || []).map(entry => ({
+            enabled: !entry.disable,
+            comment: entry.comment || '',
+            keys: entry.key || [],
+            content: entry.content || ''
+        }));
+
+        const worldBookId = await db.worldBooks.add({
+            name: worldBookName,
+            categoryId: categoryId,
+            content: worldBookContent,
+            isEnabled: true,
+            scope: 'local',
+            lastModified: Date.now()
+        });
+        associatedWorldBookIds.push(worldBookId);
+    }
+
+    const newChar = {
+        name: charName,
+        // 核心修复：优先使用 options 传入的头像，如果没有则默认为空
+        avatar: options.avatar || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+        persona: [
+            data.description,
+            data.personality,
+            data.scenario
+        ].filter(Boolean).join('\n\n').trim(), // 更稳健地合并人设字段
+        initialRelation: data.first_mes || '',
+        
+        // 其他字段设为默认值
+        remark: '',
+        birthday: '',
+        gender: '男',
+        mbti: '',
+        networkInfo: { insName: '', insBio: '' },
+        initialLikability: 0,
+        languageStyle: { noPunctuation: false, noToneWords: false, noEmoji: false, noEmicon: false },
+        associatedWorldBookIds: associatedWorldBookIds,
+        associatedUserPersonaId: null,
+        history: [],
+        offlineHistory: [],
+        diaries: { normal: [], secret: [] },
+        enableHtmlRendering: false,
+        psiteData: { userId: null, notes: [], favorites: [], history: [] },
+        forumData: {},
+        timestamp: Date.now()
+    };
+
+    await db.characters.add(newChar);
+    alert(`角色“${charName}”已成功导入！`);
+    await renderChatList();
+    await renderContactsList();
+}
 
     // --- 新增：自定义气泡功能核心函数 ---
 
