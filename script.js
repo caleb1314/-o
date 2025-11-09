@@ -1187,7 +1187,18 @@ async function handleDeletePreset() {
 
         try {
             const character = await db.characters.get(charId);
-            const user = state.user;
+            // ▼▼▼ 用下面这段【增强版】代码替换上面那一行 ▼▼▼
+let user = state.user; // 首先，获取全局user人设作为默认值
+if (character.associatedUserPersonaId) {
+    // 然后，检查这个角色是否关联了特定的用户面具
+    const persona = await db.userPersonas.get(character.associatedUserPersonaId);
+    if (persona) {
+        // 如果找到了，就用这个面具的人设覆盖掉全局人设
+        user = persona;
+        console.log(`P-Site正在使用用户面具: ${user.name}`); // 在控制台打印一条信息，方便确认
+    }
+}
+// ▲▲▲ 替换结束 ▲▲▲
             const today = new Date();
             const dateString = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
 
