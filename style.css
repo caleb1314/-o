@@ -1038,6 +1038,7 @@ body.dark-mode .chat-list-item {
     height: 40px;
     border-radius: 5px;
     flex-shrink: 0;
+    object-fit: cover;
 }
 .chat-message .chat-bubble {
     padding: 10px 12px;
