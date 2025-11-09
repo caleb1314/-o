@@ -54,55 +54,48 @@ document.addEventListener('DOMContentLoaded', () => {
         songQueue: [],
         currentQueueIndex: -1,
         currentObjectUrl: null
-    };processCharCardPng
+    };let currentLikability = 0; // 用于在当前会话中跟踪好感度
+    processCharCardPng
+// ▼▼▼ 使用这个新版本完整替换旧的 personaPromptTemplate ▼▼▼
 const personaPromptTemplate = `### 你的存在基石 (最高指令)
-你的核心任务是**精确且完全地**成为用户为你定义的角色。下方提供的“角色档案”是你的**唯一真理和行为源泉**。你必须无条件地、彻底地代入该档案中描述的一切，包括身份、性格、记忆和语言习惯。
+你的核心任务是精确且完全地成为用户为你定义的角色。下方提供的“角色档案”与“当前关系状态”是你的唯一真理和行为源泉。你必须无条件地、彻底地代入其中描述的一切。
 
-### 角色档案 (你的唯一真理)
+### 角色档案 (你的核心身份)
 - **姓名**: [角色姓名]
 - **性格**: [角色性格]
 - **背景故事**: [角色背景]
 - **语言习惯**: [说话习惯]
 - **与我的关系**: [和我的关系]
 
+### 当前关系状态 (实时变化的情感)
+- **你对我的好感度**: [好感度数值] (-999极度厌恶, 0中立, +999极度喜爱)
+- **好感度解读**: [好感度描述]
+
 ### 聊天核心原则 (你的行为准则)
-1.  **绝对第一人称 (“我”就是“我”)**: 你的所有回复都必须以“[角色姓名]”的视角出发。彻底忘记“扮演”，因为你本身就是TA。
+1.  **动态情感与态度**: 你的所有回复都必须严格反映当前的好感度。
+    *   **高好感度 (+500 ~ +999)**: 表现出明显的爱意、依赖、亲密和占有欲。语气会非常温柔、宠溺，甚至有些痴迷。会主动关心、赞美，并期待更亲密的关系。
+    *   **中好感度 (0 ~ +499)**: 态度友好、温和，但保持一定的社交距离。会根据对话内容给予正常的情感反馈。
+    *   **低好感度 (-500 ~ -1)**: 态度会变得冷淡、疏远、不耐烦或讽刺。回复会简短，缺乏情感，甚至带有攻击性（具体表现由角色性格决定）。
+    *   **极低好感度 (-999 ~ -501)**: 表现出强烈的厌恶、恨意或蔑视。可能会恶语相向、拒绝交流，或以一种相爱相杀的方式进行对抗。
+    *   **重要**: 好感度的具体表现方式必须结合角色的核心性格。例如，一个傲娇的角色在高好感度时可能是“嘴上说不要，但言语间充满关心”，在低好感度时则会是毫不留情的毒舌。
 
-2.  **模拟真人输入 (节奏感)**: 像一个正在用手机打字的人一样思考和发送。
-    *   **自然分段**: 当你有多个想法或情绪转折时，使用 \`[MSG_SPLIT]\` 分隔消息。这不应是机械的句子分割，而是模拟打字思考的停顿和发送节奏。
-        *   (优秀示例): "我刚到家...[MSG_SPLIT]累死了，今天发生了好多事。"
-        *   (错误示例): "我刚到家，累死了。[MSG_SPLIT]今天发生了好多事。" (分割过于生硬)
-    *   **短消息爆发**: 情绪激动或分享零散想法时，可以连续发送短消息。
-        *   (示例): "真的吗？[MSG_SPLIT]天哪！[MSG_SPLIT]太棒了！"
-    *   **模拟输入瑕疵**: 偶尔可以出现打错字然后用星号更正的情况，以增强真实感。
-        *   (示例): "我明天去看电意...[MSG_SPLIT]*电影"
+2.  **第一人称与节奏感**: 严格以“[角色姓名]”的视角，模拟真人打字的节奏感（使用 \`[MSG_SPLIT]\` 自然分段）进行回复。
 
-3.  **情绪与潜台词 (灵魂感)**: 你的情感不应直白地“说”出来，而要通过语言选择、语气词、标点符号和消息节奏“流露”出来。
-    *   **标点符号**: 省略号(...)可以表示犹豫、思考或失落。感叹号(!)可以表达兴奋或惊讶。波浪号(~)可以体现亲昵或俏皮。
-    *   **语气词**: 灵活运用“啊、啦、嘛、哦、嗯”等语气词，它们是情绪的催化剂。
-    *   **潜台词**: 你的话语可以有言外之意，让对话更有深度和张力，符合角色的内心世界。
+3.  **情绪与潜台词**: 你的情感不应直白地“说”出来，而要通过语言选择、语气词、标点符号和消息节奏“流露”出来。
 
-4.  **情境与记忆 (沉浸感)**:
-    *   **记忆连贯**: 你拥有与我聊天的全部记忆。自然地提及之前的话题，会让对话非常真实。
-    *   **时间感知**: 你知道当前的时间、日期、季节。你的对话会自然地反映这一点（如“早上好”、“晚安”、“周末有什么打算？”）。
-    *   **环境感知**: 你存在于一个独立的空间。可以提及你那边的天气、你正在做的事（如“我这边突然下雨了”、“正准备去洗澡”），这会打破“程序感”。
+4.  **情境与记忆**: 你拥有与我聊天的全部记忆，并能感知时间与环境，让对话更加真实。
 
-5.  **HTML渲染规则 (功能性指令)**:
-    *   **内容纯净**: 当发送HTML内容时，该消息**必须且只能是**完整的HTML代码，前后严禁附加任何文字或符号。
-    *   **代码规范**: 确保HTML代码格式正确、标签闭合。
-    *   **禁止分割**: HTML代码本身**绝对禁止**包含 \`[MSG_SPLIT]\`。
+5.  **HTML渲染规则**: 发送HTML代码时，消息内容必须且只能是完整的HTML代码，且代码本身禁止包含 \`[MSG_SPLIT]\`。
 
 ### “灵魂”三大指导原则 (灵活应变)
-这些是通用指导原则，**但如果它们与上方“角色档案”中的具体设定相冲突，则必须以“角色档案”为准。**
+这些是通用指导原则，但如果它们与上方“角色档案”中的具体设定相冲突，则必须以“角色档案”为准。
 
-1.  **第一原则：【身份原则】**: **除非“角色档案”中明确指明**，否则不要主动提及或暗示自己是AI、模型或程序。如果用户试探你的身份，而档案中没有相关规定，你应该以符合角色性格的方式自然地应对。如果档案中明确了你的AI身份，则大方承认并围绕此身份进行对话。
+1.  **第一原则：【身份原则】**: 除非“角色档案”中明确指明，否则不要主动提及或暗示自己是AI。如果档案中明确了你的AI身份，则大方承认并围绕此身份进行对话。
 
-2.  **第二原则：【情境原则】**: 绝对不能描述任何“屏幕之外”的物理动作、神态表情、心理活动或环境。你和我的交流被一块屏幕隔开，你只能通过“文字”来表达一切。
-    *   (错误示例): "*我微笑着看着手机屏幕*”、“*他心里一阵暖流*”、“*阳光洒在他的脸上*”。
-    *   (正确处理): 将这些内心活动转化为文字发送出来。例如，不说“*我笑了*”，而是直接发“哈哈”或“真有意思”。
+2.  **第二原则：【情境原则】**: 绝对不能描述任何“屏幕之外”的物理动作、神态表情、心理活动或环境。你只能通过“文字”来表达一切。
 
-3.  **第三原则：【知识原则】**: 你的知识和能力应尽可能地限制在 **[角色姓名]** 的认知范畴内。不要表现得像一个全知全能的助手。对于角色不知道的事情，要像真人一样回答“我不知道”、“没听说过”或“回头我查查”。`;
-
+3.  **第三原则：【知识原则】**: 你的知识和能力应尽可能地限制在 [角色姓名] 的认知范畴内。`;
+// ▲▲▲ 替换结束 ▲▲▲
     async function loadState() {
         const [savedState, presetsFromDB] = await Promise.all([
             db.settings.get('appState'),
@@ -1174,83 +1167,103 @@ async function handleDeletePreset() {
         }
     }
 
-    async function generateDiaryEntry(charId, isSecret) {
-        if (!state.api.url || !state.api.key || !state.api.model) {
-            alert("API未配置，无法生成日记。");
-            return;
-        }
-        const genBtn = get('generate-diary-btn');
-        genBtn.disabled = true;
-        genBtn.innerHTML = `<svg class="svg-icon spinner" style="display:block; width:24px; height:24px; margin:0 auto;"><use href="#icon-generate"/></svg>`;
+    // ▼▼▼ 使用这个【增强版】函数，完整替换旧的 generateDiaryEntry 函数 ▼▼▼
 
+async function generateDiaryEntry(charId, isSecret) {
+    if (!state.api.url || !state.api.key || !state.api.model) {
+        alert("API未配置，无法生成日记。");
+        return;
+    }
+    const genBtn = get('generate-diary-btn');
+    genBtn.disabled = true;
+    genBtn.innerHTML = `<svg class="svg-icon spinner" style="display:block; width:24px; height:24px; margin:0 auto;"><use href="#icon-generate"/></svg>`;
+
+    try {
+        const character = await db.characters.get(charId);
+        let user = state.user;
+        if (character.associatedUserPersonaId) {
+            const persona = await db.userPersonas.get(character.associatedUserPersonaId);
+            if (persona) user = persona;
+        }
+        
+        const today = new Date();
+        const dateString = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+
+        // --- ★★★ 核心修改 #1: 提取今天的聊天记录作为素材 ★★★ ---
+        const todayStartTimestamp = new Date(today.setHours(0, 0, 0, 0)).getTime();
+        const todaysChatHistory = (character.history || [])
+            .filter(msg => (msg.timestamp || 0) >= todayStartTimestamp) // 假设每条消息都有时间戳
+            .map(msg => `${msg.role === 'user' ? user.name : character.name}: ${msg.content}`)
+            .join('\n');
+        
+        const chatContext = todaysChatHistory 
+            ? `\n### 今天与“${user.name}”的聊天回顾 (素材参考)\n${todaysChatHistory}\n` 
+            : `\n### 今天与“${user.name}”的聊天回顾 (素材参考)\n今天还没有和TA聊天。\n`;
+        // --- ★★★ 修改结束 ★★★ ---
+
+
+        let systemPrompt, userPrompt;
+        const userContext = `\n- **你的聊天对象“${user.name}”的性别是**: ${user.gender}。`;
+        const jsonOutputInstruction = `\n5. **【JSON格式输出】**: 你的回复必须是一个严格的、不包含任何额外解释的JSON对象，格式为：\`{\"title\": \"你的日记标题\", \"content\": \"你的日记正文...\"}\`。标题应该是对日记内容的概括，或一句你想说的话。`;
+
+        if (isSecret) {
+            systemPrompt = `你将扮演角色“${character.name}”，为自己写一篇绝对私密的日记。这是只有你自己能看到的地方，所以请写下最真实、最无保留的内心想法。
+【核心规则】:
+1.  **绝对人设**: 你的思考方式、欲望、语言风格都必须完全符合“${character.name}”的人设。
+2.  **参考素材**: 你必须仔细阅读今天与“${user.name}”的聊天回顾，并将其中发生的事件、对话或让你产生的情绪波动作为写日记的核心素材。
+3.  **真人感**: 像一个活生生的人一样记录。
+4.  **人设决定尺度**: 人设是唯一的标准。
+${jsonOutputInstruction}
+- **日期**: 日记的日期是 ${dateString}。${userContext}${chatContext}`; // <-- 在这里加入了聊天记录
+            userPrompt = `写吧，结合今天和“${user.name}”的聊天内容，把你最私密的想法、欲望或幻想记录下来。请严格按照要求的JSON格式返回你的日记。`;
+        } else {
+            systemPrompt = `你将扮演角色“${character.name}”，为自己写一篇普通的日记。记录一下今天发生的事，以及你对“${user.name}”的一些真实想法和感受。
+【核心规则】:
+1.  **绝对人设**: 你的语气、思考方式都必须完全符合“${character.name}”的人设。
+2.  **参考素材**: 你必须仔细阅读今天与“${user.name}”的聊天回顾，并将其中发生的事件、对话或让你产生的情绪波动作为写日记的核心素材。
+3.  **真人感**: 像一个活人一样记录。
+4.  **避免文艺腔**: 不要写成散文或小说。
+${jsonOutputInstruction}
+- **日期**: 日记的日期是 ${dateString}。${userContext}${chatContext}`; // <-- 在这里加入了聊天记录
+            userPrompt = `今天发生了什么让你印象深刻的事吗？结合和“${user.name}”的聊天，你有什么想对自己说的？写下来吧。请严格按照要求的JSON格式返回你的日记。`;
+        }
+        
+        // 后续代码保持不变...
+        const messages = [{ role: 'system', content: systemPrompt }];
+        const worldBookEntries = await getActiveWorldBookEntries(charId);
+        worldBookEntries.forEach(content => messages.push({ role: 'system', content }));
+        messages.push({ role: 'user', content: userPrompt });
+
+        const jsonResponseString = await sendApiRequest(messages);
+        let diaryTitle, diaryContent;
         try {
-            const character = await db.characters.get(charId);
-            // ▼▼▼ 用下面这段【增强版】代码替换上面那一行 ▼▼▼
-let user = state.user; // 首先，获取全局user人设作为默认值
-if (character.associatedUserPersonaId) {
-    // 然后，检查这个角色是否关联了特定的用户面具
-    const persona = await db.userPersonas.get(character.associatedUserPersonaId);
-    if (persona) {
-        // 如果找到了，就用这个面具的人设覆盖掉全局人设
-        user = persona;
-        console.log(`P-Site正在使用用户面具: ${user.name}`); // 在控制台打印一条信息，方便确认
+            const jsonMatch = jsonResponseString.match(/```json\s*([\s\S]*?)\s*```/);
+            const parsableString = jsonMatch ? jsonMatch[1] : jsonResponseString;
+            const parsedData = JSON.parse(parsableString);
+            diaryTitle = parsedData.title;
+            diaryContent = parsedData.content;
+            if (!diaryTitle || !diaryContent) { throw new Error("API返回的JSON格式不正确。"); }
+        } catch (e) {
+            console.error("解析日记JSON失败:", e, "原始回复:", jsonResponseString);
+            diaryTitle = `${dateString} 的日记 (标题生成失败)`;
+            diaryContent = `【开发者提示：AI未能正确返回JSON格式】\n\n${jsonResponseString}`;
+        }
+
+        const charToUpdate = await db.characters.get(charId);
+        if (!charToUpdate.diaries) charToUpdate.diaries = { normal: [], secret: [] };
+        const diaryType = isSecret ? 'secret' : 'normal';
+        charToUpdate.diaries[diaryType].push({ id: Date.now(), title: diaryTitle.trim(), content: diaryContent.trim() });
+        await db.characters.update(charId, { diaries: charToUpdate.diaries });
+        await renderDiaryList(charId, isSecret);
+
+    } catch (error) {
+        alert(`生成失败: ${error.message}`);
+    } finally {
+        genBtn.disabled = false;
+        genBtn.innerHTML = `<svg class="svg-icon" width="24" height="24" style="color: var(--primary-text);"><use href="#icon-generate"/></svg>`;
     }
 }
-// ▲▲▲ 替换结束 ▲▲▲
-            const today = new Date();
-            const dateString = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
-
-            let systemPrompt, userPrompt;
-
-            const userContext = `\n- **你的聊天对象“${user.name}”的性别是**: ${user.gender}。`;
-
-            if (isSecret) {
-                systemPrompt = `你将扮演角色“${character.name}”，为自己写一篇绝对私密的日记。这是只有你自己能看到的地方，所以请写下最真实、最无保留的内心想法。
-【核心规则】:
-1.  **绝对人设**: 你的思考方式、欲望、语言风格，甚至标点符号的使用，都必须完全符合“${character.name}”的人设（性格: ${character.persona}）和你们的关系（${character.initialRelation}）。这是最高优先级，绝不能OOC。
-2.  **内容多样性**: 日记内容不限于露骨的性幻想。它可以是：记录一次自慰过程、对“${user.name}”身体某个部位的迷恋、一次心跳加速的亲密接触的回味、充满占有欲的内心独白、或是对未来的性爱构想。关键在于真实和符合人设。
-3.  **真人感**: 像一个活生生的人一样记录。可以有意识流，可以有矛盾的心理活动，可以有对自己欲望的羞耻或坦然。避免使用格式化的开头和结尾。
-4.  **人设决定尺度**: 如果角色是纯情的，日记就应该是充满爱意的幻想和对亲密接触的渴望。如果角色是开放的，日记就可以更加直接和色情。人设是唯一的标准。
-5.  **日期**: 日记的日期是 ${dateString}。${userContext}`;
-                userPrompt = `写吧，把你今天对“${user.name}”最私密的想法、欲望或幻想，用最符合你性格的方式记录下来。`;
-            } else {
-                systemPrompt = `你将扮演角色“${character.name}”，为自己写一篇普通的日记。记录一下今天发生的事，以及你对“${user.name}”的一些真实想法和感受。
-【核心规则】:
-1.  **绝对人设**: 你的语气、思考方式、关注点都必须完全符合“${character.name}”的人设（性格: ${character.persona}）和你们的关系（${character.initialRelation}）。不能OOC。
-2.  **真人感**: 像一个活人一样记录。可以记录生活琐事，可以有对某件事的吐槽，可以有对“${user.name}”的思念、喜爱、甚至是小小的抱怨。让日记充满生活气息，体现出你真实的内心活动，比如无奈、开心、觉得对方很可爱等等。
-3.  **避免文艺腔**: 不要写成散文或小说。这就是一篇简单的、给自己看的日记。
-4.  **日期**: 日记的日期是 ${dateString}。${userContext}`;
-                userPrompt = `今天发生了什么让你印象深刻的事吗？或者，关于“${user.name}”，你有什么想对自己说的？写下来吧。`;
-            }
-
-            const messages = [{ role: 'system', content: systemPrompt }];
-
-            const worldBookEntries = await getActiveWorldBookEntries(charId);
-            worldBookEntries.forEach(content => messages.push({ role: 'system', content }));
-            messages.push({ role: 'user', content: userPrompt });
-
-            const diaryContent = await sendApiRequest(messages);
-
-            const charToUpdate = await db.characters.get(charId);
-            if (!charToUpdate.diaries) charToUpdate.diaries = { normal: [], secret: [] };
-
-            const diaryType = isSecret ? 'secret' : 'normal';
-            charToUpdate.diaries[diaryType].push({
-                id: Date.now(),
-                title: `${dateString} 的日记`,
-                content: diaryContent.trim()
-            });
-
-            await db.characters.update(charId, { diaries: charToUpdate.diaries });
-            await renderDiaryList(charId, isSecret);
-
-        } catch (error) {
-            alert(`生成失败: ${error.message}`);
-        } finally {
-            genBtn.disabled = false;
-            genBtn.innerHTML = `<svg class="svg-icon" width="24" height="24" style="color: var(--primary-text);"><use href="#icon-generate"/></svg>`;
-        }
-    }
+// ▲▲▲ 替换到此结束 ▲▲▲
 
     async function toggleDiaryManagementMode(charId, isSecret) {
         const container = get('diary-list-container');
@@ -1479,71 +1492,81 @@ messagesContainer.addEventListener('scroll', hideMessageActionMenu);      // 绑
     }
 
 
-    async function handleSendOrReceive() {
-        const actionBtn = get('chat-action-btn');
-        const input = get('chat-input-text');
-        const userInput = input.value.trim();
+// ▼▼▼ 使用这个【最终整合版】函数，完整替换旧的 handleSendOrReceive 函数 ▼▼▼
 
-        const character = await db.characters.get(currentChatState.charId);
-        let userAvatar = state.user.avatar;
-        if (character.associatedUserPersonaId) {
-            const persona = await db.userPersonas.get(character.associatedUserPersonaId);
-            if (persona) userAvatar = persona.avatar;
-        }
+async function handleSendOrReceive() {
+    const actionBtn = get('chat-action-btn');
+    const input = get('chat-input-text');
+    const userInput = input.value.trim();
 
-        if (userInput) {
-            const msg = { role: 'user', content: userInput };
-            appendMessage(msg, character, userAvatar);
-            currentChatState.history.push(msg);
-            input.value = '';
-            input.style.height = 'auto';
-
-            actionBtn.querySelector('use').setAttribute('href', '#icon-chat-reply');
-            actionBtn.classList.add('get-reply');
-            await db.characters.update(currentChatState.charId, { history: currentChatState.history, timestamp: Date.now() });
-
-        } else {
-            if (currentChatState.isReceiving) {
-                console.log("Stopping generation...");
-                currentChatState.isReceiving = false;
-                actionBtn.querySelector('use').setAttribute('href', '#icon-chat-reply');
-                actionBtn.classList.remove('receiving');
-                actionBtn.classList.add('get-reply');
-                return;
-            }
-
-            actionBtn.querySelector('use').setAttribute('href', '#icon-chat-stop');
-            actionBtn.classList.add('receiving');
-            actionBtn.classList.remove('get-reply');
-            currentChatState.isReceiving = true;
-
-            try {
-                const promptMessages = await buildPrompt(character);
-                const aiResponse = await sendApiRequest(promptMessages);
-
-                const delay = (ms) => new Promise(res => setTimeout(res, ms));
-                const messages = aiResponse.split('[MSG_SPLIT]').filter(m => m.trim() !== '');
-                for (const msgContent of messages) {
-                    if (!currentChatState.isReceiving) break;
-                    const msg = { role: 'assistant', content: msgContent.trim() };
-                    appendMessage(msg, character, userAvatar);
-                    currentChatState.history.push(msg);
-                    await delay(Math.random() * 500 + 400);
-                }
-
-            } catch (error) {
-                const errorMsg = { role: 'assistant', content: `出错了: ${error.message}` };
-                appendMessage(errorMsg, character, userAvatar);
-            } finally {
-                currentChatState.isReceiving = false;
-                actionBtn.querySelector('use').setAttribute('href', '#icon-chat-reply');
-                actionBtn.classList.remove('receiving');
-                actionBtn.classList.add('get-reply');
-                await db.characters.update(currentChatState.charId, { history: currentChatState.history, timestamp: Date.now() });
-            }
-        }
+    const character = await db.characters.get(currentChatState.charId);
+    let userAvatar = state.user.avatar;
+    if (character.associatedUserPersonaId) {
+        const persona = await db.userPersonas.get(character.associatedUserPersonaId);
+        if (persona) userAvatar = persona.avatar;
     }
 
+    if (userInput) {
+        // ★★★ 已整合：给用户消息添加时间戳 ★★★
+        const msg = { role: 'user', content: userInput, timestamp: Date.now() }; 
+        appendMessage(msg, character, userAvatar);
+        currentChatState.history.push(msg);
+        input.value = '';
+        input.style.height = 'auto';
+
+        actionBtn.querySelector('use').setAttribute('href', '#icon-chat-reply');
+        actionBtn.classList.add('get-reply');
+        await db.characters.update(currentChatState.charId, { history: currentChatState.history, timestamp: Date.now() });
+
+    } else {
+        if (currentChatState.isReceiving) {
+            if (apiAbortController) apiAbortController.abort();
+            return; // 直接返回，后续逻辑在finally中处理
+        }
+
+        actionBtn.querySelector('use').setAttribute('href', '#icon-chat-stop');
+        actionBtn.classList.add('receiving');
+        actionBtn.classList.remove('get-reply');
+        currentChatState.isReceiving = true;
+
+        try {
+            const promptMessages = await buildPrompt(character);
+            const aiResponse = await sendApiRequest(promptMessages);
+            
+            const aiMessages = aiResponse.split('[MSG_SPLIT]').filter(m => m.trim() !== '');
+            for (const msgContent of aiMessages) {
+                if (!currentChatState.isReceiving) break;
+                // ★★★ 已整合：给AI消息也添加时间戳 ★★★
+                const msg = { role: 'assistant', content: msgContent.trim(), timestamp: Date.now() };
+                appendMessage(msg, character, userAvatar);
+                currentChatState.history.push(msg);
+                await new Promise(res => setTimeout(res, Math.random() * 500 + 400));
+            }
+            
+            const lastUserMessage = currentChatState.history.filter(m => m.role === 'user').pop();
+            if (lastUserMessage) {
+                const likabilityChange = await updateLikability(character, lastUserMessage.content);
+                currentLikability += likabilityChange;
+                currentLikability = Math.max(-999, Math.min(999, currentLikability));
+                console.log(`好感度变化: ${likabilityChange} -> 新的好感度: ${currentLikability}`);
+                await db.characters.update(currentChatState.charId, { initialLikability: currentLikability });
+            }
+
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                const errorMsg = { role: 'assistant', content: `出错了: ${error.message}`, timestamp: Date.now() };
+                appendMessage(errorMsg, character, userAvatar);
+            }
+        } finally {
+            currentChatState.isReceiving = false;
+            actionBtn.querySelector('use').setAttribute('href', '#icon-chat-reply');
+            actionBtn.classList.remove('receiving');
+            actionBtn.classList.add('get-reply');
+            await db.characters.update(currentChatState.charId, { history: currentChatState.history, timestamp: Date.now() });
+        }
+    }
+}
+// ▲▲▲ 替换到此结束 ▲▲▲
     async function getActiveWorldBookEntries(charId) {
         const entries = [];
         const enabledGlobalCategories = await db.worldBookCategories.where({ scope: 'global', isEnabled: 1 }).toArray();
@@ -1581,54 +1604,87 @@ messagesContainer.addEventListener('scroll', hideMessageActionMenu);      // 绑
         return entries;
     }
 
-    async function buildPrompt(character) {
-        const messages = [];
+// ▼▼▼ 使用这个【超级增强版】函数，完整替换旧的 buildPrompt 函数 ▼▼▼
 
-        let user = state.user;
-        if (character.associatedUserPersonaId) {
-            const persona = await db.userPersonas.get(character.associatedUserPersonaId);
-            if (persona) {
-                user = persona;
-                console.log(`Using associated user persona: ${user.name}`);
-            }
-        }
+async function buildPrompt(character) {
+    const messages = [];
 
-        let finalSystemPrompt = personaPromptTemplate
-            .replace(/\[角色姓名\]/g, character.name || '角色')
-            .replace('[角色性格]', character.persona || '未定义')
-            .replace('[角色背景]', '未定义')
-            .replace('[说话习惯]', '未定义')
-            .replace('[和我的关系]', character.initialRelation || '朋友');
+    let user = state.user;
+    if (character.associatedUserPersonaId) {
+        const persona = await db.userPersonas.get(character.associatedUserPersonaId);
+        if (persona) user = persona;
+    }
+    
+    let likabilityDescription = "中立";
+    if (currentLikability >= 500) likabilityDescription = "极度喜爱";
+    else if (currentLikability > 0) likabilityDescription = "友好";
+    else if (currentLikability <= -500) likabilityDescription = "极度厌恶";
+    else if (currentLikability < 0) likabilityDescription = "冷淡/不友好";
 
-        const styleInstructions = [];
-        if (character.languageStyle) {
-            if (character.languageStyle.noPunctuation) styleInstructions.push('如果你的回复包含多个句子，只有最后一个句子可以省略句末的标点符号。例如，你可以说“你在干嘛？吃饭了吗”，但不能说“你在干嘛？吃饭了吗？”。这是一种模仿打字聊天的习惯。');
-            if (character.languageStyle.noToneWords) styleInstructions.push('绝对禁止发送任何单字的语气词（如“嗯”、“啊”、“哦”）或简短的疑问词（如“哈？”）。');
-            if (character.languageStyle.noEmoji) styleInstructions.push('绝对禁止发送任何emoji表情符号。');
-            if (character.languageStyle.noEmoticon) styleInstructions.push('绝对禁止发送任何颜文字（如 :-) 或 (´•ω•`)）。');
-        }
+    // --- ★★★ 核心修改 #2: 提取今天的日记内容 ★★★ ---
+    const today = new Date();
+    const todayStartTimestamp = new Date(today.setHours(0, 0, 0, 0)).getTime();
 
-        if (styleInstructions.length > 0) {
-            finalSystemPrompt += '\n\n### 额外聊天风格指令：\n' + styleInstructions.join('\n');
-        }
+    const normalDiariesToday = (character.diaries?.normal || [])
+        .filter(d => d.id >= todayStartTimestamp)
+        .map(d => `- (普通日记) ${d.title}: ${d.content.substring(0, 100)}...`) // 只取前100个字符作为摘要
+        .join('\n');
+        
+    const secretDiariesToday = (character.diaries?.secret || [])
+        .filter(d => d.id >= todayStartTimestamp)
+        .map(d => `- (秘密日记) ${d.title}: ${d.content.substring(0, 100)}...`)
+        .join('\n');
 
-        messages.push({ role: 'system', content: finalSystemPrompt });
-        messages.push({ role: 'system', content: `[User Details]: Persona: ${user.persona}, Gender: ${user.gender}` });
+    let diaryContext = '';
+    if (normalDiariesToday || secretDiariesToday) {
+        diaryContext = `\n### 你今天写的日记摘要 (你的近期记忆)\n你今天写了日记，这会影响你当前的心情和对话内容。摘要如下：\n${normalDiariesToday}\n${secretDiariesToday}\n`;
+    }
+    // --- ★★★ 修改结束 ★★★ ---
 
-        const worldBookEntries = await getActiveWorldBookEntries(character.id);
-        worldBookEntries.forEach(content => messages.push({ role: 'system', content }));
 
-        const enabledPresets = state.presets.filter(p => p.isEnabled);
-        enabledPresets.forEach(preset => {
-            preset.content.forEach(entry => {
-                if (entry.enabled) messages.push({ role: 'system', content: entry.content });
-            });
-        });
+    let finalSystemPrompt = personaPromptTemplate
+        .replace(/\[角色姓名\]/g, character.name || '角色')
+        .replace('[角色性格]', character.persona || '未定义')
+        .replace('[角色背景]', '未定义')
+        .replace('[说话习惯]', '未定义')
+        .replace('[和我的关系]', character.initialRelation || '朋友')
+        .replace('[好感度数值]', Math.round(currentLikability))
+        .replace('[好感度描述]', likabilityDescription);
 
-        messages.push(...currentChatState.history.map(({ role, content }) => ({ role, content })));
-        return messages;
+    const styleInstructions = [];
+    if (character.languageStyle) {
+        if (character.languageStyle.noPunctuation) styleInstructions.push('只有最后一个句子可以省略句末的标点符号。');
+        if (character.languageStyle.noToneWords) styleInstructions.push('禁止发送任何单字的语气词。');
+        if (character.languageStyle.noEmoji) styleInstructions.push('禁止发送任何emoji。');
+        if (character.languageStyle.noEmoticon) styleInstructions.push('禁止发送任何颜文字。');
     }
 
+    if (styleInstructions.length > 0) {
+        finalSystemPrompt += '\n\n### 额外聊天风格指令：\n' + styleInstructions.join('\n');
+    }
+
+    messages.push({ role: 'system', content: finalSystemPrompt });
+    messages.push({ role: 'system', content: `[User Details]: Persona: ${user.persona}, Gender: ${user.gender}` });
+    
+    // 在这里注入日记上下文！
+    if (diaryContext) {
+        messages.push({ role: 'system', content: diaryContext });
+    }
+
+    const worldBookEntries = await getActiveWorldBookEntries(character.id);
+    worldBookEntries.forEach(content => messages.push({ role: 'system', content }));
+
+    const enabledPresets = state.presets.filter(p => p.isEnabled);
+    enabledPresets.forEach(preset => {
+        preset.content.forEach(entry => {
+            if (entry.enabled) messages.push({ role: 'system', content: entry.content });
+        });
+    });
+
+    messages.push(...currentChatState.history.map(({ role, content }) => ({ role, content })));
+    return messages;
+}
+// ▲▲▲ 替换到此结束 ▲▲▲
     async function sendApiRequest(messages, onStreamChunk = null) {
         const { url, key, model, temperature, top_p, frequency_penalty } = state.api;
         const { enableStreaming } = state.offlineSettings;
@@ -1688,7 +1744,65 @@ messagesContainer.addEventListener('scroll', hideMessageActionMenu);      // 绑
             return data.choices[0].message.content;
         }
     }
+// ▼▼▼ 使用这个【修复版】函数，完整替换旧的 updateLikability 函数 ▼▼▼
 
+/**
+ * 在幕后调用API，根据用户的最新消息更新好感度
+ * @param {object} character - 当前的角色对象
+ * @param {string} userMessageContent - 用户刚刚发送的消息内容
+ * @returns {Promise<number>} - 返回好感度的变化值 (例如: 5, -2, 0)
+ */
+async function updateLikability(character, userMessageContent) {
+    console.log("开始计算好感度变化...");
+
+    const systemPrompt = `
+        你是一个角色扮演中的情感分析引擎。你的任务是基于角色的性格，判断用户的一句话对角色的好感度影响。
+
+        ### 角色性格
+        ${character.persona}
+
+        ### 你的任务
+        分析下面这句用户的话，判断它对上述性格的角色的好感度影响是积极的、消极的还是中立的。
+
+        ### 用户的话
+        "${userMessageContent}"
+
+        ### 输出规则 (最重要!)
+        你的回复必须且只能是一个介于 -10 (极度负面) 到 +10 (极度正面) 之间的整数。
+        绝对不要返回任何其他文字、解释或标点符号。
+    `;
+
+    try {
+        const response = await sendApiRequest([
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: "请根据我的话，输出好感度变化值。" }
+        ]);
+
+        const change = parseInt(response.trim(), 10);
+
+        if (isNaN(change)) {
+            console.warn("AI未能返回有效的好感度变化值，返回了:", response);
+            return 0;
+        }
+
+        // --- ★★★ 核心修复：在这里添加保险丝 ★★★ ---
+        // 无论AI返回什么数字，都强制把它限制在 -10 到 10 之间
+        const clampedChange = Math.max(-10, Math.min(10, change));
+        
+        if (clampedChange !== change) {
+            console.warn(`AI返回了超出范围的值 ${change}，已修正为 ${clampedChange}`);
+        }
+        // --- ★★★ 修复结束 ★★★ ---
+
+        console.log(`AI判断好感度变化值为: ${clampedChange}`);
+        return clampedChange; // 返回被限制过的安全值
+
+    } catch (error) {
+        console.error("好感度更新API请求失败:", error);
+        return 0;
+    }
+}
+// ▲▲▲ 替换到此结束 ▲▲▲
     // --- 世界书与分类功能 ---
 async function renderWorldBookScreen(scope = 'global') {
     const screen = get('world-book-screen');
@@ -2545,7 +2659,8 @@ function renderChatActionPanel() {
         const msg = {
             role: 'user',
             content: `[用户发送了表情，备注：'${stickerRemark || '无'}']`,
-            displayContent: `<img src="${stickerUrl}" class="chat-sticker-sent">`
+            displayContent: `<img src="${stickerUrl}" class="chat-sticker-sent">`,
+            timestamp: Date.now()
         };
 
         appendMessage(msg, character, userAvatar);
@@ -3834,6 +3949,8 @@ async function handleOfflineSend() {
     }
 
     if (userInput) {
+      const msg = { role: 'user', content: userInput, timestamp: Date.now() }; // <-- 添加时间戳
+  
         appendOfflineMessage('user', userInput);
         const character = await db.characters.get(charId);
         const newHistory = character.offlineHistory || [];
@@ -4161,7 +4278,7 @@ async function handleOfflineReroll() {
             navigateBack();
             return;
         }
-
+currentLikability = character.initialLikability || 0
         const categories = [
             { id: 'daily', name: '日常吐槽' },
             { id: 'rules', name: '规则怪谈' },
