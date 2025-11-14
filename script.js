@@ -1446,49 +1446,55 @@ function updateChatButtonStateAndHeight() {
     get('chat-settings-btn').onclick = () => navigateTo('chat-settings-screen', { charId });
 } // <--- 这才是函数唯一的、正确的结束大括号
 
-    async function appendMessage(msg, character, currentUserAvatar) {
-        const messagesContainer = get('chat-conversation-screen').querySelector('.chat-messages-container');
-        const msgDiv = document.createElement('div');
-        const messageRole = msg.role === 'ai' || msg.role === 'assistant' ? 'ai' : 'user';
-        msgDiv.className = `chat-message ${messageRole}`;
-        const avatar = messageRole === 'user' ? (currentUserAvatar || state.user.avatar) : character.avatar;
+    // 在 script.js 中，找到旧的 appendMessage 函数并用下面的新版本替换
 
-        const bubble = document.createElement('div');
-        bubble.className = 'chat-bubble';
+async function appendMessage(msg, character, currentUserAvatar) {
+    const messagesContainer = get('chat-conversation-screen').querySelector('.chat-messages-container');
+    const msgDiv = document.createElement('div');
+    const messageRole = msg.role === 'ai' || msg.role === 'assistant' ? 'ai' : 'user';
+    msgDiv.className = `chat-message ${messageRole}`;
+    const avatar = messageRole === 'user' ? (currentUserAvatar || state.user.avatar) : character.avatar;
 
-        if (msg.displayContent && msg.displayContent.includes('chat-sticker-sent')) {
-            bubble.classList.add('no-bg');
-            bubble.innerHTML = msg.displayContent;
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+
+    // ▼▼▼【核心修改】▼▼▼
+    // 我们将这里的逻辑简化，只要 msg.displayContent 存在，就优先使用它来渲染。
+    // 这同时兼容了图片和表情包。
+    if (msg.displayContent) {
+        bubble.classList.add('no-bg');
+        bubble.innerHTML = msg.displayContent;
+    }
+    // ▲▲▲【修改结束】▲▲▲
+
+    else if (messageRole === 'ai' && character.enableHtmlRendering) {
+        let potentialHtml = msg.content.trim();
+        const isMarkdownCodeBlock = potentialHtml.startsWith('```') && potentialHtml.endsWith('```');
+
+        if (isMarkdownCodeBlock) {
+            potentialHtml = potentialHtml.substring(potentialHtml.indexOf('\n') + 1, potentialHtml.lastIndexOf('```')).trim();
         }
-        // ...
-        else if (messageRole === 'ai' && character.enableHtmlRendering) {
-            let potentialHtml = msg.content.trim();
-            const isMarkdownCodeBlock = potentialHtml.startsWith('```') && potentialHtml.endsWith('```');
 
-            // 如果是Markdown代码块, 就提取里面的纯代码
-            if (isMarkdownCodeBlock) {
-                potentialHtml = potentialHtml.substring(potentialHtml.indexOf('\n') + 1, potentialHtml.lastIndexOf('```')).trim();
-            }
-
-            // 只有当处理后的代码是以 '<' 开头时才渲染
-            if (potentialHtml.startsWith('<')) {
-                bubble.classList.add('no-bg');
-                bubble.innerHTML = potentialHtml;
-            } else {
-                // 如果处理后依然不是HTML，就按原文显示
-                bubble.textContent = msg.content;
-            }
+        if (potentialHtml.startsWith('<')) {
+            bubble.classList.add('no-bg');
+            bubble.innerHTML = potentialHtml;
         } else {
             bubble.textContent = msg.content;
         }
-        // ...
-
-        msgDiv.innerHTML = `<img src="${avatar || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}" class="chat-avatar">`;
-        msgDiv.appendChild(bubble);
-
-        messagesContainer.appendChild(msgDiv);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    } else {
+        // 对于普通文本消息或AI的非HTML回复，我们才设置 textContent
+        // 注意：图片消息的 content 是一个对象，不能在这里处理，所以上面的 if 判断很重要
+        if (typeof msg.content === 'string') {
+            bubble.textContent = msg.content;
+        }
     }
+
+    msgDiv.innerHTML = `<img src="${avatar || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}" class="chat-avatar">`;
+    msgDiv.appendChild(bubble);
+
+    messagesContainer.appendChild(msgDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
     // ▼▼▼ 在这里粘贴新函数 ▼▼▼
 
 /**
@@ -1519,82 +1525,41 @@ function updateChatButtonState() {
 }
 
 // ▲▲▲ 新函数粘贴结束 ▲▲▲
-// ▼▼▼ 用这个新版本完整替换旧的 handleSendOrReceive 函数 ▼▼▼
+// 在 script.js 中，完整替换旧的 handleSendOrReceive 函数
 
 async function handleSendOrReceive() {
-    const actionBtn = get('chat-action-btn');
     const input = get('chat-input-text');
     const userInput = input.value.trim();
 
-    const character = await db.characters.get(currentChatState.charId);
-    let userAvatar = state.user.avatar;
-    if (character.associatedUserPersonaId) {
-        const persona = await db.userPersonas.get(character.associatedUserPersonaId);
-        if (persona) userAvatar = persona.avatar;
+    // 停止AI回复的逻辑保持不变
+    if (currentChatState.isReceiving) {
+        if (apiAbortController) apiAbortController.abort();
+        return;
     }
 
     if (userInput) {
-        // --- 发送用户消息 ---
-        const msg = { role: 'user', content: userInput, timestamp: Date.now() }; 
+        // --- 发送纯文本消息 ---
+        const charId = currentChatState.charId;
+        const character = await db.characters.get(charId);
+        let userAvatar = state.user.avatar;
+        if (character.associatedUserPersonaId) {
+            const persona = await db.userPersonas.get(character.associatedUserPersonaId);
+            if (persona) userAvatar = persona.avatar;
+        }
+
+        const msg = { role: 'user', content: userInput, timestamp: Date.now() };
         appendMessage(msg, character, userAvatar);
         currentChatState.history.push(msg);
         input.value = '';
         input.style.height = 'auto';
-
-        updateChatButtonState(); // ★ 发送后立刻更新按钮状态
-
-        await db.characters.update(currentChatState.charId, { history: currentChatState.history, timestamp: Date.now() });
-
+        updateChatButtonState();
+        await db.characters.update(charId, { history: currentChatState.history, timestamp: Date.now() });
+      
     } else {
-        // --- 请求AI回复 ---
-        if (currentChatState.isReceiving) {
-            if (apiAbortController) apiAbortController.abort();
-            return; // 中止请求，finally会处理后续
-        }
-
-        currentChatState.isReceiving = true;
-        updateChatButtonState(); // ★ AI开始回复前，更新按钮为“停止”状态
-
-        try {
-            const promptMessages = await buildPrompt(character);
-            const aiResponse = await sendApiRequest(promptMessages);
-            
-            const aiMessages = aiResponse.split('[MSG_SPLIT]').filter(m => m.trim() !== '');
-            for (const msgContent of aiMessages) {
-                if (!currentChatState.isReceiving) break; // 检查是否在循环中被中止
-                const msg = { role: 'assistant', content: msgContent.trim(), timestamp: Date.now() };
-                appendMessage(msg, character, userAvatar);
-                currentChatState.history.push(msg);
-                await new Promise(res => setTimeout(res, Math.random() * 500 + 400));
-            }
-            
-            const lastUserMessage = currentChatState.history.filter(m => m.role === 'user').pop();
-            if (lastUserMessage) {
-                const likabilityChange = await updateLikability(character, lastUserMessage.content);
-                currentLikability += likabilityChange;
-                currentLikability = Math.max(-999, Math.min(999, currentLikability));
-                await db.characters.update(currentChatState.charId, { initialLikability: currentLikability });
-            }
-
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                const errorMsg = { role: 'assistant', content: `出错了: ${error.message}`, timestamp: Date.now() };
-                appendMessage(errorMsg, character, userAvatar);
-            }
-        } finally {
-            currentChatState.isReceiving = false;
-            
-            // ★ ★ ★ 最终修复点！ ★ ★ ★
-            // AI回复结束后，再次调用新函数，它会根据输入框内容智能判断按钮状态
-            updateChatButtonState(); 
-
-            await db.characters.update(currentChatState.charId, { history: currentChatState.history, timestamp: Date.now() });
-        }
+        // 如果输入框为空，则只是请求AI回复（例如，点击“让TA先说”）
+        await getAiReply();
     }
 }
-
-// ▲▲▲ 替换结束 ▲▲▲
-
     async function getActiveWorldBookEntries(charId) {
         const entries = [];
         const enabledGlobalCategories = await db.worldBookCategories.where({ scope: 'global', isEnabled: 1 }).toArray();
@@ -1709,7 +1674,7 @@ async function buildPrompt(character) {
         });
     });
 
-    messages.push(...currentChatState.history.map(({ role, content }) => ({ role, content })));
+    messages.push(...currentChatState.history);
     return messages;
 }
 // ▲▲▲ 替换到此结束 ▲▲▲
@@ -2435,11 +2400,18 @@ function renderChatActionPanel() {
                         alert('错误：无法获取当前角色信息。');
                     }
                 });
-            } else {
-                // 对其他所有按钮保持原来的“开发中”提示
-                item.addEventListener('click', () => alert(`“${feature.name}”功能开发中...`));
-            }
-            // --- 修改结束 ---
+            } else if (feature.name === '图片') { // ▼▼▼ 新增这部分逻辑 ▼▼▼
+    item.addEventListener('click', () => {
+        // 关闭功能面板
+        get('chat-action-panel').classList.remove('active');
+        get('chat-conversation-screen').querySelector('.chat-messages-container').style.paddingBottom = '10px';
+        // 触发隐藏的文件输入框
+        get('image-upload-input').click();
+    });
+} else {
+    // 对其他所有按钮保持原来的“开发中”提示
+    item.addEventListener('click', () => alert(`“${feature.name}”功能开发中...`));
+}
 
             if (currentRow) {
                 currentRow.appendChild(item);
@@ -5760,7 +5732,135 @@ setupMessageActionMenuListeners();
         setTimeout(() => get('home-screen').classList.add('active'), 100);
     }
 // --- ▼▼▼ 照片小组件上传功能事件绑定 ▼▼▼ ---
+// 在 script.js 的 init() 函数的末尾，init(); 之前
 
+// ▼▼▼ 在这里粘贴所有新代码 ▼▼▼
+
+/**
+ * [全新] 发送包含图片的消息，并触发AI回复
+ * @param {string} base64Url - 图片的Base64 Data URL
+ */
+async function sendImageMessage(base64Url) {
+    const charId = currentChatState.charId;
+    const character = await db.characters.get(charId);
+    let userAvatar = state.user.avatar;
+    if (character.associatedUserPersonaId) {
+        const persona = await db.userPersonas.get(character.associatedUserPersonaId);
+        if (persona) userAvatar = persona.avatar;
+    }
+
+    // 从输入框获取可能存在的附带文本
+    const accompanyingText = get('chat-input-text').value.trim();
+    get('chat-input-text').value = ''; // 清空输入框
+    get('chat-input-text').style.height = 'auto';
+
+    // --- 核心：构建多模态消息体 ---
+    // 这是能让AI模型（如GPT-4o, Claude 3）识图的关键
+    const messageContent = [
+        {
+            type: 'image_url',
+            image_url: {
+                "url": base64Url
+            }
+        }
+    ];
+    
+    // 如果有附带文本，也加入到消息体中
+    if (accompanyingText) {
+        messageContent.unshift({
+            type: 'text',
+            text: accompanyingText
+        });
+    }
+
+    const msg = {
+        role: 'user',
+        content: messageContent, // content现在是一个数组，而不是字符串
+        displayContent: `<img src="${base64Url}" class="chat-image-sent">`, // 用于在UI上显示
+        timestamp: Date.now()
+    };
+
+    // 更新UI和数据库
+    appendMessage(msg, character, userAvatar);
+    currentChatState.history.push(msg);
+    await db.characters.update(charId, { history: currentChatState.history, timestamp: Date.now() });
+
+    // 发送图片后，立即请求AI回复
+    await getAiReply();
+}
+
+/**
+ * [重构] 将获取AI回复的逻辑提取为独立函数，方便复用
+ */
+async function getAiReply() {
+    if (currentChatState.isReceiving) {
+        if (apiAbortController) apiAbortController.abort();
+        return;
+    }
+    
+    const charId = currentChatState.charId;
+    const character = await db.characters.get(charId);
+    let userAvatar = state.user.avatar;
+    if (character.associatedUserPersonaId) {
+        const persona = await db.userPersonas.get(character.associatedUserPersonaId);
+        if (persona) userAvatar = persona.avatar;
+    }
+
+    currentChatState.isReceiving = true;
+    updateChatButtonState();
+
+    try {
+        const promptMessages = await buildPrompt(character);
+        const aiResponse = await sendApiRequest(promptMessages);
+        
+        const aiMessages = aiResponse.split('[MSG_SPLIT]').filter(m => m.trim() !== '');
+        for (const msgContent of aiMessages) {
+            if (!currentChatState.isReceiving) break;
+            const msg = { role: 'assistant', content: msgContent.trim(), timestamp: Date.now() };
+            appendMessage(msg, character, userAvatar);
+            currentChatState.history.push(msg);
+            await new Promise(res => setTimeout(res, Math.random() * 500 + 400));
+        }
+        
+        // ... (好感度更新逻辑保持不变)
+        const lastUserMessage = currentChatState.history.filter(m => m.role === 'user').pop();
+        if (lastUserMessage) {
+            // 注意：对于图片消息，我们只取文本部分来更新好感度
+            const textContentForLikability = Array.isArray(lastUserMessage.content) 
+                ? (lastUserMessage.content.find(c => c.type === 'text')?.text || '[图片]')
+                : lastUserMessage.content;
+            const likabilityChange = await updateLikability(character, textContentForLikability);
+            currentLikability += likabilityChange;
+            currentLikability = Math.max(-999, Math.min(999, currentLikability));
+            await db.characters.update(charId, { initialLikability: currentLikability });
+        }
+
+    } catch (error) {
+        if (error.name !== 'AbortError') {
+            const errorMsg = { role: 'assistant', content: `出错了: ${error.message}`, timestamp: Date.now() };
+            appendMessage(errorMsg, character, userAvatar);
+        }
+    } finally {
+        currentChatState.isReceiving = false;
+        updateChatButtonState();
+        await db.characters.update(charId, { history: currentChatState.history, timestamp: Date.now() });
+    }
+}
+
+// 在 init() 函数中添加对新文件输入框的监听
+get('image-upload-input').addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        sendImageMessage(e.target.result);
+    };
+    reader.readAsDataURL(file);
+    event.target.value = ''; // 重置以便下次选择
+});
+
+// ▲▲▲ 新代码粘贴结束 ▲▲▲
 // 1. 为 "照片小组件" 的 "本地上传" 按钮添加点击事件
 get('photo-widget-upload-local-btn').addEventListener('click', () => {
     // a. 先关闭浮窗
