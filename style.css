@@ -3281,3 +3281,13 @@ body.dark-mode .search-result-play-btn:disabled {
     font-size: 1rem;
     min-height: auto;
 }
+/* 在 style.css, 紧跟在 .chat-sticker-sent 样式后面 */
+
+/* 新增：聊天中发送的图片样式 */
+.chat-bubble.no-bg .chat-image-sent {
+    max-width: 200px;  /* 限制图片最大宽度 */
+    max-height: 200px; /* 限制图片最大高度 */
+    display: block;
+    border-radius: 8px; /* 和气泡一样的圆角 */
+    cursor: pointer; /* 添加手型光标，暗示可以点击放大（未来功能） */
+}
