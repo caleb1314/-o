@@ -14,34 +14,74 @@ setInterval(updateTime, 1000);
 // 获取屏幕元素
 const screen = document.getElementById('screen');
 
-// ================= 新增：长按进入编辑模式逻辑 =================
-let pressTimer;
-const LONG_PRESS_DURATION = 800; // 长按触发时间 800ms
+// ================= 优化后的长按进入编辑模式逻辑 =================
+let pressTimer = null;
+let startX = 0;
+let startY = 0;
+const LONG_PRESS_DURATION = 600; // 稍微缩短到600ms，体验更灵敏
+
+// 屏蔽浏览器默认的右键/长按菜单
+screen.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+});
 
 const startPress = (e) => {
     // 如果已经在编辑模式，不触发
     if (screen.classList.contains('edit-mode')) return;
     
+    // 记录按下的初始坐标
+    if (e.type === 'touchstart') {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+    } else {
+        startX = e.clientX;
+        startY = e.clientY;
+    }
+
     pressTimer = setTimeout(() => {
         screen.classList.add('edit-mode');
-        // 触发手机轻微震动反馈（仅安卓支持）
+        // 触发手机轻微震动反馈（优先适配安卓端）
         if (navigator.vibrate) {
             navigator.vibrate(50);
         }
     }, LONG_PRESS_DURATION);
 };
 
-const cancelPress = () => {
-    clearTimeout(pressTimer);
+const movePress = (e) => {
+    if (!pressTimer) return;
+    
+    let currentX, currentY;
+    if (e.type === 'touchmove') {
+        currentX = e.touches[0].clientX;
+        currentY = e.touches[0].clientY;
+    } else {
+        currentX = e.clientX;
+        currentY = e.clientY;
+    }
+    
+    // 允许 10px 以内的微小滑动，超过则认为是滑动翻页，取消长按
+    if (Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+    }
 };
 
-// 绑定全局长按事件
+const cancelPress = () => {
+    if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+    }
+};
+
+// 绑定全局长按事件 (替换了之前的严格取消逻辑)
 screen.addEventListener('touchstart', startPress, { passive: true });
+screen.addEventListener('touchmove', movePress, { passive: true });
 screen.addEventListener('touchend', cancelPress);
-screen.addEventListener('touchmove', cancelPress, { passive: true });
+screen.addEventListener('touchcancel', cancelPress);
+
 screen.addEventListener('mousedown', startPress);
+screen.addEventListener('mousemove', movePress);
 screen.addEventListener('mouseup', cancelPress);
-screen.addEventListener('mousemove', cancelPress);
 screen.addEventListener('mouseleave', cancelPress);
 
 // 完成按钮退出编辑模式
