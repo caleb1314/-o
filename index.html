@@ -2,21 +2,17 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <!-- 替换了viewport，增加 viewport-fit=cover 适配刘海屏 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- 安卓 PWA 及全屏标签 (优先) -->
     <meta name="theme-color" content="#000000">
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="manifest" href="manifest.json">
     
-    <!-- iOS 全屏标签 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="液态桌面">
 
     <title>液态玻璃手机主页</title>
-    <!-- 引入外部 CSS 文件 -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -41,13 +37,24 @@
             </div>
         </div>
 
+        <!-- 新增：编辑模式控制栏 -->
+        <div class="edit-controls">
+            <div class="edit-btn liquid-glass">编辑</div>
+            <div class="done-btn liquid-glass" id="done-btn">完成</div>
+        </div>
+
         <!-- 桌面应用容器 -->
         <div class="pages-container">
             
             <!-- 第一页 -->
             <div class="page">
-                <!-- 音乐小组件 -->
-                <div class="top-widget-container">
+                <!-- 音乐小组件 (整体) -->
+                <div class="top-widget-container jiggle-item">
+                    <!-- 新增：删除按键 -->
+                    <div class="delete-btn">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg>
+                    </div>
+
                     <svg class="connecting-lines" viewBox="0 0 400 250" preserveAspectRatio="xMidYMin slice">
                         <defs>
                             <linearGradient id="fade-grad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -89,32 +96,32 @@
                 </div>
 
                 <div class="app-grid">
-                    <div class="app-item"><div class="app-icon-box"></div><div class="app-name">微信</div></div>
-                    <div class="app-item"><div class="app-icon-box"></div><div class="app-name">音乐</div></div>
-                    <div class="app-item"><div class="app-icon-box"></div><div class="app-name">小红书</div></div>
-                    <div class="app-item"><div class="app-icon-box"></div><div class="app-name">Ins</div></div>
+                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">微信</div></div>
+                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">音乐</div></div>
+                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">小红书</div></div>
+                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">Ins</div></div>
                 </div>
             </div>
 
             <!-- 第二页 -->
             <div class="page">
                 <div class="app-grid">
-                    <div class="app-item"><div class="app-icon-box"></div><div class="app-name">美化</div></div>
-                    <div class="app-item"><div class="app-icon-box"></div><div class="app-name">情侣空间</div></div>
-                    <div class="app-item"><div class="app-icon-box"></div><div class="app-name">工具</div></div>
-                    <div class="app-item"><div class="app-icon-box"></div><div class="app-name">社区</div></div>
-                    <div class="app-item"><div class="app-icon-box"></div><div class="app-name">应用商店</div></div>
-                    <div class="app-item"><div class="app-icon-box"></div><div class="app-name">世界</div></div>
-                    <div class="app-item"><div class="app-icon-box"></div><div class="app-name">书架</div></div>
-                    <div class="app-item"><div class="app-icon-box"></div><div class="app-name">影视</div></div>
+                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">美化</div></div>
+                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">情侣空间</div></div>
+                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">工具</div></div>
+                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">社区</div></div>
+                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">应用商店</div></div>
+                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">世界</div></div>
+                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">书架</div></div>
+                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">影视</div></div>
                 </div>
             </div>
 
-            <!-- 第三页 (已修复找回) -->
+            <!-- 第三页 -->
             <div class="page">
                 <div class="app-grid">
-                    <div class="app-item"><div class="app-icon-box"></div><div class="app-name">异世界</div></div>
-                    <div class="app-item"><div class="app-icon-box"></div><div class="app-name">查手机</div></div>
+                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">异世界</div></div>
+                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">查手机</div></div>
                 </div>
             </div>
 
@@ -122,18 +129,15 @@
 
         <!-- 底部 Dock 栏 -->
         <div class="dock-container liquid-glass">
-            <div class="app-item"><div class="dock-item"></div><div class="app-name">设置</div></div>
-            <div class="app-item"><div class="dock-item"></div><div class="app-name">电话</div></div>
-            <div class="app-item"><div class="dock-item"></div><div class="app-name">信息</div></div>
-            <div class="app-item"><div class="dock-item"></div><div class="app-name">浏览器</div></div>
+            <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="dock-item"></div><div class="app-name">设置</div></div>
+            <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="dock-item"></div><div class="app-name">电话</div></div>
+            <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="dock-item"></div><div class="app-name">信息</div></div>
+            <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="dock-item"></div><div class="app-name">浏览器</div></div>
         </div>
 
     </div>
 
-    <!-- 引入外部 JS 文件 -->
     <script src="script.js" defer></script>
-    
-    <!-- 新增：PWA Service Worker 注册逻辑 -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
