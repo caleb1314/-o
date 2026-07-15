@@ -40,6 +40,8 @@ body {
         inset 0 -1px 2px rgba(0, 0, 0, 0.05),
         0 6px 16px rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 /* 顶栏 (状态栏) */
@@ -53,8 +55,8 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 0 24px;
-    padding-top: env(safe-area-inset-top); /* 新增适配：防止被刘海遮挡 */
-    z-index: 10;
+    padding-top: env(safe-area-inset-top);
+    z-index: 100;
 }
 
 .time-container {
@@ -81,11 +83,49 @@ body {
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
 }
 
+/* ================= 新增：编辑控制栏 ================= */
+.edit-controls {
+    position: absolute;
+    top: calc(44px + env(safe-area-inset-top) + 5px);
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 90;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.edit-mode .edit-controls {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.edit-btn, .done-btn {
+    padding: 6px 16px;
+    border-radius: 16px;
+    font-size: 13px;
+    color: #666; /* 灰色文字 */
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    /* 提升亮度以匹配高透且看清文字 */
+    background: rgba(255, 255, 255, 0.45);
+}
+
+.edit-btn:active, .done-btn:active {
+    transform: scale(0.95);
+}
+
 /* ================= 分页容器 ================= */
 .pages-container {
     width: 100%;
     height: calc(100% - 130px);
-    margin-top: calc(44px + env(safe-area-inset-top)); /* 修改适配：给刘海留出空间 */
+    margin-top: calc(44px + env(safe-area-inset-top));
     display: flex;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
@@ -156,7 +196,6 @@ body {
     box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
-/* 纯白气泡 */
 .speech-bubble {
     position: relative;
     background: #ffffff;
@@ -190,7 +229,6 @@ body {
     text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
-/* 高不透明度毛玻璃播放器 */
 .music-player-v2 {
     width: 100%;
     background: rgba(255, 255, 255, 0.85);
@@ -271,6 +309,7 @@ body {
 }
 
 .app-item {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -278,7 +317,6 @@ body {
     cursor: pointer;
 }
 
-/* 软件图标保持微毛玻璃质感 */
 .app-icon-box, .dock-item {
     border-radius: 16px;
     background: rgba(235, 235, 240, 0.75);
@@ -317,7 +355,7 @@ body {
 /* 底部 Dock 栏 */
 .dock-container {
     position: absolute;
-    bottom: calc(25px + env(safe-area-inset-bottom)); /* 修改适配：防止被底部小白条遮挡 */
+    bottom: calc(25px + env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%);
     width: calc(100% - 30px);
@@ -328,4 +366,60 @@ body {
     align-items: center;
     padding: 0 10px;
     z-index: 100;
+}
+
+/* ================= 新增：编辑模式抖动与删除键 ================= */
+@keyframes jiggle {
+    0% { transform: rotate(-1.5deg) scale(1); }
+    50% { transform: rotate(1.5deg) scale(1); }
+    100% { transform: rotate(-1.5deg) scale(1); }
+}
+
+/* 错开抖动频率，更自然 */
+.edit-mode .jiggle-item:nth-child(even) {
+    animation: jiggle 0.28s infinite;
+}
+.edit-mode .jiggle-item:nth-child(odd) {
+    animation: jiggle 0.32s infinite reverse;
+}
+
+/* 删除按键样式 */
+.delete-btn {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    z-index: 20;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0);
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 应用图标的删除键定位 */
+.app-item .delete-btn {
+    top: -6px;
+    right: -4px;
+}
+
+/* 音乐组件的删除键定位 */
+.top-widget-container .delete-btn {
+    top: 5px;
+    right: 5px;
+}
+
+.edit-mode .delete-btn {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+}
+
+.delete-btn:active {
+    transform: scale(0.85) !important;
+}
+
+/* 删除时的消失动画 */
+.removing {
+    transform: scale(0) !important;
+    opacity: 0 !important;
+    transition: all 0.3s ease !important;
 }
