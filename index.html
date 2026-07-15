@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>纯净透镜 - 强折射变形测试</title>
+    <title>自由拖拽透镜 - 自定义背景测试</title>
     <style>
         /* 基础重置 */
         * {
@@ -18,10 +18,10 @@
             margin: 0;
             overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, "Roboto", sans-serif;
-            background-color: #000;
+            background-color: #111;
         }
 
-        /* 隐藏的 SVG 滤镜：用于制造强烈的物理折射 */
+        /* 隐藏的 SVG 滤镜：纯净强折射，无模糊 */
         .svg-filters {
             position: absolute;
             width: 0;
@@ -49,151 +49,119 @@
             height: 100vh;
             scroll-snap-align: center;
             position: relative;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
 
-        /* 背景1：经典网格（最容易看出线条被折射扭曲） */
+        /* 默认背景1：经典网格 */
         .page-1 {
             background-color: #e2edf8;
             background-image: 
-                linear-gradient(#9cbce0 2px, transparent 2px),
-                linear-gradient(90deg, #9cbce0 2px, transparent 2px);
-            background-size: 36px 36px;
-            background-position: center center;
+                linear-gradient(#8ca8c9 2px, transparent 2px),
+                linear-gradient(90deg, #8ca8c9 2px, transparent 2px);
+            background-size: 40px 40px;
         }
 
-        /* 背景2：斜向条纹（测试边缘错位折射） */
+        /* 默认背景2：高对比度几何 */
         .page-2 {
-            background: repeating-linear-gradient(
-                -45deg,
-                #d1dceb,
-                #d1dceb 20px,
-                #e2edf8 20px,
-                #e2edf8 40px
-            );
-        }
-
-        /* 背景3：色块与圆（测试大面积色彩拉伸） */
-        .page-3 {
-            background: #e2edf8;
+            background: linear-gradient(135deg, #2c3e50, #3498db);
             overflow: hidden;
         }
-        .page-3::before {
-            content: '';
-            position: absolute;
-            top: 30%; left: 10%;
-            width: 150px; height: 150px;
-            background: #4a90e2;
-            border-radius: 50%;
+        .page-2::before {
+            content: ''; position: absolute; top: 20%; left: 20%; width: 200px; height: 200px; background: #e74c3c; border-radius: 50%;
         }
-        .page-3::after {
-            content: '';
-            position: absolute;
-            bottom: 20%; right: 10%;
-            width: 200px; height: 200px;
-            background: #50e3c2;
-            border-radius: 50%;
+        .page-2::after {
+            content: ''; position: absolute; bottom: 20%; right: 10%; width: 150px; height: 300px; background: #f1c40f; transform: rotate(45deg);
         }
 
-        /* 底部滑动提示 */
-        .swipe-hint {
+        /* ================= 底部操作区 ================= */
+        .controls {
             position: fixed;
-            bottom: 40px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            gap: 12px;
+            z-index: 10;
+            pointer-events: auto;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 24px;
+            color: #fff;
             font-size: 14px;
             font-weight: 500;
-            pointer-events: none;
-            z-index: 10;
-            background: rgba(255,255,255,0.4);
-            padding: 8px 16px;
-            border-radius: 20px;
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-        /* ================= 悬浮在屏幕中央的透镜气泡 ================= */
-        .glass-wrapper {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            pointer-events: none;
-            z-index: 5;
-            padding: 16px;
-        }
-
-        .liquid-glass-card {
-            position: relative;
-            width: 100%;
-            max-width: 380px;
+        /* ================= 自由拖拽的透镜气泡 ================= */
+        .lens-card {
+            position: absolute; /* 改为绝对定位以支持拖拽 */
+            left: calc(50% - 175px); /* 初始居中 */
+            top: calc(50% - 42px);
+            width: 350px;
             height: 84px;
             border-radius: 42px;
-            pointer-events: auto; 
             
-            /* 1. 绝对纯透明，无任何底色 */
+            /* 1. 绝对纯透明 */
             background: transparent;
             
-            /* 2. 核心：调用强化后的强折射滤镜 */
-            backdrop-filter: url(#strong-refraction);
-            -webkit-backdrop-filter: url(#strong-refraction);
+            /* 2. 核心：调用强折射滤镜，彻底去掉 blur！ */
+            backdrop-filter: url(#pure-lens-refraction);
+            -webkit-backdrop-filter: url(#pure-lens-refraction);
             
-            /* 3. 彻底去除白光！只保留极微弱的暗色内阴影勾勒透镜边缘厚度 */
+            /* 3. 模拟玻璃切割边缘的微弱反光 */
             box-shadow: 
-                inset 0 1px 3px rgba(0, 0, 0, 0.05),
-                inset 0 -1px 3px rgba(0, 0, 0, 0.02),
-                0 8px 20px rgba(0, 0, 0, 0.04);
-            
-            /* 增加一个极细的半透明边框，模拟玻璃切割边缘 */
-            border: 1px solid rgba(0, 0, 0, 0.03);
+                inset 0 1px 2px rgba(255, 255, 255, 0.2),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.1),
+                0 10px 30px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             
             display: flex;
             align-items: center;
             padding: 0 20px 0 12px;
+            z-index: 100;
             
+            /* 动画仅应用于形变，不应用于 left/top 以免拖拽卡顿 */
             transform-origin: center center;
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
-            will-change: transform, box-shadow;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            will-change: transform, left, top;
+            cursor: grab;
         }
 
-        /* 长按悬浮状态 */
-        .liquid-glass-card.is-floating {
-            animation: float-anim 2s ease-in-out infinite;
-            box-shadow: 
-                inset 0 1px 3px rgba(0, 0, 0, 0.05),
-                inset 0 -1px 3px rgba(0, 0, 0, 0.02),
-                0 20px 30px rgba(0, 0, 0, 0.08); /* 悬浮时外部阴影加深 */
+        .lens-card:active {
+            cursor: grabbing;
         }
 
-        @keyframes float-anim {
-            0%, 100% { transform: translateY(0) scale(1.02); }
-            50% { transform: translateY(-10px) scale(1.02); }
-        }
-
-        /* 内部元素样式 */
+        /* 内部元素进一步透明化，让路给折射效果 */
         .icon-box {
             width: 60px;
             height: 60px;
-            background: rgba(255, 255, 255, 0.7); /* 稍微透一点底 */
+            background: rgba(255, 255, 255, 0.15); /* 极度透明 */
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 22px;
             display: flex;
             justify-content: center;
             align-items: center;
             margin-right: 14px;
             flex-shrink: 0;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
         }
 
         .icon-box svg {
-            width: 22px;
-            height: 22px;
-            color: #111827;
+            width: 24px;
+            height: 24px;
+            color: rgba(255, 255, 255, 0.9);
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
         }
 
         .text-content {
@@ -204,26 +172,29 @@
             min-width: 0;
         }
 
+        /* 文字增加阴影以适应各种复杂背景 */
         .title {
             font-size: 16px;
             font-weight: 600;
-            color: #111827;
+            color: #fff;
             margin-bottom: 4px;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.6);
         }
 
         .desc {
             font-size: 12px;
-            color: #4b5563;
+            color: rgba(255, 255, 255, 0.8);
             font-weight: 400;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.6);
         }
 
         .arrow-icon {
             width: 16px;
             height: 16px;
-            color: #6b7280;
+            color: rgba(255, 255, 255, 0.6);
             margin-left: 10px;
             flex-shrink: 0;
         }
@@ -231,107 +202,139 @@
 </head>
 <body>
 
-    <!-- 强化版 SVG 物理折射滤镜 -->
+    <!-- 纯净透镜 SVG 滤镜 (无模糊) -->
     <svg class="svg-filters">
-        <filter id="strong-refraction" color-interpolation-filters="sRGB">
-            <!-- 1. 生成基础波纹 -->
-            <feTurbulence type="fractalNoise" baseFrequency="0.008 0.015" numOctaves="1" result="noise" />
-            <!-- 2. 增强对比度，让波纹的峰谷更陡峭，从而产生更强烈的拉扯感 -->
+        <filter id="pure-lens-refraction" color-interpolation-filters="sRGB">
+            <!-- 降低频率，制造平滑的透镜曲面感 -->
+            <feTurbulence type="fractalNoise" baseFrequency="0.003 0.006" numOctaves="1" result="noise" />
             <feComponentTransfer in="noise" result="enhancedNoise">
-                <feFuncR type="linear" slope="2" intercept="-0.5"/>
-                <feFuncG type="linear" slope="2" intercept="-0.5"/>
+                <feFuncR type="linear" slope="2.5" intercept="-0.75"/>
+                <feFuncG type="linear" slope="2.5" intercept="-0.75"/>
             </feComponentTransfer>
-            <!-- 3. 置换背景，scale 提升至 45 (之前是25)，制造强烈的透镜扭曲 -->
-            <feDisplacementMap in="SourceGraphic" in2="enhancedNoise" scale="45" xChannelSelector="R" yChannelSelector="G" />
-            <!-- 4. 叠加极轻微的模糊，柔化折射边缘的锯齿 -->
-            <feGaussianBlur stdDeviation="0.5" />
+            <!-- 极高 scale 制造强烈的物理折射 -->
+            <feDisplacementMap in="SourceGraphic" in2="enhancedNoise" scale="50" xChannelSelector="R" yChannelSelector="G" />
+            <!-- 注意：这里彻底删除了 feGaussianBlur，保证 100% 清晰透彻 -->
         </filter>
     </svg>
 
     <!-- 背景滑动层 -->
-    <div class="bg-slider">
+    <div class="bg-slider" id="bgSlider">
         <div class="bg-page page-1"></div>
         <div class="bg-page page-2"></div>
-        <div class="bg-page page-3"></div>
     </div>
 
-    <!-- 底部提示 -->
-    <div class="swipe-hint">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 8l4 4-4 4"></path>
-            <path d="M3 12h18"></path>
-            <path d="M7 8l-4 4 4 4"></path>
-        </svg>
-        左右拖拽背景测试折射
-    </div>
-
-    <!-- 固定在中央的透镜气泡 -->
-    <div class="glass-wrapper">
-        <div class="liquid-glass-card" id="liquidCard">
-            <div class="icon-box">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="6" y="3" width="12" height="18" rx="3.5" ry="3.5"></rect>
-                    <circle cx="12" cy="16.5" r="1" fill="currentColor" stroke="none"></circle>
-                </svg>
-            </div>
-            
-            <div class="text-content">
-                <div class="title">查看 TA 的手机</div>
-                <div class="desc">顾凛 同意了你的请求，点击即可查看通...</div>
-            </div>
-
-            <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
+    <!-- 自由拖拽的透镜 -->
+    <div class="lens-card" id="lensCard">
+        <div class="icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="6" y="3" width="12" height="18" rx="3.5" ry="3.5"></rect>
+                <circle cx="12" cy="16.5" r="1" fill="currentColor" stroke="none"></circle>
             </svg>
         </div>
+        <div class="text-content">
+            <div class="title">透镜探测器</div>
+            <div class="desc">随意拖拽我，观察背景的物理折射...</div>
+        </div>
+        <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+    </div>
+
+    <!-- 底部控制区 -->
+    <div class="controls">
+        <label class="btn" for="uploadBg">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            上传背景
+        </label>
+        <input type="file" id="uploadBg" accept="image/*" hidden>
     </div>
 
     <script>
-        const card = document.getElementById('liquidCard');
-        let pressTimer;
-        let isLongPress = false;
+        // ================= 拖拽与果冻特效逻辑 =================
+        const lens = document.getElementById('lensCard');
+        let isDragging = false;
+        let startX, startY, initialLeft, initialTop;
 
-        const handlePressDown = (e) => {
-            isLongPress = false;
-            card.classList.remove('is-floating');
+        // 按下：触发果冻挤压并记录初始位置
+        const dragStart = (clientX, clientY) => {
+            isDragging = true;
+            startX = clientX;
+            startY = clientY;
+            initialLeft = lens.offsetLeft;
+            initialTop = lens.offsetTop;
             
-            card.style.transition = 'transform 0.2s cubic-bezier(0.25, 1, 0.5, 1)';
-            card.style.transform = 'scale(0.94) scaleX(1.03) scaleY(0.92)';
-
-            pressTimer = setTimeout(() => {
-                isLongPress = true;
-                card.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
-                card.style.transform = ''; 
-                card.classList.add('is-floating');
-            }, 350); 
+            // 果冻挤压形变
+            lens.style.transform = 'scale(0.96) scaleX(1.02) scaleY(0.94)';
         };
 
-        const handlePressUp = (e) => {
-            clearTimeout(pressTimer);
+        // 移动：更新位置
+        const dragMove = (clientX, clientY, e) => {
+            if (!isDragging) return;
+            e.preventDefault(); // 核心：防止拖拽透镜时触发背景滑动
             
-            if (!isLongPress) {
-                card.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
-                card.style.transform = 'scale(1.02) scaleX(0.97) scaleY(1.03)';
+            const dx = clientX - startX;
+            const dy = clientY - startY;
+            
+            lens.style.left = `${initialLeft + dx}px`;
+            lens.style.top = `${initialTop + dy}px`;
+        };
+
+        // 松开：果冻回弹
+        const dragEnd = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            // 果冻回弹动画
+            lens.style.transform = 'scale(1.02) scaleX(0.98) scaleY(1.02)';
+            setTimeout(() => {
+                lens.style.transform = 'scale(1)';
+            }, 150);
+        };
+
+        // 绑定移动端 Touch 事件
+        lens.addEventListener('touchstart', (e) => dragStart(e.touches[0].clientX, e.touches[0].clientY), { passive: false });
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) dragMove(e.touches[0].clientX, e.touches[0].clientY, e);
+        }, { passive: false });
+        document.addEventListener('touchend', dragEnd);
+
+        // 兼容 PC 端 Mouse 事件
+        lens.addEventListener('mousedown', (e) => dragStart(e.clientX, e.clientY));
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) dragMove(e.clientX, e.clientY, e);
+        });
+        document.addEventListener('mouseup', dragEnd);
+
+        // ================= 上传背景逻辑 =================
+        const uploadInput = document.getElementById('uploadBg');
+        const bgSlider = document.getElementById('bgSlider');
+
+        uploadInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                // 创建新的一页
+                const newPage = document.createElement('div');
+                newPage.className = 'bg-page';
+                newPage.style.backgroundImage = `url(${event.target.result})`;
                 
-                setTimeout(() => {
-                    card.style.transform = 'scale(1)';
-                }, 150);
-            } else {
-                card.classList.remove('is-floating');
-                card.style.transform = 'scale(1)';
-            }
-        };
-
-        card.addEventListener('touchstart', handlePressDown, { passive: true });
-        card.addEventListener('touchend', handlePressUp);
-        card.addEventListener('touchcancel', handlePressUp);
-
-        card.addEventListener('mousedown', handlePressDown);
-        card.addEventListener('mouseup', handlePressUp);
-        card.addEventListener('mouseleave', () => {
-            clearTimeout(pressTimer);
-            card.classList.remove('is-floating');
-            card.style.transform = 'scale(1)';
+                // 添加到滑动容器
+                bgSlider.appendChild(newPage);
+                
+                // 平滑滚动到新上传的页面
+                newPage.scrollIntoView({ behavior: 'smooth' });
+                
+                // 清空 input，允许重复上传同一张图
+                uploadInput.value = '';
+            };
+            reader.readAsDataURL(file);
         });
     </script>
 </body>
