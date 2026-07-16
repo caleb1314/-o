@@ -3,15 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
     <meta name="theme-color" content="#000000">
     <meta name="mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="manifest.json">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="液态桌面">
-
     <title>液态玻璃手机主页</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -21,9 +16,7 @@
         
         <!-- 顶栏 -->
         <div class="status-bar">
-            <div class="time-container">
-                <div class="time" id="clock"></div>
-            </div>
+            <div class="time-container"><div class="time" id="clock"></div></div>
             <div class="status-icons">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><rect x="0" y="12" width="4.5" height="6" rx="1.5"/><rect x="6.5" y="9" width="4.5" height="9" rx="1.5"/><rect x="13" y="6" width="4.5" height="12" rx="1.5"/><rect x="19.5" y="4" width="4.5" height="14" rx="1.5"/><rect x="0" y="20" width="4.5" height="4" rx="1.5"/><rect x="6.5" y="20" width="4.5" height="4" rx="1.5"/><rect x="13" y="20" width="4.5" height="4" rx="1.5"/><rect x="19.5" y="20" width="4.5" height="4" rx="1.5"/></svg>
                 <svg width="20" height="16" viewBox="0 0 24 20" fill="#fff"><path d="M12 3c4.6 0 8.8 1.8 12 4.7l-1.5 1.8C19.8 7 16.1 5.3 12 5.3s-7.8 1.7-10.5 4.2L0 7.7C3.2 4.8 7.4 3 12 3z" stroke="#fff" stroke-width="0.5"/><path d="M12 9.5c2.8 0 5.4 1.1 7.3 2.9l-1.5 1.8C16.5 13 14.4 12.2 12 12.2s-4.5.8-5.8 2L4.7 12.4c1.9-1.8 4.5-2.9 7.3-2.9z" stroke="#fff" stroke-width="0.5"/><path d="M12 15.8c1.1 0 2.1.4 2.8 1.1l-2.8 3.4-2.8-3.4c.7-.7 1.7-1.1 2.8-1.1z" stroke="#fff" stroke-width="0.5"/></svg>
@@ -41,7 +34,6 @@
         <div class="edit-controls">
             <div style="position: relative;">
                 <div class="edit-btn liquid-glass" id="edit-btn">编辑</div>
-                <!-- 弹窗菜单 -->
                 <div class="edit-menu liquid-glass" id="edit-menu">
                     <div class="edit-menu-item" id="menu-add">添加组件</div>
                     <div class="edit-menu-item" id="menu-wallpaper">更换壁纸</div>
@@ -59,77 +51,52 @@
             <div class="page">
                 <div class="app-grid">
                     <!-- 音乐组件 (大组件 4x3) -->
-                    <div class="widget-4x3 jiggle-item">
-                        <div class="delete-btn">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg>
-                        </div>
-
-                        <!-- 恢复原样的耳机线 -->
-                        <svg class="connecting-lines" viewBox="0 0 400 250" preserveAspectRatio="xMidYMin slice">
-                            <defs>
-                                <linearGradient id="fade-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" style="stop-color:#555555;stop-opacity:1" />
-                                    <stop offset="85%" style="stop-color:#555555;stop-opacity:0" />
-                                </linearGradient>
-                            </defs>
-                            <circle cx="151" cy="100" r="4" fill="#555555" />
-                            <circle cx="249" cy="100" r="4" fill="#555555" />
-                            <path d="M 151 100 Q 100 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/>
-                            <path d="M 249 100 Q 300 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/>
-                        </svg>
-                        
+                    <div class="widget-4x3 jiggle-item grid-item" style="--col: 1; --row: 1; --w: 4; --h: 3;">
+                        <div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+                        <svg class="connecting-lines" viewBox="0 0 400 250" preserveAspectRatio="xMidYMin slice"><defs><linearGradient id="fade-grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#555555;stop-opacity:1" /><stop offset="85%" style="stop-color:#555555;stop-opacity:0" /></linearGradient></defs><circle cx="151" cy="100" r="4" fill="#555555" /><circle cx="249" cy="100" r="4" fill="#555555" /><path d="M 151 100 Q 100 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/><path d="M 249 100 Q 300 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/></svg>
                         <div class="avatars-wrapper">
                             <div class="avatar-group"><div class="speech-bubble" contenteditable="true" spellcheck="false">你在左边</div><div class="avatar-circle"></div></div>
                             <div class="avatar-group"><div class="speech-bubble" contenteditable="true" spellcheck="false">我紧靠右</div><div class="avatar-circle"></div></div>
                         </div>
                         <div class="center-text" contenteditable="true" spellcheck="false">Twenty four seven with us</div>
-                        
                         <div class="music-player-v2">
                             <div class="music-title">Pink Lavender</div>
                             <div class="music-subtitle" contenteditable="true" spellcheck="false">· ⁺ ⋆ ‿ ıllıllı ‿ ⋆ ⁺ ·</div>
-                            <div class="progress-container">
-                                <div class="time-label">1:26</div>
-                                <div class="progress-bar"><div class="progress-fill"></div></div>
-                                <div class="time-label">3:48</div>
-                            </div>
+                            <div class="progress-container"><div class="time-label">1:26</div><div class="progress-bar"><div class="progress-fill"></div></div><div class="time-label">3:48</div></div>
                             <div class="controls-row">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="#666"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                                <div class="main-controls">
-                                    <svg width="24" height="24" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M22 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg>
-                                    <svg width="32" height="32" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="2" fill="#333"/><rect x="14" y="5" width="4" height="14" rx="2" fill="#333"/></svg>
-                                    <svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M13 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg>
-                                </div>
+                                <div class="main-controls"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M22 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg><svg width="32" height="32" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="2" fill="#333"/><rect x="14" y="5" width="4" height="14" rx="2" fill="#333"/></svg><svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M13 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg></div>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><path d="M9.52 14.47 A 3.5 3.5 0 1 1 14.48 14.47"/><path d="M7.05 16.95 A 7 7 0 1 1 16.95 16.95"/><path d="M4.58 19.42 A 10.5 10.5 0 1 1 19.42 19.42"/><path d="M12 15.5L16.5 21H7.5L12 15.5Z" fill="#333"/></svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">微信</div></div>
-                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">音乐</div></div>
-                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">小红书</div></div>
-                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">Ins</div></div>
+                    <div class="app-item jiggle-item grid-item" style="--col: 1; --row: 4; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">微信</div></div>
+                    <div class="app-item jiggle-item grid-item" style="--col: 2; --row: 4; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">音乐</div></div>
+                    <div class="app-item jiggle-item grid-item" style="--col: 3; --row: 4; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">小红书</div></div>
+                    <div class="app-item jiggle-item grid-item" style="--col: 4; --row: 4; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">Ins</div></div>
                 </div>
             </div>
 
             <!-- 第二页 -->
             <div class="page">
                 <div class="app-grid">
-                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">美化</div></div>
-                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">情侣空间</div></div>
-                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">工具</div></div>
-                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">社区</div></div>
-                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">应用商店</div></div>
-                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">世界</div></div>
-                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">书架</div></div>
-                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">影视</div></div>
+                    <div class="app-item jiggle-item grid-item" style="--col: 1; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">美化</div></div>
+                    <div class="app-item jiggle-item grid-item" style="--col: 2; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">情侣空间</div></div>
+                    <div class="app-item jiggle-item grid-item" style="--col: 3; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">工具</div></div>
+                    <div class="app-item jiggle-item grid-item" style="--col: 4; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">社区</div></div>
+                    <div class="app-item jiggle-item grid-item" style="--col: 1; --row: 2; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">应用商店</div></div>
+                    <div class="app-item jiggle-item grid-item" style="--col: 2; --row: 2; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">世界</div></div>
+                    <div class="app-item jiggle-item grid-item" style="--col: 3; --row: 2; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">书架</div></div>
+                    <div class="app-item jiggle-item grid-item" style="--col: 4; --row: 2; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">影视</div></div>
                 </div>
             </div>
 
             <!-- 第三页 -->
             <div class="page">
                 <div class="app-grid">
-                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">异世界</div></div>
-                    <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">查手机</div></div>
+                    <div class="app-item jiggle-item grid-item" style="--col: 1; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">异世界</div></div>
+                    <div class="app-item jiggle-item grid-item" style="--col: 2; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">查手机</div></div>
                 </div>
             </div>
 
@@ -143,67 +110,50 @@
             <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="dock-item"></div><div class="app-name">浏览器</div></div>
         </div>
 
-        <!-- 隐藏的壁纸上传输入框 -->
         <input type="file" id="wallpaper-input" accept="image/*" style="display: none;">
 
-        <!-- 页面预览覆盖层 -->
         <div class="preview-overlay" id="preview-overlay">
             <div class="preview-container" id="preview-container"></div>
         </div>
 
-        <!-- 组件面板 -->
+        <!-- 组件面板 (UI重绘) -->
         <div class="widget-panel" id="widget-panel">
             <div class="panel-header">
                 <div class="panel-title">添加组件</div>
                 <div class="size-tabs">
-    <div class="size-tab active" data-size="small">小</div>
-    <div class="size-tab" data-size="medium">中</div>
-    <div class="size-tab" data-size="large">大</div>
-</div>
-                <div class="panel-header-right">
-                    <div class="panel-new-btn" id="panel-new-btn">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-</div>
-                    <div class="close-panel" id="close-panel">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </div>
+                    <div class="size-tab active" data-size="small">小</div>
+                    <div class="size-tab" data-size="medium">中</div>
+                    <div class="size-tab" data-size="large">大</div>
+                </div>
+                <div class="panel-new-btn" id="panel-new-btn">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </div>
             </div>
             <div class="widget-list">
-    <!-- 小组件 -->
-    <div class="widget-option" id="add-img-1x2" data-size="small">
-        <div class="widget-preview">
-            <svg width="20" height="36" viewBox="0 0 20 36" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="18" height="34" rx="4"/><circle cx="7" cy="10" r="2"/><polyline points="1 22 7 16 13 22 18 18 19 19"/></svg>
-        </div>
-        <div class="widget-name">竖图 (1×2)</div>
-    </div>
-    <div class="widget-option" id="add-img-2x1" data-size="small">
-        <div class="widget-preview">
-            <svg width="36" height="20" viewBox="0 0 36 20" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="34" height="18" rx="4"/><circle cx="10" cy="7" r="2"/><polyline points="1 13 10 7 18 13 26 9 35 11"/></svg>
-        </div>
-        <div class="widget-name">横图 (2×1)</div>
-    </div>
-    <!-- 中组件 -->
-    <div class="widget-option hidden" id="add-img-widget" data-size="medium">
-        <div class="widget-preview">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        </div>
-        <div class="widget-name">方图 (2×2)</div>
-    </div>
-    <div class="widget-option hidden" id="add-img-4x2" data-size="medium">
-        <div class="widget-preview">
-            <svg width="44" height="22" viewBox="0 0 44 22" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="42" height="20" rx="4"/><circle cx="10" cy="8" r="2.5"/><polyline points="1 15 10 8 20 15 32 9 43 12"/></svg>
-        </div>
-        <div class="widget-name">宽图 (4×2)</div>
-    </div>
-    <!-- 大组件 -->
-    <div class="widget-option hidden" id="add-music-widget" data-size="large">
-        <div class="widget-preview">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="15.5" r="2.5"/><path d="M8 17V5l12-2v12"/></svg>
-        </div>
-        <div class="widget-name">音乐播放器</div>
-    </div>
-</div>
+                <!-- 小组件 -->
+                <div class="widget-option" id="add-img-1x2" data-size="small">
+                    <div class="widget-preview"><svg width="20" height="36" viewBox="0 0 20 36" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="18" height="34" rx="4"/><circle cx="7" cy="10" r="2"/><polyline points="1 22 7 16 13 22 18 18 19 19"/></svg></div>
+                    <div class="widget-name">竖图 (1×2)</div>
+                </div>
+                <div class="widget-option" id="add-img-2x1" data-size="small">
+                    <div class="widget-preview"><svg width="36" height="20" viewBox="0 0 36 20" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="34" height="18" rx="4"/><circle cx="10" cy="7" r="2"/><polyline points="1 13 10 7 18 13 26 9 35 11"/></svg></div>
+                    <div class="widget-name">横图 (2×1)</div>
+                </div>
+                <!-- 中组件 -->
+                <div class="widget-option hidden" id="add-img-widget" data-size="medium">
+                    <div class="widget-preview"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+                    <div class="widget-name">方图 (2×2)</div>
+                </div>
+                <div class="widget-option hidden" id="add-img-4x2" data-size="medium">
+                    <div class="widget-preview"><svg width="44" height="22" viewBox="0 0 44 22" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="42" height="20" rx="4"/><circle cx="10" cy="8" r="2.5"/><polyline points="1 15 10 8 20 15 32 9 43 12"/></svg></div>
+                    <div class="widget-name">宽图 (4×2)</div>
+                </div>
+                <!-- 大组件 -->
+                <div class="widget-option hidden" id="add-music-widget" data-size="large">
+                    <div class="widget-preview"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="15.5" r="2.5"/><path d="M8 17V5l12-2v12"/></svg></div>
+                    <div class="widget-name">音乐播放器</div>
+                </div>
+            </div>
         </div>
 
     </div>
