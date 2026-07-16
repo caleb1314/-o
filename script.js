@@ -78,7 +78,6 @@ if ('getBattery' in navigator) {
 
 // ================= 动态事件绑定 =================
 function bindAllDynamicEvents() {
-    // 重新绑定删除键事件
     const deleteBtns = document.querySelectorAll('.delete-btn');
     deleteBtns.forEach(btn => {
         const newBtn = btn.cloneNode(true);
@@ -99,7 +98,6 @@ function bindAllDynamicEvents() {
         });
     });
 
-    // 重新绑定 App 图标事件
     const appItems = document.querySelectorAll('.app-item');
     appItems.forEach(item => {
         const newBtn = item.cloneNode(true);
@@ -139,7 +137,6 @@ function bindAllDynamicEvents() {
         item.addEventListener('mouseleave', cancelPressAnim);
     });
 
-    // 重新绑定 2x2 图片组件事件
     const imgWidgets = document.querySelectorAll('.widget-2x2');
     imgWidgets.forEach(widget => {
         const newWidget = widget.cloneNode(true);
@@ -179,6 +176,7 @@ function bindAllDynamicEvents() {
                 reader.onload = async (event) => {
                     const base64 = event.target.result;
                     content.style.backgroundImage = `url(${base64})`;
+                    content.classList.add('has-image'); // 添加无边框类
                     const placeholder = content.querySelector('.upload-placeholder');
                     if (placeholder) placeholder.style.display = 'none';
                     await saveToDB(`widget_${widgetId}`, base64);
@@ -202,7 +200,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (savedPages) document.querySelector('.pages-container').innerHTML = savedPages;
     if (savedDock) document.querySelector('.dock-container').innerHTML = savedDock;
     
-    // 恢复图片组件的背景
     const widgets = document.querySelectorAll('.widget-2x2');
     for (const widget of widgets) {
         const widgetId = widget.getAttribute('data-widget-id');
@@ -211,6 +208,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             if (base64) {
                 const content = widget.querySelector('.image-widget-content');
                 content.style.backgroundImage = `url(${base64})`;
+                content.classList.add('has-image');
                 const placeholder = content.querySelector('.upload-placeholder');
                 if (placeholder) placeholder.style.display = 'none';
             }
@@ -320,6 +318,10 @@ if (editBtn && editMenu) {
 // ================= 新增：添加组件逻辑 =================
 const widgetPanel = document.getElementById('widget-panel');
 const closePanelBtn = document.getElementById('close-panel');
+const panelAddBtn = document.getElementById('panel-add-btn');
+
+let selectedWidgetHTML = null;
+let selectedWidgetCapacity = 0;
 
 document.getElementById('menu-add').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -329,22 +331,54 @@ document.getElementById('menu-add').addEventListener('click', (e) => {
 
 closePanelBtn.addEventListener('click', () => {
     widgetPanel.classList.remove('show');
+    clearWidgetSelection();
 });
 
 document.addEventListener('click', (e) => {
-    // 关闭编辑菜单
     if (editMenu && editMenu.classList.contains('show')) {
         if (!editBtn.contains(e.target) && !editMenu.contains(e.target)) {
             editMenu.classList.remove('show');
         }
     }
-    // 关闭组件面板
     if (widgetPanel && widgetPanel.classList.contains('show')) {
         if (!widgetPanel.contains(e.target) && e.target.id !== 'menu-add') {
             widgetPanel.classList.remove('show');
+            clearWidgetSelection();
         }
     }
 });
+
+// 选中组件逻辑
+document.querySelectorAll('.widget-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+        document.querySelectorAll('.widget-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        
+        if (opt.id === 'add-img-widget') {
+            selectedWidgetHTML = getImageWidgetHTML();
+            selectedWidgetCapacity = 4; // 2x2 = 4
+        } else if (opt.id === 'add-music-widget') {
+            selectedWidgetHTML = musicWidgetHTML;
+            selectedWidgetCapacity = 12; // 4x3 = 12
+        }
+    });
+});
+
+// 点击添加按键
+panelAddBtn.addEventListener('click', () => {
+    if (selectedWidgetHTML) {
+        addWidgetToCurrentPage(selectedWidgetHTML, selectedWidgetCapacity);
+        widgetPanel.classList.remove('show');
+        clearWidgetSelection();
+    } else {
+        showToast('请先选择一个组件');
+    }
+});
+
+function clearWidgetSelection() {
+    selectedWidgetHTML = null;
+    document.querySelectorAll('.widget-option').forEach(o => o.classList.remove('selected'));
+}
 
 // 获取当前页码
 function getCurrentPageIndex() {
@@ -354,7 +388,7 @@ function getCurrentPageIndex() {
     return Math.round(scrollLeft / width);
 }
 
-// 计算页面容量 (最大24)
+// 计算页面容量 (最大24 = 4x6)
 function getPageCapacity(page) {
     let used = 0;
     const items = page.querySelectorAll('.app-item, .widget-2x2, .top-widget-container');
@@ -366,16 +400,67 @@ function getPageCapacity(page) {
     return 24 - used;
 }
 
-// 弹窗提示
+// ================= 顶部清透玻璃弹窗逻辑 =================
+let activeNotifications = [];
+let notifCounter = 0;
+
 function showToast(msg) {
-    const toast = document.getElementById('toast-message');
-    toast.textContent = msg;
-    toast.classList.remove('show');
-    void toast.offsetWidth; // 触发重绘
-    toast.classList.add('show');
+    notifCounter++;
+    const id = notifCounter;
+
+    const banner = document.createElement('div');
+    banner.className = 'notification-banner';
+    banner.innerHTML = `
+        <div class="text-content">
+            <div class="title">提示</div>
+            <div class="message">${msg}</div>
+        </div>
+    `;
+
+    document.body.appendChild(banner);
+    activeNotifications.unshift({ id, el: banner });
+    void banner.offsetWidth; // 触发重绘
+    updateStack();
+
     setTimeout(() => {
-        toast.classList.remove('show');
+        removeNotification(id);
     }, 1500);
+}
+
+function updateStack() {
+    activeNotifications.forEach((notif, index) => {
+        const el = notif.el;
+        if (index === 0) {
+            el.style.transform = `translate(-50%, 0) scale(1)`;
+            el.style.opacity = '1';
+            el.style.zIndex = 9999;
+        } else if (index === 1) {
+            el.style.transform = `translate(-50%, 12px) scale(0.92)`;
+            el.style.opacity = '0.85';
+            el.style.zIndex = 9998;
+        } else if (index === 2) {
+            el.style.transform = `translate(-50%, 24px) scale(0.84)`;
+            el.style.opacity = '0.5';
+            el.style.zIndex = 9997;
+        } else {
+            el.style.transform = `translate(-50%, 36px) scale(0.75)`;
+            el.style.opacity = '0';
+            el.style.zIndex = 9996;
+        }
+    });
+}
+
+function removeNotification(id) {
+    const index = activeNotifications.findIndex(n => n.id === id);
+    if (index > -1) {
+        const notif = activeNotifications[index];
+        activeNotifications.splice(index, 1);
+        notif.el.classList.add('leaving');
+        updateStack();
+        setTimeout(() => {
+            if (notif.el.parentNode) notif.el.parentNode.removeChild(notif.el);
+        }, 400);
+    }
 }
 
 // 插入组件到当前页
@@ -424,7 +509,7 @@ function getImageWidgetHTML() {
 
 // 音乐组件模板
 const musicWidgetHTML = `
-<div class="top-widget-container jiggle-item" style="grid-column: span 4;">
+<div class="top-widget-container jiggle-item">
     <div class="delete-btn">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg>
     </div>
@@ -465,17 +550,6 @@ const musicWidgetHTML = `
     </div>
 </div>
 `;
-
-// 绑定面板点击事件
-document.getElementById('add-img-widget').addEventListener('click', () => {
-    addWidgetToCurrentPage(getImageWidgetHTML(), 4);
-    widgetPanel.classList.remove('show');
-});
-
-document.getElementById('add-music-widget').addEventListener('click', () => {
-    addWidgetToCurrentPage(musicWidgetHTML, 12);
-    widgetPanel.classList.remove('show');
-});
 
 // ================= 取消修改逻辑 =================
 document.getElementById('menu-cancel').addEventListener('click', (e) => {
