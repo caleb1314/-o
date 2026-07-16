@@ -76,7 +76,7 @@ if ('getBattery' in navigator) {
     });
 }
 
-// ================= 全局删除事件委托 (修复删除失效bug) =================
+// ================= 全局删除事件委托 =================
 const screen = document.getElementById('screen');
 screen.addEventListener('click', (e) => {
     const deleteBtn = e.target.closest('.delete-btn');
@@ -93,9 +93,8 @@ screen.addEventListener('click', (e) => {
     }
 });
 
-// ================= 动态事件绑定 (按压动画与图片上传) =================
+// ================= 动态事件绑定 =================
 function bindAllDynamicEvents() {
-    // 重新绑定 App 图标按压动画
     const appItems = document.querySelectorAll('.app-item');
     appItems.forEach(item => {
         const newBtn = item.cloneNode(true);
@@ -135,7 +134,6 @@ function bindAllDynamicEvents() {
         item.addEventListener('mouseleave', cancelPressAnim);
     });
 
-    // 重新绑定图片组件事件
     const imgWidgets = document.querySelectorAll('.widget-2x2');
     imgWidgets.forEach(widget => {
         const newWidget = widget.cloneNode(true);
@@ -313,7 +311,7 @@ if (editBtn && editMenu) {
     });
 }
 
-// ================= 新增：添加组件逻辑 =================
+// ================= 添加组件逻辑 =================
 const widgetPanel = document.getElementById('widget-panel');
 const closePanelBtn = document.getElementById('close-panel');
 const panelAddBtn = document.getElementById('panel-add-btn');
@@ -389,9 +387,9 @@ function getCurrentPageIndex() {
 // 计算页面容量 (最大24 = 4x6)
 function getPageCapacity(page) {
     let used = 0;
-    const items = page.querySelectorAll('.app-item, .widget-2x2, .top-widget-container');
+    const items = page.querySelectorAll('.app-item, .widget-2x2, .widget-4x3');
     items.forEach(item => {
-        if (item.classList.contains('top-widget-container')) used += 12; 
+        if (item.classList.contains('widget-4x3')) used += 12; 
         else if (item.classList.contains('widget-2x2')) used += 4;       
         else if (item.classList.contains('app-item')) used += 1;         
     });
@@ -505,9 +503,9 @@ function getImageWidgetHTML() {
     `;
 }
 
-// 音乐组件模板 (更新了耳机线SVG)
+// 音乐组件模板 (恢复原样)
 const musicWidgetHTML = `
-<div class="top-widget-container jiggle-item">
+<div class="widget-4x3 jiggle-item">
     <div class="delete-btn">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg>
     </div>
@@ -518,10 +516,10 @@ const musicWidgetHTML = `
                 <stop offset="85%" style="stop-color:#555555;stop-opacity:0" />
             </linearGradient>
         </defs>
-        <circle cx="151" cy="75" r="4" fill="#555555" />
-        <circle cx="249" cy="75" r="4" fill="#555555" />
-        <path d="M 151 75 Q 80 140, 140 230" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M 249 75 Q 320 140, 260 230" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="151" cy="100" r="4" fill="#555555" />
+        <circle cx="249" cy="100" r="4" fill="#555555" />
+        <path d="M 151 100 Q 100 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M 249 100 Q 300 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/>
     </svg>
     <div class="avatars-wrapper">
         <div class="avatar-group"><div class="speech-bubble" contenteditable="true" spellcheck="false">你在左边</div><div class="avatar-circle"></div></div>
