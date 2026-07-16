@@ -1,4 +1,3 @@
-// script.js
 // ================= IndexedDB 持久化逻辑 =================
 const DB_NAME = 'LiquidDeskDB';
 const STORE_NAME = 'deskStore';
@@ -79,7 +78,7 @@ if ('getBattery' in navigator) {
 
 // ================= 动态事件绑定 =================
 function bindAllDynamicEvents() {
-    // 处理删除键
+    // 重新绑定删除键事件
     const deleteBtns = document.querySelectorAll('.delete-btn');
     deleteBtns.forEach(btn => {
         const newBtn = btn.cloneNode(true);
@@ -94,20 +93,20 @@ function bindAllDynamicEvents() {
                 item.classList.add('removing');
                 setTimeout(() => {
                     item.remove();
-                    saveCurrentState(); // 删除后自动保存
+                    saveCurrentState();
                 }, 300);
             }
         });
     });
 
-    // 处理应用图标点击动画
-    const appItems = document.querySelectorAll('.app-item:not(.widget-image-item)');
+    // 重新绑定 App 图标事件
+    const appItems = document.querySelectorAll('.app-item');
     appItems.forEach(item => {
         const newBtn = item.cloneNode(true);
         item.replaceWith(newBtn);
     });
 
-    document.querySelectorAll('.app-item:not(.widget-image-item)').forEach(item => {
+    document.querySelectorAll('.app-item').forEach(item => {
         const icon = item.querySelector('.app-icon-box') || item.querySelector('.dock-item');
         if (!icon) return;
 
@@ -140,33 +139,49 @@ function bindAllDynamicEvents() {
         item.addEventListener('mouseleave', cancelPressAnim);
     });
 
-    // 处理图片组件的点击上传
-    document.querySelectorAll('.widget-image-item').forEach(item => {
-        const box = item.querySelector('.widget-image-box');
-        const input = item.querySelector('.widget-image-input');
-        
-        // 移除旧事件
-        const newBox = box.cloneNode(true);
-        box.replaceWith(newBox);
-        
-        const updatedBox = item.querySelector('.widget-image-box');
-        const updatedInput = item.querySelector('.widget-image-input');
-        const updatedBg = item.querySelector('.widget-image-bg');
-        
-        updatedBox.addEventListener('click', (e) => {
+    // 重新绑定 2x2 图片组件事件
+    const imgWidgets = document.querySelectorAll('.widget-2x2');
+    imgWidgets.forEach(widget => {
+        const newWidget = widget.cloneNode(true);
+        widget.replaceWith(newWidget);
+    });
+
+    document.querySelectorAll('.widget-2x2').forEach(widget => {
+        const content = widget.querySelector('.image-widget-content');
+        const input = widget.querySelector('.widget-img-input');
+        const widgetId = widget.getAttribute('data-widget-id');
+
+        const pressDownAnim = () => {
             if (screen.classList.contains('edit-mode')) return;
-            updatedInput.click();
+            content.style.transform = 'scale(0.95)';
+        };
+        const pressUpAnim = () => {
+            if (screen.classList.contains('edit-mode')) return;
+            content.style.transform = 'scale(1)';
+        };
+
+        widget.addEventListener('touchstart', pressDownAnim, { passive: true });
+        widget.addEventListener('touchend', pressUpAnim);
+        widget.addEventListener('touchcancel', pressUpAnim);
+        widget.addEventListener('mousedown', pressDownAnim);
+        widget.addEventListener('mouseup', pressUpAnim);
+        widget.addEventListener('mouseleave', pressUpAnim);
+
+        content.addEventListener('click', (e) => {
+            if (screen.classList.contains('edit-mode')) return;
+            input.click();
         });
-        
-        updatedInput.addEventListener('change', (e) => {
+
+        input.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = async (event) => {
                     const base64 = event.target.result;
-                    updatedBg.style.backgroundImage = `url(${base64})`;
-                    const widgetId = item.getAttribute('data-widget-id');
-                    await saveToDB(widgetId, base64);
+                    content.style.backgroundImage = `url(${base64})`;
+                    const placeholder = content.querySelector('.upload-placeholder');
+                    if (placeholder) placeholder.style.display = 'none';
+                    await saveToDB(`widget_${widgetId}`, base64);
                     await saveCurrentState();
                 };
                 reader.readAsDataURL(file);
@@ -187,19 +202,21 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (savedPages) document.querySelector('.pages-container').innerHTML = savedPages;
     if (savedDock) document.querySelector('.dock-container').innerHTML = savedDock;
     
-    // 加载图片组件的缓存图片
-    const imageWidgets = document.querySelectorAll('.widget-image-item');
-    for (const widget of imageWidgets) {
+    // 恢复图片组件的背景
+    const widgets = document.querySelectorAll('.widget-2x2');
+    for (const widget of widgets) {
         const widgetId = widget.getAttribute('data-widget-id');
         if (widgetId) {
-            const base64 = await getFromDB(widgetId);
+            const base64 = await getFromDB(`widget_${widgetId}`);
             if (base64) {
-                const bg = widget.querySelector('.widget-image-bg');
-                if (bg) bg.style.backgroundImage = `url(${base64})`;
+                const content = widget.querySelector('.image-widget-content');
+                content.style.backgroundImage = `url(${base64})`;
+                const placeholder = content.querySelector('.upload-placeholder');
+                if (placeholder) placeholder.style.display = 'none';
             }
         }
     }
-    
+
     bindAllDynamicEvents();
 });
 
@@ -278,23 +295,8 @@ const doneBtn = document.getElementById('done-btn');
 
 const saveCurrentState = async () => {
     if(document.activeElement) document.activeElement.blur();
-    
-    // 临时移除图片组件的 base64 背景，避免 HTML 缓存过大
-    const bgs = document.querySelectorAll('.widget-image-bg');
-    const bgCaches = [];
-    bgs.forEach(bg => {
-        bgCaches.push(bg.style.backgroundImage);
-        bg.style.backgroundImage = '';
-    });
-    
     const pagesHTML = document.querySelector('.pages-container').innerHTML;
     const dockHTML = document.querySelector('.dock-container').innerHTML;
-    
-    // 恢复背景
-    bgs.forEach((bg, index) => {
-        bg.style.backgroundImage = bgCaches[index];
-    });
-    
     await saveToDB('pagesHTML', pagesHTML);
     await saveToDB('dockHTML', dockHTML);
 };
@@ -315,56 +317,114 @@ if (editBtn && editMenu) {
     });
 }
 
+// ================= 新增：添加组件逻辑 =================
+const widgetPanel = document.getElementById('widget-panel');
+const closePanelBtn = document.getElementById('close-panel');
+
+document.getElementById('menu-add').addEventListener('click', (e) => {
+    e.stopPropagation();
+    editMenu.classList.remove('show');
+    widgetPanel.classList.add('show');
+});
+
+closePanelBtn.addEventListener('click', () => {
+    widgetPanel.classList.remove('show');
+});
+
 document.addEventListener('click', (e) => {
+    // 关闭编辑菜单
     if (editMenu && editMenu.classList.contains('show')) {
         if (!editBtn.contains(e.target) && !editMenu.contains(e.target)) {
             editMenu.classList.remove('show');
         }
     }
+    // 关闭组件面板
+    if (widgetPanel && widgetPanel.classList.contains('show')) {
+        if (!widgetPanel.contains(e.target) && e.target.id !== 'menu-add') {
+            widgetPanel.classList.remove('show');
+        }
+    }
 });
 
-// ================= 新增：添加组件与空间计算逻辑 =================
-const widgetPanelOverlay = document.getElementById('widget-panel-overlay');
+// 获取当前页码
+function getCurrentPageIndex() {
+    const container = document.querySelector('.pages-container');
+    const scrollLeft = container.scrollLeft;
+    const width = container.clientWidth;
+    return Math.round(scrollLeft / width);
+}
 
-document.getElementById('menu-add').addEventListener('click', (e) => {
-    e.stopPropagation();
-    editMenu.classList.remove('show');
-    widgetPanelOverlay.classList.add('show');
-});
+// 计算页面容量 (最大24)
+function getPageCapacity(page) {
+    let used = 0;
+    const items = page.querySelectorAll('.app-item, .widget-2x2, .top-widget-container');
+    items.forEach(item => {
+        if (item.classList.contains('top-widget-container')) used += 12; // 音乐组件占 4x3
+        else if (item.classList.contains('widget-2x2')) used += 4;       // 图片组件占 2x2
+        else if (item.classList.contains('app-item')) used += 1;         // App 占 1x1
+    });
+    return 24 - used;
+}
 
-document.getElementById('widget-panel-close').addEventListener('click', () => {
-    widgetPanelOverlay.classList.remove('show');
-});
-
+// 弹窗提示
 function showToast(msg) {
-    const toast = document.getElementById('toast-container');
-    const toastMsg = toast.querySelector('.toast-message');
-    toastMsg.textContent = msg;
+    const toast = document.getElementById('toast-message');
+    toast.textContent = msg;
+    toast.classList.remove('show');
+    void toast.offsetWidth; // 触发重绘
     toast.classList.add('show');
     setTimeout(() => {
         toast.classList.remove('show');
-    }, 1000);
+    }, 1500);
 }
 
-function getPageUsedSpace(page) {
-    let space = 0;
-    // 音乐组件算作 12 个格子 (4x3)
-    const musicWidget = page.querySelector('.top-widget-container');
-    if (musicWidget) space += 12;
+// 插入组件到当前页
+function addWidgetToCurrentPage(htmlString, capacityNeeded) {
+    const pageIndex = getCurrentPageIndex();
+    const pages = document.querySelectorAll('.pages-container .page');
+    if (pageIndex >= pages.length) return;
     
-    // 图片组件每个算作 4 个格子 (2x2)
-    const imageWidgets = page.querySelectorAll('.widget-image-item');
-    space += imageWidgets.length * 4;
-    
-    // 普通应用图标每个算作 1 个格子 (1x1)
-    const appItems = page.querySelectorAll('.app-grid > .app-item:not(.widget-image-item)');
-    space += appItems.length * 1;
-    
-    return space;
+    const page = pages[pageIndex];
+    const appGrid = page.querySelector('.app-grid');
+    if (!appGrid) return;
+
+    const currentCapacity = getPageCapacity(page);
+    if (currentCapacity < capacityNeeded) {
+        showToast('空间不足，无法添加');
+        return;
+    }
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlString.trim();
+    const newElement = tempDiv.firstChild;
+
+    appGrid.appendChild(newElement);
+    bindAllDynamicEvents();
+    saveCurrentState();
 }
 
+// 图片组件模板
+function getImageWidgetHTML() {
+    const widgetId = 'img-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+    return `
+    <div class="widget-2x2 jiggle-item" data-widget-id="${widgetId}">
+        <div class="delete-btn">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="image-widget-content liquid-glass">
+            <input type="file" class="widget-img-input" accept="image/*" style="display:none;">
+            <div class="upload-placeholder">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <span>添加照片</span>
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+// 音乐组件模板
 const musicWidgetHTML = `
-<div class="top-widget-container jiggle-item">
+<div class="top-widget-container jiggle-item" style="grid-column: span 4;">
     <div class="delete-btn">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg>
     </div>
@@ -406,56 +466,15 @@ const musicWidgetHTML = `
 </div>
 `;
 
-function addWidgetToCurrentPage(type) {
-    const pagesContainer = document.querySelector('.pages-container');
-    const pages = document.querySelectorAll('.page');
-    const currentIndex = Math.round(pagesContainer.scrollLeft / pagesContainer.clientWidth);
-    const currentPage = pages[currentIndex];
-    
-    const usedSpace = getPageUsedSpace(currentPage);
-    const requiredSpace = type === 'music' ? 12 : 4;
-    
-    if (usedSpace + requiredSpace > 24) {
-        showToast('空间不足，无法添加');
-        return;
-    }
-    
-    if (type === 'music') {
-        if (currentPage.querySelector('.top-widget-container')) {
-            showToast('该页面已有音乐组件');
-            return;
-        }
-        const appGrid = currentPage.querySelector('.app-grid');
-        appGrid.insertAdjacentHTML('beforebegin', musicWidgetHTML);
-    } else if (type === 'image') {
-        const widgetId = 'widget_img_' + Date.now();
-        const imageHTML = `
-            <div class="app-item widget-image-item jiggle-item" data-widget-id="${widgetId}">
-                <div class="delete-btn">
-                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg>
-                </div>
-                <div class="widget-image-box liquid-glass">
-                    <input type="file" class="widget-image-input" accept="image/*" style="display: none;">
-                    <div class="widget-image-bg"></div>
-                    <svg viewBox="0 0 24 24" width="32" height="32"><path d="M12 5v14M5 12h14" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/></svg>
-                </div>
-            </div>
-        `;
-        const appGrid = currentPage.querySelector('.app-grid');
-        appGrid.insertAdjacentHTML('beforeend', imageHTML);
-    }
-    
-    bindAllDynamicEvents();
-    widgetPanelOverlay.classList.remove('show');
-    saveCurrentState();
-}
-
-document.getElementById('add-widget-image').addEventListener('click', () => {
-    addWidgetToCurrentPage('image');
+// 绑定面板点击事件
+document.getElementById('add-img-widget').addEventListener('click', () => {
+    addWidgetToCurrentPage(getImageWidgetHTML(), 4);
+    widgetPanel.classList.remove('show');
 });
 
-document.getElementById('add-widget-music').addEventListener('click', () => {
-    addWidgetToCurrentPage('music');
+document.getElementById('add-music-widget').addEventListener('click', () => {
+    addWidgetToCurrentPage(musicWidgetHTML, 12);
+    widgetPanel.classList.remove('show');
 });
 
 // ================= 取消修改逻辑 =================
@@ -463,20 +482,6 @@ document.getElementById('menu-cancel').addEventListener('click', (e) => {
     e.stopPropagation();
     document.querySelector('.pages-container').innerHTML = backupPagesHTML;
     document.querySelector('.dock-container').innerHTML = backupDockHTML;
-    
-    // 恢复图片组件缓存
-    const imageWidgets = document.querySelectorAll('.widget-image-item');
-    imageWidgets.forEach(async (widget) => {
-        const widgetId = widget.getAttribute('data-widget-id');
-        if (widgetId) {
-            const base64 = await getFromDB(widgetId);
-            if (base64) {
-                const bg = widget.querySelector('.widget-image-bg');
-                if (bg) bg.style.backgroundImage = `url(${base64})`;
-            }
-        }
-    });
-    
     bindAllDynamicEvents();
     
     screen.classList.remove('edit-mode');
