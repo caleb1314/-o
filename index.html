@@ -41,8 +41,9 @@
         <div class="edit-controls">
             <div style="position: relative;">
                 <div class="edit-btn liquid-glass" id="edit-btn">编辑</div>
-                <!-- 新增：弹窗菜单 -->
+                <!-- 弹窗菜单 -->
                 <div class="edit-menu liquid-glass" id="edit-menu">
+                    <div class="edit-menu-item" id="menu-add">添加组件</div>
                     <div class="edit-menu-item" id="menu-wallpaper">更换壁纸</div>
                     <div class="edit-menu-item" id="menu-preview">页面预览</div>
                     <div class="edit-menu-item" id="menu-cancel">取消修改</div>
@@ -143,7 +144,7 @@
         <!-- 隐藏的壁纸上传输入框 -->
         <input type="file" id="wallpaper-input" accept="image/*" style="display: none;">
 
-        <!-- 新增：页面预览覆盖层 -->
+        <!-- 页面预览覆盖层 -->
         <div class="preview-overlay" id="preview-overlay">
             <div class="preview-container" id="preview-container"></div>
         </div>
