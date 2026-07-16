@@ -788,3 +788,10 @@ body {
     font-weight: 400;
     color: #555555;
 }
+.size-tabs { display:flex; gap:6px; align-items:center; }
+.size-tab { padding:5px 13px; border-radius:14px; font-size:13px; font-weight:700; color:#555; cursor:pointer; transition:all 0.2s; background:rgba(0,0,0,0.05); }
+.size-tab.active { background:#000; color:#fff; }
+.size-tab:active { transform:scale(0.94); }
+/* 隐藏非当前分类的组件 */
+.widget-option { display:flex; } /* 已有，不用改 */
+.widget-option.hidden { display:none; }
