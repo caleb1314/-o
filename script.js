@@ -76,12 +76,10 @@ if ('getBattery' in navigator) {
     });
 }
 
-// ================= 动态事件绑定 (用于恢复DOM后重新绑定) =================
+// ================= 动态事件绑定 =================
 function bindAllDynamicEvents() {
-    // 1. 删除按钮逻辑
     const deleteBtns = document.querySelectorAll('.delete-btn');
     deleteBtns.forEach(btn => {
-        // 克隆节点以清除旧事件，防止重复绑定
         const newBtn = btn.cloneNode(true);
         btn.replaceWith(newBtn);
     });
@@ -99,7 +97,6 @@ function bindAllDynamicEvents() {
         });
     });
 
-    // 2. 软件图标果冻弹跳动效逻辑
     const appItems = document.querySelectorAll('.app-item');
     appItems.forEach(item => {
         const newBtn = item.cloneNode(true);
@@ -142,19 +139,16 @@ function bindAllDynamicEvents() {
 
 // ================= 页面初始化加载缓存 =================
 window.addEventListener('DOMContentLoaded', async () => {
-    // 恢复壁纸
     const savedWallpaper = await getFromDB('wallpaper');
     if (savedWallpaper) {
         document.getElementById('screen').style.backgroundImage = `url(${savedWallpaper})`;
     }
     
-    // 恢复布局与文字
     const savedPages = await getFromDB('pagesHTML');
     const savedDock = await getFromDB('dockHTML');
     if (savedPages) document.querySelector('.pages-container').innerHTML = savedPages;
     if (savedDock) document.querySelector('.dock-container').innerHTML = savedDock;
     
-    // 初始化事件
     bindAllDynamicEvents();
 });
 
@@ -165,7 +159,6 @@ let startX = 0;
 let startY = 0;
 const LONG_PRESS_DURATION = 600;
 
-// 备份变量，用于取消修改
 let backupPagesHTML = '';
 let backupDockHTML = '';
 
@@ -185,7 +178,6 @@ const startPress = (e) => {
     }
 
     pressTimer = setTimeout(() => {
-        // 进入编辑模式前，备份当前状态
         backupPagesHTML = document.querySelector('.pages-container').innerHTML;
         backupDockHTML = document.querySelector('.dock-container').innerHTML;
         
@@ -233,18 +225,14 @@ const editBtn = document.getElementById('edit-btn');
 const editMenu = document.getElementById('edit-menu');
 const doneBtn = document.getElementById('done-btn');
 
-// 保存当前状态到 IndexedDB
 const saveCurrentState = async () => {
-    // 触发一下 blur 确保 contenteditable 内容更新
     if(document.activeElement) document.activeElement.blur();
-    
     const pagesHTML = document.querySelector('.pages-container').innerHTML;
     const dockHTML = document.querySelector('.dock-container').innerHTML;
     await saveToDB('pagesHTML', pagesHTML);
     await saveToDB('dockHTML', dockHTML);
 };
 
-// 完成编辑
 const exitEditMode = async (e) => {
     if(e) e.stopPropagation();
     screen.classList.remove('edit-mode');
@@ -254,7 +242,6 @@ const exitEditMode = async (e) => {
 
 if (doneBtn) doneBtn.addEventListener('click', exitEditMode);
 
-// 点击编辑按钮弹出菜单
 if (editBtn && editMenu) {
     editBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -262,7 +249,6 @@ if (editBtn && editMenu) {
     });
 }
 
-// 点击空白处收起编辑菜单
 document.addEventListener('click', (e) => {
     if (editMenu && editMenu.classList.contains('show')) {
         if (!editBtn.contains(e.target) && !editMenu.contains(e.target)) {
@@ -271,20 +257,26 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// ================= 新增：取消修改逻辑 =================
+// ================= 新增：添加组件逻辑 =================
+document.getElementById('menu-add').addEventListener('click', (e) => {
+    e.stopPropagation();
+    editMenu.classList.remove('show');
+    // 预留接口，后续可在此处接入组件库面板
+    console.log("点击了添加组件");
+});
+
+// ================= 取消修改逻辑 =================
 document.getElementById('menu-cancel').addEventListener('click', (e) => {
     e.stopPropagation();
-    // 还原备份的 DOM
     document.querySelector('.pages-container').innerHTML = backupPagesHTML;
     document.querySelector('.dock-container').innerHTML = backupDockHTML;
-    // 重新绑定事件
     bindAllDynamicEvents();
     
     screen.classList.remove('edit-mode');
     editMenu.classList.remove('show');
 });
 
-// ================= 新增：真实更换壁纸逻辑 =================
+// ================= 真实更换壁纸逻辑 =================
 const wallpaperInput = document.getElementById('wallpaper-input');
 document.getElementById('menu-wallpaper').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -305,7 +297,7 @@ wallpaperInput.addEventListener('change', (e) => {
     editMenu.classList.remove('show');
 });
 
-// ================= 新增：页面预览跳转逻辑 =================
+// ================= 页面预览跳转逻辑 =================
 document.getElementById('menu-preview').addEventListener('click', (e) => {
     e.stopPropagation();
     editMenu.classList.remove('show');
@@ -314,7 +306,6 @@ document.getElementById('menu-preview').addEventListener('click', (e) => {
     const container = document.getElementById('preview-container');
     container.innerHTML = '';
     
-    // 获取当前壁纸背景
     const currentBg = document.getElementById('screen').style.backgroundImage || getComputedStyle(document.getElementById('screen')).backgroundImage;
     
     const pages = document.querySelectorAll('.pages-container .page');
@@ -322,21 +313,17 @@ document.getElementById('menu-preview').addEventListener('click', (e) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'preview-page-wrapper';
         
-        // 缩略图外壳 (附带壁纸)
         const scaleBox = document.createElement('div');
         scaleBox.className = 'preview-scale-box liquid-glass';
         scaleBox.style.backgroundImage = currentBg;
         
-        // 缩放内容容器
         const scaleContent = document.createElement('div');
         scaleContent.className = 'preview-scale-content';
         
-        // 克隆真实页面，做到一模一样
         const clonedPage = page.cloneNode(true);
         scaleContent.appendChild(clonedPage);
         scaleBox.appendChild(scaleContent);
         
-        // 底部打勾图标
         const checkIcon = document.createElement('div');
         checkIcon.className = 'preview-check';
         checkIcon.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 13l4 4L19 7" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -344,7 +331,6 @@ document.getElementById('menu-preview').addEventListener('click', (e) => {
         wrapper.appendChild(scaleBox);
         wrapper.appendChild(checkIcon);
         
-        // 点击跳转
         wrapper.addEventListener('click', () => {
             const pagesContainer = document.querySelector('.pages-container');
             pagesContainer.scrollTo({
@@ -360,7 +346,6 @@ document.getElementById('menu-preview').addEventListener('click', (e) => {
     overlay.classList.add('show');
 });
 
-// 点击预览背景关闭预览
 document.getElementById('preview-overlay').addEventListener('click', (e) => {
     if (e.target.id === 'preview-overlay' || e.target.id === 'preview-container') {
         document.getElementById('preview-overlay').classList.remove('show');
