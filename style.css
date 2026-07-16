@@ -209,46 +209,17 @@ body {
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(6, 1fr);
     height: 100%;
-    gap: 15px 15px; /* 保持软件之间标准的 15px 间隙 */
+    gap: 15px 15px; 
     align-items: center;
     justify-items: center;
 }
 
 /* ================= 规范化组件尺寸类名 ================= */
-.widget-1x2 { grid-column: span 1; grid-row: span 2; width: 100%; height: 100%; }
-.widget-2x1 { grid-column: span 2; grid-row: span 1; width: 100%; height: 100%; }
-.widget-4x2 { grid-column: span 4; grid-row: span 2; width: 100%; height: 100%; }
-
-/* 2x2 正方形图片组件 */
-.widget-2x2 {
-    grid-column: span 2;
-    grid-row: span 2;
-    width: 100%;
-    aspect-ratio: 1 / 1; /* 强制完美正方形 */
-    height: auto; 
-    align-self: start; /* 靠上对齐，消除组件上方的多余空白，缩短与上方组件的间隙 */
-    position: relative;
-    border-radius: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* 4x3 音乐大组件 */
-.widget-4x3 {
-    grid-column: span 4;
-    grid-row: span 3;
-    width: 100%;
-    height: auto; /* 适应内容高度 */
-    align-self: end; /* 靠下对齐，消除组件下方的多余空白，缩短与下方组件的间隙 */
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    margin: 0;
-}
+.widget-1x2 { grid-column: span 1; grid-row: span 2; width: 100%; height: 100%; align-self: start; position: relative; }
+.widget-2x1 { grid-column: span 2; grid-row: span 1; width: 100%; height: 100%; align-self: start; position: relative; }
+.widget-2x2 { grid-column: span 2; grid-row: span 2; width: 100%; height: 100%; align-self: start; position: relative; }
+.widget-4x2 { grid-column: span 4; grid-row: span 2; width: 100%; height: 100%; align-self: start; position: relative; }
+.widget-4x3 { grid-column: span 4; grid-row: span 3; width: 100%; height: auto; align-self: end; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; background: transparent; margin: 0; }
 
 /* ================= 音乐小组件内部样式 ================= */
 .connecting-lines {
@@ -514,8 +485,7 @@ body {
     right: -4px;
 }
 
-.widget-4x3 .delete-btn,
-.widget-2x2 .delete-btn {
+[class*="widget-"] .delete-btn {
     top: auto;
     bottom: -6px;
     right: -4px;
@@ -622,7 +592,7 @@ body {
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
-/* ================= 组件面板 ================= */
+/* ================= 全新分类组件面板 ================= */
 .widget-panel {
     position: absolute;
     bottom: 0;
@@ -639,7 +609,6 @@ body {
     transition: transform 0.35s ease-out;
     display: flex;
     flex-direction: column;
-    padding: 20px;
     box-shadow: 0 -10px 30px rgba(0,0,0,0.15);
     border-top: 1px solid rgba(255,255,255,0.5);
 }
@@ -652,8 +621,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    padding: 0 10px;
+    padding: 20px 20px 15px 20px;
+    position: relative;
 }
 
 .panel-title {
@@ -662,24 +631,59 @@ body {
     font-weight: 700;
 }
 
+.panel-tabs {
+    display: flex;
+    gap: 24px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.panel-tab {
+    font-size: 15px;
+    font-weight: 600;
+    color: #888;
+    cursor: pointer;
+    padding-bottom: 4px;
+    position: relative;
+    transition: color 0.2s;
+}
+
+.panel-tab.active {
+    color: #000;
+}
+
+.panel-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 18px;
+    height: 3px;
+    background: #333;
+    border-radius: 2px;
+}
+
 .panel-header-right {
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
-.panel-add-btn {
-    padding: 6px 14px;
+.panel-add-icon {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     background: rgba(0, 122, 255, 0.1);
-    color: #007aff;
-    border-radius: 14px;
-    font-size: 13px;
-    font-weight: 600;
+    border-radius: 50%;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: transform 0.2s;
 }
 
-.panel-add-btn:active {
+.panel-add-icon:active {
     transform: scale(0.95);
     background: rgba(0, 122, 255, 0.2);
 }
@@ -695,12 +699,21 @@ body {
     cursor: pointer;
 }
 
+.widget-tab-content {
+    display: none;
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 20px 20px 20px;
+}
+
+.widget-tab-content.active {
+    display: block;
+}
+
 .widget-list {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 15px;
-    overflow-y: auto;
-    padding-bottom: 20px;
 }
 
 .widget-option {
@@ -713,11 +726,7 @@ body {
     cursor: pointer;
     background: rgba(255,255,255,0.6);
     border: 2px solid transparent;
-    transition: transform 0.2s, border-color 0.2s;
-}
-
-.widget-option.selected {
-    border-color: #007aff;
+    transition: transform 0.2s;
 }
 
 .widget-option:active {
@@ -725,14 +734,13 @@ body {
 }
 
 .widget-preview {
-    width: 60px;
-    height: 60px;
     background: rgba(0,0,0,0.05);
     border-radius: 16px;
     display: flex;
     justify-content: center;
     align-items: center;
     margin-bottom: 10px;
+    border: 1px solid rgba(0,0,0,0.05);
 }
 
 .widget-name {
@@ -787,4 +795,25 @@ body {
     font-size: 12px;
     font-weight: 400;
     color: #555555;
+}
+
+/* ================= 拖拽专属样式 ================= */
+.edit-mode .app-item,
+.edit-mode [class*="widget-"] {
+    touch-action: none; /* 阻止默认滚动，保证拖拽流畅 */
+}
+
+.drag-clone {
+    position: fixed !important;
+    z-index: 9999 !important;
+    pointer-events: none !important;
+    opacity: 0.9 !important;
+    transform: scale(1.05) !important;
+    transition: none !important;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important;
+    margin: 0 !important;
+}
+
+.is-dragging {
+    opacity: 0 !important;
 }
