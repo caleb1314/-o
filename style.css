@@ -18,12 +18,11 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .edit-btn, .done-btn { padding: 6px 16px; border-radius: 16px; font-size: 13px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); font-weight: 700; cursor: pointer; }
 .edit-btn:active, .done-btn:active { transform: scale(0.95); }
 
-/* 弹窗菜单 */
+/* 弹窗菜单 (修复为图3那种独立分开的液态玻璃胶囊，且文字横排) */
 @keyframes menuJelly { 0% { transform: translateY(-15px) scale(0.9); opacity: 0; } 40% { transform: translateY(4px) scale(1.02); opacity: 1; } 70% { transform: translateY(-2px) scale(0.99); opacity: 1; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
-.edit-menu { position: absolute; top: 40px; left: 0; display: flex; flex-direction: column; padding: 0; border-radius: 16px; opacity: 0; pointer-events: none; transform: translateY(-15px) scale(0.9); z-index: 100; overflow: hidden; }
+.edit-menu { position: absolute; top: 40px; left: 0; display: flex; flex-direction: column; gap: 10px; padding: 0; opacity: 0; pointer-events: none; transform: translateY(-15px) scale(0.9); z-index: 100; }
 .edit-menu.show { opacity: 1; pointer-events: auto; animation: menuJelly 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-.edit-menu-item { padding: 12px 22px; font-size: 13px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); font-weight: 700; text-align: center; cursor: pointer; border-bottom: 1px solid rgba(255, 255, 255, 0.15); }
-.edit-menu-item:last-child { border-bottom: none; }
+.edit-menu-item { padding: 10px 20px; font-size: 13px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); font-weight: 700; text-align: center; cursor: pointer; border-radius: 16px; white-space: nowrap; /* 强制文字横向不换行 */ }
 .edit-menu-item:active { background: rgba(255, 255, 255, 0.15); }
 
 /* 分页容器 */
@@ -47,8 +46,8 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .image-widget-content { width: 100%; height: 100%; border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; background-size: cover; background-position: center; cursor: pointer; background-color: rgba(255,255,255,0.1); transition: transform 0.2s; }
 .upload-placeholder { display: flex; flex-direction: column; align-items: center; gap: 8px; color: #fff; font-size: 12px; font-weight: 600; opacity: 0.8; }
 
-/* 桌面应用图标 */
-.app-item { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
+/* 桌面应用图标 (修复：添加 align-self: start 和 margin-top 缩短与上方组件的间距) */
+.app-item { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; align-self: start; margin-top: 4px; }
 .app-icon-box, .dock-item { border-radius: 16px; background: rgba(235, 235, 240, 0.75); box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.9), inset 0 -1px 3px rgba(0, 0, 0, 0.05), 0 4px 10px rgba(0, 0, 0, 0.15); border: 1px solid rgba(255, 255, 255, 0.6); width: 58px; height: 58px; }
 .dock-item { width: 56px; height: 56px; border-radius: 15px; background: rgba(255, 255, 255, 0.85); }
 .app-name { color: #fff; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
@@ -75,18 +74,15 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .preview-scale-content .page { width: 100%; height: 100%; padding: 10px 20px 20px 20px; overflow: hidden; }
 .preview-check { width: 26px; height: 26px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.5); }
 
-/* 组件面板 (UI重绘) */
+/* 组件面板 */
 .widget-panel { position: absolute; bottom: 0; left: 0; width: 100%; height: 50vh; background: rgba(242, 242, 247, 0.95); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-top-left-radius: 32px; border-top-right-radius: 32px; z-index: 300; transform: translateY(100%); transition: transform 0.35s ease-out; display: flex; flex-direction: column; padding: 20px; box-shadow: 0 -10px 30px rgba(0,0,0,0.15); }
 .widget-panel.show { transform: translateY(0); }
 .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 5px; }
 .panel-title { color: #000; font-size: 18px; font-weight: 700; }
-
-/* 新增：大小切换Tab */
 .size-tabs { display: flex; background: rgba(0,0,0,0.06); border-radius: 16px; padding: 3px; }
 .size-tab { padding: 6px 16px; font-size: 13px; font-weight: 600; color: #666; border-radius: 14px; cursor: pointer; transition: all 0.2s; }
 .size-tab.active { background: #fff; color: #000; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 .panel-new-btn { width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; cursor: pointer; border-radius: 50%; background: rgba(0,0,0,0.05); }
-
 .widget-list { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; overflow-y: auto; padding-bottom: 20px; }
 .widget-option { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; border-radius: 22px; cursor: pointer; background: rgba(255,255,255,0.6); transition: transform 0.2s; }
 .widget-option.hidden { display: none; }
@@ -101,7 +97,7 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .notification-banner .title { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 2px; }
 .notification-banner .message { font-size: 12px; font-weight: 400; color: #555555; }
 
-/* 音乐组件内部样式 (保持不变) */
+/* 音乐组件内部样式 */
 .connecting-lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .avatars-wrapper { display: flex; justify-content: center; gap: 30px; width: 100%; z-index: 1; }
 .avatar-group { display: flex; flex-direction: column; align-items: center; gap: 10px; }
