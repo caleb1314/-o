@@ -1,3 +1,12 @@
+// ================= 恢复 PWA Service Worker 注册 =================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+        });
+    });
+}
+
 // ================= IndexedDB 持久化逻辑 =================
 const DB_NAME = 'LiquidDeskDB';
 const STORE_NAME = 'deskStore';
@@ -143,8 +152,7 @@ function bindAllDynamicEvents() {
     initDragSystem();
 }
 
-// ================= 拖拽系统 (核心重写：自由摆放 & 碰撞检测) =================
-const screen = document.getElementById('screen');
+// ================= 拖拽系统 (自由摆放 & 碰撞检测) =================
 let draggingItem = null;
 let ghostEl = null;
 let pageScrollTimer = null;
@@ -152,7 +160,7 @@ let pageScrollTimer = null;
 function getOccupancyMatrix(page) {
     const matrix = Array(6).fill(null).map(() => Array(4).fill(false));
     page.querySelectorAll('.grid-item').forEach(item => {
-        if (item === draggingItem) return; // 忽略当前拖拽的物体
+        if (item === draggingItem) return; 
         const col = parseInt(item.style.getPropertyValue('--col'));
         const row = parseInt(item.style.getPropertyValue('--row'));
         const w = parseInt(item.style.getPropertyValue('--w'));
@@ -199,7 +207,6 @@ function handleDragStart(e) {
     draggingItem = e.currentTarget;
     draggingItem.classList.add('dragging');
 
-    // 创建幽灵元素跟随手指
     ghostEl = draggingItem.cloneNode(true);
     ghostEl.classList.remove('dragging', 'jiggle-item');
     ghostEl.style.position = 'fixed';
@@ -235,7 +242,6 @@ function handleDragMove(e) {
     const pagesContainer = document.querySelector('.pages-container');
     const pageW = pagesContainer.clientWidth;
     
-    // 边缘检测延迟换页
     if (clientX > window.innerWidth - 40) {
         if (!pageScrollTimer) pageScrollTimer = setTimeout(() => { pagesContainer.scrollBy({ left: pageW, behavior: 'smooth' }); }, 600);
     } else if (clientX < 40) {
@@ -245,7 +251,6 @@ function handleDragMove(e) {
         pageScrollTimer = null;
     }
 
-    // 计算当前悬停的网格坐标
     const pageIndex = Math.round(pagesContainer.scrollLeft / pageW);
     const pages = document.querySelectorAll('.page');
     const currentPage = pages[pageIndex];
@@ -396,7 +401,6 @@ document.addEventListener('click', (e) => {
     if (!widgetPanel.contains(e.target) && e.target.id !== 'menu-add') widgetPanel.classList.remove('show');
 });
 
-// UI Tab 切换
 document.querySelectorAll('.size-tab').forEach(tab => {
     tab.addEventListener('click', () => {
         document.querySelectorAll('.size-tab').forEach(t => t.classList.remove('active'));
@@ -408,7 +412,6 @@ document.querySelectorAll('.size-tab').forEach(tab => {
     });
 });
 
-// 点击直接添加组件
 document.querySelectorAll('.widget-option').forEach(opt => {
     opt.addEventListener('click', () => {
         let html = null, w = 0, h = 0;
@@ -450,7 +453,6 @@ function addWidgetToCurrentPage(htmlString, w, h) {
     saveCurrentState();
 }
 
-// 组件模板生成器
 function getImgHTML(w, h) {
     const id = 'img-' + Date.now() + '-' + Math.floor(Math.random()*1000);
     return `<div class="widget-${w}x${h} jiggle-item grid-item" data-widget-id="${id}">
