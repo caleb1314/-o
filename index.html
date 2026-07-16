@@ -39,17 +39,17 @@
 
         <!-- 编辑模式控制栏 -->
         <div class="edit-controls">
-            <div class="edit-btn liquid-glass" id="edit-btn">编辑</div>
+            <div style="position: relative;">
+                <div class="edit-btn liquid-glass" id="edit-btn">编辑</div>
+                <!-- 新增：弹窗菜单 -->
+                <div class="edit-menu liquid-glass" id="edit-menu">
+                    <div class="edit-menu-item" id="menu-wallpaper">更换壁纸</div>
+                    <div class="edit-menu-item" id="menu-preview">页面预览</div>
+                    <div class="edit-menu-item" id="menu-cancel">取消修改</div>
+                </div>
+            </div>
             <div class="done-btn liquid-glass" id="done-btn">完成</div>
         </div>
-
-        <!-- 编辑菜单弹窗 -->
-        <div class="edit-menu liquid-glass" id="edit-menu">
-            <div class="menu-item" id="change-wp-btn">更换壁纸</div>
-            <div class="menu-item" id="preview-btn">页面预览</div>
-            <div class="menu-item" id="cancel-btn">取消修改</div>
-        </div>
-        <input type="file" id="wallpaper-input" accept="image/*" style="display: none;">
 
         <!-- 桌面应用容器 -->
         <div class="pages-container">
@@ -140,10 +140,12 @@
             <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="dock-item"></div><div class="app-name">浏览器</div></div>
         </div>
 
-        <!-- 页面预览覆盖层 -->
-        <div class="page-preview-overlay" id="page-preview-overlay">
+        <!-- 隐藏的壁纸上传输入框 -->
+        <input type="file" id="wallpaper-input" accept="image/*" style="display: none;">
+
+        <!-- 新增：页面预览覆盖层 -->
+        <div class="preview-overlay" id="preview-overlay">
             <div class="preview-container" id="preview-container"></div>
-            <div class="preview-close liquid-glass" id="preview-close">完成</div>
         </div>
 
     </div>
