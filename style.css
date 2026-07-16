@@ -209,18 +209,39 @@ body {
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(6, 1fr);
     height: 100%;
-    gap: 15px 15px;
+    gap: 15px 15px; /* 保持软件之间标准的 15px 间隙 */
     align-items: center;
     justify-items: center;
 }
 
-/* ================= 音乐小组件 ================= */
-.top-widget-container {
+/* ================= 规范化组件尺寸类名 ================= */
+.widget-1x2 { grid-column: span 1; grid-row: span 2; width: 100%; height: 100%; }
+.widget-2x1 { grid-column: span 2; grid-row: span 1; width: 100%; height: 100%; }
+.widget-4x2 { grid-column: span 4; grid-row: span 2; width: 100%; height: 100%; }
+
+/* 2x2 正方形图片组件 */
+.widget-2x2 {
+    grid-column: span 2;
+    grid-row: span 2;
+    width: 100%;
+    aspect-ratio: 1 / 1; /* 强制完美正方形 */
+    height: auto; 
+    align-self: start; /* 靠上对齐，消除组件上方的多余空白，缩短与上方组件的间隙 */
+    position: relative;
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 4x3 音乐大组件 */
+.widget-4x3 {
     grid-column: span 4;
     grid-row: span 3;
-    position: relative;
     width: 100%;
-    height: 100%;
+    height: auto; /* 适应内容高度 */
+    align-self: end; /* 靠下对齐，消除组件下方的多余空白，缩短与下方组件的间隙 */
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -229,6 +250,7 @@ body {
     margin: 0;
 }
 
+/* ================= 音乐小组件内部样式 ================= */
 .connecting-lines {
     position: absolute;
     top: 0;
@@ -364,20 +386,7 @@ body {
     gap: 20px;
 }
 
-/* ================= 2x2 图片小组件 (正方形) ================= */
-.widget-2x2 {
-    grid-column: span 2;
-    grid-row: span 2;
-    width: 100%;
-    aspect-ratio: 1 / 1; /* 强制正方形 */
-    height: auto; /* 覆盖100%以保持比例 */
-    position: relative;
-    border-radius: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
+/* ================= 图片小组件内部样式 ================= */
 .image-widget-content {
     width: 100%;
     height: 100%;
@@ -505,7 +514,7 @@ body {
     right: -4px;
 }
 
-.top-widget-container .delete-btn,
+.widget-4x3 .delete-btn,
 .widget-2x2 .delete-btn {
     top: auto;
     bottom: -6px;
