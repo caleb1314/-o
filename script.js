@@ -20,7 +20,6 @@ if ('getBattery' in navigator) {
             const batteryLevel = document.getElementById('battery-level');
             
             if (batteryText) batteryText.textContent = level;
-            // 满电量宽度为20
             if (batteryLevel) batteryLevel.setAttribute('width', (level / 100) * 20);
         }
         updateBattery();
