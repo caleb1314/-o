@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
     <meta name="theme-color" content="#000000">
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="manifest" href="manifest.json">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="液态桌面">
+
     <title>液态玻璃手机主页</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -27,32 +30,37 @@
                 <svg width="32" height="14" viewBox="0 0 32 14">
                     <defs><clipPath id="battery-clip"><rect x="0" y="0" width="27" height="14" rx="4.5" /></clipPath></defs>
                     <rect x="0" y="0" width="27" height="14" rx="4.5" fill="rgba(255,255,255,0.3)" />
-                    <g clip-path="url(#battery-clip)"><rect x="0" y="0" id="battery-level" width="20" height="14" fill="#fff" /></g>
+                    <g clip-path="url(#battery-clip)"><rect x="0" y="0" width="20" height="14" fill="#fff" id="battery-level" /></g>
                     <path d="M28 4.5 v5 a2 2 0 0 0 0 -5 z" fill="rgba(255,255,255,0.5)" />
-                    <text x="13.5" y="11.5" id="battery-text" font-size="12" font-weight="900" fill="#000" text-anchor="middle" letter-spacing="-0.5">77</text>
+                    <text x="13.5" y="11.5" font-size="12" font-weight="900" fill="#000" text-anchor="middle" letter-spacing="-0.5" id="battery-text">77</text>
                 </svg>
             </div>
         </div>
 
         <!-- 编辑模式控制栏 -->
         <div class="edit-controls">
-            <div class="cancel-btn liquid-glass" id="cancel-btn">取消</div>
-            <div class="right-actions">
-                <div class="wallpaper-btn liquid-glass" id="wallpaper-btn">壁纸</div>
-                <div class="preview-btn liquid-glass" id="preview-btn">预览</div>
-                <div class="done-btn liquid-glass" id="done-btn">完成</div>
-            </div>
+            <div class="edit-btn liquid-glass" id="edit-btn">编辑</div>
+            <div class="done-btn liquid-glass" id="done-btn">完成</div>
+        </div>
+
+        <!-- 编辑菜单弹窗 -->
+        <div class="edit-menu liquid-glass" id="edit-menu">
+            <div class="menu-item" id="change-wp-btn">更换壁纸</div>
+            <div class="menu-item" id="preview-btn">页面预览</div>
+            <div class="menu-item" id="cancel-btn">取消修改</div>
         </div>
         <input type="file" id="wallpaper-input" accept="image/*" style="display: none;">
 
         <!-- 桌面应用容器 -->
-        <div class="pages-container" id="pages-container">
+        <div class="pages-container">
+            
             <!-- 第一页 -->
             <div class="page">
                 <div class="top-widget-container jiggle-item">
                     <div class="delete-btn">
                         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg>
                     </div>
+
                     <svg class="connecting-lines" viewBox="0 0 400 250" preserveAspectRatio="xMidYMin slice">
                         <defs>
                             <linearGradient id="fade-grad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -65,11 +73,13 @@
                         <path d="M 151 100 Q 100 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/>
                         <path d="M 249 100 Q 300 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/>
                     </svg>
+                    
                     <div class="avatars-wrapper">
                         <div class="avatar-group"><div class="speech-bubble" contenteditable="true" spellcheck="false">你在左边</div><div class="avatar-circle"></div></div>
                         <div class="avatar-group"><div class="speech-bubble" contenteditable="true" spellcheck="false">我紧靠右</div><div class="avatar-circle"></div></div>
                     </div>
                     <div class="center-text" contenteditable="true" spellcheck="false">Twenty four seven with us</div>
+                    
                     <div class="music-player-v2">
                         <div class="music-title">Pink Lavender</div>
                         <div class="music-subtitle" contenteditable="true" spellcheck="false">· ⁺ ⋆ ‿ ıllıllı ‿ ⋆ ⁺ ·</div>
@@ -89,6 +99,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="app-grid">
                     <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">微信</div></div>
                     <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">音乐</div></div>
@@ -118,22 +129,21 @@
                     <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">查手机</div></div>
                 </div>
             </div>
+
         </div>
 
         <!-- 底部 Dock 栏 -->
-        <div class="dock-container liquid-glass" id="dock-container">
+        <div class="dock-container liquid-glass">
             <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="dock-item"></div><div class="app-name">设置</div></div>
             <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="dock-item"></div><div class="app-name">电话</div></div>
             <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="dock-item"></div><div class="app-name">信息</div></div>
             <div class="app-item jiggle-item"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="dock-item"></div><div class="app-name">浏览器</div></div>
         </div>
 
-        <!-- 页面预览遮罩 -->
+        <!-- 页面预览覆盖层 -->
         <div class="page-preview-overlay" id="page-preview-overlay">
-            <div class="preview-header">
-                <div class="close-preview-btn liquid-glass" id="close-preview-btn">关闭</div>
-            </div>
-            <div class="preview-grid" id="preview-grid"></div>
+            <div class="preview-container" id="preview-container"></div>
+            <div class="preview-close liquid-glass" id="preview-close">完成</div>
         </div>
 
     </div>
