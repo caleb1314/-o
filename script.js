@@ -1,3 +1,52 @@
+// ================= IndexedDB 持久化逻辑 =================
+const DB_NAME = 'LiquidDeskDB';
+const STORE_NAME = 'deskStore';
+
+function initDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME);
+            }
+        };
+        request.onsuccess = (e) => resolve(e.target.result);
+        request.onerror = (e) => reject(e.target.error);
+    });
+}
+
+async function saveToDB(key, value) {
+    try {
+        const db = await initDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.put(value, key);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject();
+        });
+    } catch (e) {
+        console.error('DB Save Error', e);
+    }
+}
+
+async function getFromDB(key) {
+    try {
+        const db = await initDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.get(key);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject();
+        });
+    } catch (e) {
+        console.error('DB Get Error', e);
+        return null;
+    }
+}
+
 // ================= 实时时钟逻辑 =================
 const clockElement = document.getElementById('clock');
 function updateTime() {
@@ -27,69 +76,17 @@ if ('getBattery' in navigator) {
     });
 }
 
-// ================= IndexedDB 数据持久化 =================
-const DB_NAME = 'LiquidDeskDB';
-const STORE_NAME = 'deskStore';
-
-function initDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, 1);
-        request.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME);
-            }
-        };
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-    });
-}
-
-async function setDBItem(key, value) {
-    try {
-        const db = await initDB();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(STORE_NAME, 'readwrite');
-            tx.objectStore(STORE_NAME).put(value, key);
-            tx.oncomplete = () => resolve();
-            tx.onerror = () => reject(tx.error);
-        });
-    } catch (e) {
-        console.warn('IndexedDB set error:', e);
-    }
-}
-
-async function getDBItem(key) {
-    try {
-        const db = await initDB();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(STORE_NAME, 'readonly');
-            const request = tx.objectStore(STORE_NAME).get(key);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-    } catch (e) {
-        console.warn('IndexedDB get error:', e);
-        return null;
-    }
-}
-
-// ================= 核心交互逻辑 =================
-const screen = document.getElementById('screen');
-let pressTimer = null;
-let startX = 0;
-let startY = 0;
-const LONG_PRESS_DURATION = 600;
-
-// 状态备份（用于取消修改）
-let backupHTML = null;
-let backupWallpaper = null;
-
-// 绑定所有桌面元素的交互事件
-function bindItemEvents() {
-    // 删除按钮逻辑
+// ================= 动态事件绑定 (用于恢复DOM后重新绑定) =================
+function bindAllDynamicEvents() {
+    // 1. 删除按钮逻辑
     const deleteBtns = document.querySelectorAll('.delete-btn');
     deleteBtns.forEach(btn => {
+        // 克隆节点以清除旧事件，防止重复绑定
+        const newBtn = btn.cloneNode(true);
+        btn.replaceWith(newBtn);
+    });
+    
+    document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const item = btn.closest('.jiggle-item');
@@ -102,9 +99,14 @@ function bindItemEvents() {
         });
     });
 
-    // 软件图标果冻弹跳动效逻辑
+    // 2. 软件图标果冻弹跳动效逻辑
     const appItems = document.querySelectorAll('.app-item');
     appItems.forEach(item => {
+        const newBtn = item.cloneNode(true);
+        item.replaceWith(newBtn);
+    });
+
+    document.querySelectorAll('.app-item').forEach(item => {
         const icon = item.querySelector('.app-icon-box') || item.querySelector('.dock-item');
         if (!icon) return;
 
@@ -138,22 +140,38 @@ function bindItemEvents() {
     });
 }
 
-// 初始化加载数据
+// ================= 页面初始化加载缓存 =================
 window.addEventListener('DOMContentLoaded', async () => {
-    const savedHTML = await getDBItem('desktopHTML');
-    if (savedHTML) {
-        document.querySelector('.pages-container').innerHTML = savedHTML.pages;
-        document.querySelector('.dock-container').innerHTML = savedHTML.dock;
+    // 恢复壁纸
+    const savedWallpaper = await getFromDB('wallpaper');
+    if (savedWallpaper) {
+        document.getElementById('screen').style.backgroundImage = `url(${savedWallpaper})`;
     }
-    const savedWP = await getDBItem('wallpaper');
-    if (savedWP) {
-        document.getElementById('screen').style.backgroundImage = `url(${savedWP})`;
-    }
-    bindItemEvents();
+    
+    // 恢复布局与文字
+    const savedPages = await getFromDB('pagesHTML');
+    const savedDock = await getFromDB('dockHTML');
+    if (savedPages) document.querySelector('.pages-container').innerHTML = savedPages;
+    if (savedDock) document.querySelector('.dock-container').innerHTML = savedDock;
+    
+    // 初始化事件
+    bindAllDynamicEvents();
 });
 
-// 长按进入编辑模式
-screen.addEventListener('contextmenu', (e) => e.preventDefault());
+// ================= 长按进入编辑模式逻辑 =================
+const screen = document.getElementById('screen');
+let pressTimer = null;
+let startX = 0;
+let startY = 0;
+const LONG_PRESS_DURATION = 600;
+
+// 备份变量，用于取消修改
+let backupPagesHTML = '';
+let backupDockHTML = '';
+
+screen.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+});
 
 const startPress = (e) => {
     if (screen.classList.contains('edit-mode')) return;
@@ -167,15 +185,14 @@ const startPress = (e) => {
     }
 
     pressTimer = setTimeout(() => {
-        // 备份当前状态
-        backupHTML = {
-            pages: document.querySelector('.pages-container').innerHTML,
-            dock: document.querySelector('.dock-container').innerHTML
-        };
-        backupWallpaper = document.getElementById('screen').style.backgroundImage;
+        // 进入编辑模式前，备份当前状态
+        backupPagesHTML = document.querySelector('.pages-container').innerHTML;
+        backupDockHTML = document.querySelector('.dock-container').innerHTML;
         
         screen.classList.add('edit-mode');
-        if (navigator.vibrate) navigator.vibrate(50);
+        if (navigator.vibrate) {
+            navigator.vibrate(50);
+        }
     }, LONG_PRESS_DURATION);
 };
 
@@ -211,17 +228,31 @@ screen.addEventListener('mousemove', movePress);
 screen.addEventListener('mouseup', cancelPress);
 screen.addEventListener('mouseleave', cancelPress);
 
-// ================= 编辑控制栏逻辑 =================
+// ================= 编辑控制栏与弹窗逻辑 =================
 const editBtn = document.getElementById('edit-btn');
 const editMenu = document.getElementById('edit-menu');
 const doneBtn = document.getElementById('done-btn');
-const cancelBtn = document.getElementById('cancel-btn');
 
-const exitEditMode = (e) => {
+// 保存当前状态到 IndexedDB
+const saveCurrentState = async () => {
+    // 触发一下 blur 确保 contenteditable 内容更新
+    if(document.activeElement) document.activeElement.blur();
+    
+    const pagesHTML = document.querySelector('.pages-container').innerHTML;
+    const dockHTML = document.querySelector('.dock-container').innerHTML;
+    await saveToDB('pagesHTML', pagesHTML);
+    await saveToDB('dockHTML', dockHTML);
+};
+
+// 完成编辑
+const exitEditMode = async (e) => {
     if(e) e.stopPropagation();
     screen.classList.remove('edit-mode');
     editMenu.classList.remove('show');
+    await saveCurrentState();
 };
+
+if (doneBtn) doneBtn.addEventListener('click', exitEditMode);
 
 // 点击编辑按钮弹出菜单
 if (editBtn && editMenu) {
@@ -240,125 +271,98 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// 完成修改（持久化保存）
-if (doneBtn) {
-    doneBtn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const currentHTML = {
-            pages: document.querySelector('.pages-container').innerHTML,
-            dock: document.querySelector('.dock-container').innerHTML
+// ================= 新增：取消修改逻辑 =================
+document.getElementById('menu-cancel').addEventListener('click', (e) => {
+    e.stopPropagation();
+    // 还原备份的 DOM
+    document.querySelector('.pages-container').innerHTML = backupPagesHTML;
+    document.querySelector('.dock-container').innerHTML = backupDockHTML;
+    // 重新绑定事件
+    bindAllDynamicEvents();
+    
+    screen.classList.remove('edit-mode');
+    editMenu.classList.remove('show');
+});
+
+// ================= 新增：真实更换壁纸逻辑 =================
+const wallpaperInput = document.getElementById('wallpaper-input');
+document.getElementById('menu-wallpaper').addEventListener('click', (e) => {
+    e.stopPropagation();
+    wallpaperInput.click();
+});
+
+wallpaperInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const base64 = event.target.result;
+            document.getElementById('screen').style.backgroundImage = `url(${base64})`;
+            await saveToDB('wallpaper', base64);
         };
-        await setDBItem('desktopHTML', currentHTML);
+        reader.readAsDataURL(file);
+    }
+    editMenu.classList.remove('show');
+});
+
+// ================= 新增：页面预览跳转逻辑 =================
+document.getElementById('menu-preview').addEventListener('click', (e) => {
+    e.stopPropagation();
+    editMenu.classList.remove('show');
+    
+    const overlay = document.getElementById('preview-overlay');
+    const container = document.getElementById('preview-container');
+    container.innerHTML = '';
+    
+    // 获取当前壁纸背景
+    const currentBg = document.getElementById('screen').style.backgroundImage || getComputedStyle(document.getElementById('screen')).backgroundImage;
+    
+    const pages = document.querySelectorAll('.pages-container .page');
+    pages.forEach((page, index) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'preview-page-wrapper';
         
-        const currentWP = document.getElementById('screen').style.backgroundImage;
-        if (currentWP) {
-            const match = currentWP.match(/url\(['"]?(.*?)['"]?\)/);
-            if (match) await setDBItem('wallpaper', match[1]);
-        }
-        exitEditMode(e);
-    });
-}
-
-// 取消修改（恢复备份）
-if (cancelBtn) {
-    cancelBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (backupHTML) {
-            document.querySelector('.pages-container').innerHTML = backupHTML.pages;
-            document.querySelector('.dock-container').innerHTML = backupHTML.dock;
-            bindItemEvents(); // 重新绑定事件
-        }
-        if (backupWallpaper !== null) {
-            document.getElementById('screen').style.backgroundImage = backupWallpaper;
-        }
-        exitEditMode(e);
-    });
-}
-
-// ================= 更换壁纸逻辑 =================
-const changeWpBtn = document.getElementById('change-wp-btn');
-const wpInput = document.getElementById('wallpaper-input');
-
-if (changeWpBtn) {
-    changeWpBtn.addEventListener('click', () => wpInput.click());
-}
-
-if (wpInput) {
-    wpInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                document.getElementById('screen').style.backgroundImage = `url(${ev.target.result})`;
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-}
-
-// ================= 页面预览逻辑 =================
-const previewBtn = document.getElementById('preview-btn');
-const previewOverlay = document.getElementById('page-preview-overlay');
-const previewContainer = document.getElementById('preview-container');
-const previewClose = document.getElementById('preview-close');
-
-if (previewBtn) {
-    previewBtn.addEventListener('click', () => {
-        previewContainer.innerHTML = '';
-        const pages = document.querySelectorAll('.page');
+        // 缩略图外壳 (附带壁纸)
+        const scaleBox = document.createElement('div');
+        scaleBox.className = 'preview-scale-box liquid-glass';
+        scaleBox.style.backgroundImage = currentBg;
         
-        pages.forEach((page, index) => {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'preview-item-wrapper';
-            
-            const item = document.createElement('div');
-            item.className = 'preview-item liquid-glass';
-            
-            const clone = page.cloneNode(true);
-            clone.className = 'page-clone';
-            
-            // 计算缩放比例以适配预览框
-            const rect = page.getBoundingClientRect();
-            const previewWidth = 140; // 预览框宽度
-            const scale = previewWidth / rect.width;
-            const previewHeight = rect.height * scale;
-            
-            item.style.width = `${previewWidth}px`;
-            item.style.height = `${previewHeight}px`;
-            
-            clone.style.width = `${rect.width}px`;
-            clone.style.height = `${rect.height}px`;
-            clone.style.transform = `scale(${scale})`;
-            
-            item.appendChild(clone);
-            
-            const check = document.createElement('div');
-            check.className = 'preview-check';
-            check.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-            
-            wrapper.appendChild(item);
-            wrapper.appendChild(check);
-            
-            // 点击跳转
-            item.addEventListener('click', () => {
-                const pagesContainer = document.querySelector('.pages-container');
-                pagesContainer.scrollTo({
-                    left: index * pagesContainer.clientWidth,
-                    behavior: 'smooth'
-                });
-                previewOverlay.classList.remove('show');
+        // 缩放内容容器
+        const scaleContent = document.createElement('div');
+        scaleContent.className = 'preview-scale-content';
+        
+        // 克隆真实页面，做到一模一样
+        const clonedPage = page.cloneNode(true);
+        scaleContent.appendChild(clonedPage);
+        scaleBox.appendChild(scaleContent);
+        
+        // 底部打勾图标
+        const checkIcon = document.createElement('div');
+        checkIcon.className = 'preview-check';
+        checkIcon.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 13l4 4L19 7" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        
+        wrapper.appendChild(scaleBox);
+        wrapper.appendChild(checkIcon);
+        
+        // 点击跳转
+        wrapper.addEventListener('click', () => {
+            const pagesContainer = document.querySelector('.pages-container');
+            pagesContainer.scrollTo({
+                left: pagesContainer.clientWidth * index,
+                behavior: 'smooth'
             });
-            
-            previewContainer.appendChild(wrapper);
+            overlay.classList.remove('show');
         });
         
-        previewOverlay.classList.add('show');
-        editMenu.classList.remove('show');
+        container.appendChild(wrapper);
     });
-}
+    
+    overlay.classList.add('show');
+});
 
-if (previewClose) {
-    previewClose.addEventListener('click', () => {
-        previewOverlay.classList.remove('show');
-    });
-}
+// 点击预览背景关闭预览
+document.getElementById('preview-overlay').addEventListener('click', (e) => {
+    if (e.target.id === 'preview-overlay' || e.target.id === 'preview-container') {
+        document.getElementById('preview-overlay').classList.remove('show');
+    }
+});
