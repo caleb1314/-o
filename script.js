@@ -47,27 +47,23 @@ async function getFromDB(key) {
     }
 }
 
-// ================= 实时时钟逻辑 =================
+// ================= 实时时钟与电量 =================
 const clockElement = document.getElementById('clock');
 function updateTime() {
     const now = new Date();
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
-    if (clockElement) {
-        clockElement.textContent = `${hours}:${minutes}`;
-    }
+    if (clockElement) clockElement.textContent = `${hours}:${minutes}`;
 }
 updateTime(); 
 setInterval(updateTime, 1000);
 
-// ================= 真实电量获取逻辑 =================
 if ('getBattery' in navigator) {
     navigator.getBattery().then(function(battery) {
         function updateBattery() {
             const level = Math.round(battery.level * 100);
             const batteryText = document.getElementById('battery-text');
             const batteryLevel = document.getElementById('battery-level');
-            
             if (batteryText) batteryText.textContent = level;
             if (batteryLevel) batteryLevel.setAttribute('width', (level / 100) * 20);
         }
@@ -95,8 +91,8 @@ screen.addEventListener('click', (e) => {
 
 // ================= 动态事件绑定 =================
 function bindAllDynamicEvents() {
-    const appItems = document.querySelectorAll('.app-item');
-    appItems.forEach(item => {
+    // 软件点击动画
+    document.querySelectorAll('.app-item').forEach(item => {
         const newBtn = item.cloneNode(true);
         item.replaceWith(newBtn);
     });
@@ -110,16 +106,12 @@ function bindAllDynamicEvents() {
             icon.style.transform = 'scale(0.92) scaleX(1.05) scaleY(0.92)';
             icon.style.boxShadow = 'inset 0 2px 4px rgba(255, 255, 255, 0.9), inset 0 -1px 3px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.05)';
         };
-
         const pressUpAnim = () => {
             if (screen.classList.contains('edit-mode')) return;
             icon.style.transform = 'scale(1.05) scaleX(0.95) scaleY(1.05)';
             icon.style.boxShadow = '';
-            setTimeout(() => {
-                icon.style.transform = 'scale(1)';
-            }, 150);
+            setTimeout(() => { icon.style.transform = 'scale(1)'; }, 150);
         };
-
         const cancelPressAnim = () => {
             if (screen.classList.contains('edit-mode')) return;
             icon.style.transform = 'scale(1)';
@@ -134,14 +126,16 @@ function bindAllDynamicEvents() {
         item.addEventListener('mouseleave', cancelPressAnim);
     });
 
-    const imgWidgets = document.querySelectorAll('.widget-2x2');
-    imgWidgets.forEach(widget => {
+    // 图片组件上传逻辑
+    document.querySelectorAll('.image-widget-content').forEach(content => {
+        const widget = content.closest('[class*="widget-"]');
+        if (!widget) return;
         const newWidget = widget.cloneNode(true);
         widget.replaceWith(newWidget);
     });
 
-    document.querySelectorAll('.widget-2x2').forEach(widget => {
-        const content = widget.querySelector('.image-widget-content');
+    document.querySelectorAll('.image-widget-content').forEach(content => {
+        const widget = content.closest('[class*="widget-"]');
         const input = widget.querySelector('.widget-img-input');
         const widgetId = widget.getAttribute('data-widget-id');
 
@@ -188,34 +182,36 @@ function bindAllDynamicEvents() {
 // ================= 页面初始化加载缓存 =================
 window.addEventListener('DOMContentLoaded', async () => {
     const savedWallpaper = await getFromDB('wallpaper');
-    if (savedWallpaper) {
-        document.getElementById('screen').style.backgroundImage = `url(${savedWallpaper})`;
-    }
+    if (savedWallpaper) document.getElementById('screen').style.backgroundImage = `url(${savedWallpaper})`;
     
     const savedPages = await getFromDB('pagesHTML');
     const savedDock = await getFromDB('dockHTML');
     if (savedPages) document.querySelector('.pages-container').innerHTML = savedPages;
     if (savedDock) document.querySelector('.dock-container').innerHTML = savedDock;
     
-    const widgets = document.querySelectorAll('.widget-2x2');
+    // 恢复所有图片组件
+    const widgets = document.querySelectorAll('[class*="widget-"]:not(.widget-4x3)');
     for (const widget of widgets) {
         const widgetId = widget.getAttribute('data-widget-id');
         if (widgetId) {
             const base64 = await getFromDB(`widget_${widgetId}`);
             if (base64) {
                 const content = widget.querySelector('.image-widget-content');
-                content.style.backgroundImage = `url(${base64})`;
-                content.classList.add('has-image');
-                const placeholder = content.querySelector('.upload-placeholder');
-                if (placeholder) placeholder.style.display = 'none';
+                if (content) {
+                    content.style.backgroundImage = `url(${base64})`;
+                    content.classList.add('has-image');
+                    const placeholder = content.querySelector('.upload-placeholder');
+                    if (placeholder) placeholder.style.display = 'none';
+                }
             }
         }
     }
 
     bindAllDynamicEvents();
+    initDragAndDrop();
 });
 
-// ================= 长按进入编辑模式逻辑 =================
+// ================= 长按进入编辑模式 =================
 let pressTimer = null;
 let startX = 0;
 let startY = 0;
@@ -224,13 +220,10 @@ const LONG_PRESS_DURATION = 600;
 let backupPagesHTML = '';
 let backupDockHTML = '';
 
-screen.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-});
+screen.addEventListener('contextmenu', (e) => e.preventDefault());
 
 const startPress = (e) => {
     if (screen.classList.contains('edit-mode')) return;
-    
     if (e.type === 'touchstart') {
         startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
@@ -242,11 +235,8 @@ const startPress = (e) => {
     pressTimer = setTimeout(() => {
         backupPagesHTML = document.querySelector('.pages-container').innerHTML;
         backupDockHTML = document.querySelector('.dock-container').innerHTML;
-        
         screen.classList.add('edit-mode');
-        if (navigator.vibrate) {
-            navigator.vibrate(50);
-        }
+        if (navigator.vibrate) navigator.vibrate(50);
     }, LONG_PRESS_DURATION);
 };
 
@@ -282,7 +272,7 @@ screen.addEventListener('mousemove', movePress);
 screen.addEventListener('mouseup', cancelPress);
 screen.addEventListener('mouseleave', cancelPress);
 
-// ================= 编辑控制栏与弹窗逻辑 =================
+// ================= 编辑控制栏与弹窗 =================
 const editBtn = document.getElementById('edit-btn');
 const editMenu = document.getElementById('edit-menu');
 const doneBtn = document.getElementById('done-btn');
@@ -311,13 +301,9 @@ if (editBtn && editMenu) {
     });
 }
 
-// ================= 添加组件逻辑 =================
+// ================= 组件面板逻辑 =================
 const widgetPanel = document.getElementById('widget-panel');
 const closePanelBtn = document.getElementById('close-panel');
-const panelAddBtn = document.getElementById('panel-add-btn');
-
-let selectedWidgetHTML = null;
-let selectedWidgetCapacity = 0;
 
 document.getElementById('menu-add').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -327,122 +313,98 @@ document.getElementById('menu-add').addEventListener('click', (e) => {
 
 closePanelBtn.addEventListener('click', () => {
     widgetPanel.classList.remove('show');
-    clearWidgetSelection();
 });
 
-document.addEventListener('click', (e) => {
-    if (editMenu && editMenu.classList.contains('show')) {
-        if (!editBtn.contains(e.target) && !editMenu.contains(e.target)) {
-            editMenu.classList.remove('show');
-        }
-    }
-    if (widgetPanel && widgetPanel.classList.contains('show')) {
-        if (!widgetPanel.contains(e.target) && e.target.id !== 'menu-add') {
-            widgetPanel.classList.remove('show');
-            clearWidgetSelection();
-        }
-    }
+document.getElementById('panel-add-btn').addEventListener('click', () => {
+    showToast('自定义组件功能开发中');
 });
 
-// 选中组件逻辑
-document.querySelectorAll('.widget-option').forEach(opt => {
-    opt.addEventListener('click', () => {
-        document.querySelectorAll('.widget-option').forEach(o => o.classList.remove('selected'));
-        opt.classList.add('selected');
+// 选项卡切换
+document.querySelectorAll('.panel-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.widget-tab-content').forEach(c => c.classList.remove('active'));
         
-        if (opt.id === 'add-img-widget') {
-            selectedWidgetHTML = getImageWidgetHTML();
-            selectedWidgetCapacity = 4; // 2x2 = 4
-        } else if (opt.id === 'add-music-widget') {
-            selectedWidgetHTML = musicWidgetHTML;
-            selectedWidgetCapacity = 12; // 4x3 = 12
-        }
+        tab.classList.add('active');
+        document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
     });
 });
 
-// 点击添加按键
-panelAddBtn.addEventListener('click', () => {
-    if (selectedWidgetHTML) {
-        addWidgetToCurrentPage(selectedWidgetHTML, selectedWidgetCapacity);
-        widgetPanel.classList.remove('show');
-        clearWidgetSelection();
-    } else {
-        showToast('请先选择一个组件');
+// ================= 核心：精准 4x6 空间算法 =================
+function canFitInPage(page, newElement = null) {
+    const grid = Array(6).fill(0).map(() => Array(4).fill(false));
+    const items = Array.from(page.querySelectorAll('.app-item, [class*="widget-"]'));
+    
+    if (newElement && !items.includes(newElement)) {
+        items.push(newElement);
     }
-});
 
-function clearWidgetSelection() {
-    selectedWidgetHTML = null;
-    document.querySelectorAll('.widget-option').forEach(o => o.classList.remove('selected'));
+    for (let item of items) {
+        if (item.classList && item.classList.contains('drag-clone')) continue;
+        
+        let w = 1, h = 1;
+        if (item.classList) {
+            if (item.classList.contains('widget-1x2')) { w = 1; h = 2; }
+            else if (item.classList.contains('widget-2x1')) { w = 2; h = 1; }
+            else if (item.classList.contains('widget-2x2')) { w = 2; h = 2; }
+            else if (item.classList.contains('widget-4x2')) { w = 4; h = 2; }
+            else if (item.classList.contains('widget-4x3')) { w = 4; h = 3; }
+        }
+        
+        let placed = false;
+        for (let r = 0; r <= 6 - h; r++) {
+            for (let c = 0; c <= 4 - w; c++) {
+                let empty = true;
+                for (let ir = 0; ir < h; ir++) {
+                    for (let ic = 0; ic < w; ic++) {
+                        if (grid[r + ir][c + ic]) empty = false;
+                    }
+                }
+                if (empty) {
+                    for (let ir = 0; ir < h; ir++) {
+                        for (let ic = 0; ic < w; ic++) {
+                            grid[r + ir][c + ic] = true;
+                        }
+                    }
+                    placed = true;
+                    break;
+                }
+            }
+            if (placed) break;
+        }
+        if (!placed) return false; // 只要有一个放不下，就说明空间不足
+    }
+    return true;
 }
 
-// 获取当前页码
 function getCurrentPageIndex() {
     const container = document.querySelector('.pages-container');
-    const scrollLeft = container.scrollLeft;
-    const width = container.clientWidth;
-    return Math.round(scrollLeft / width);
+    return Math.round(container.scrollLeft / container.clientWidth);
 }
 
-// 计算页面容量 (最大24 = 4x6)
-function getPageCapacity(page) {
-    let used = 0;
-    const items = page.querySelectorAll('.app-item, .widget-2x2, .widget-4x3');
-    items.forEach(item => {
-        if (item.classList.contains('widget-4x3')) used += 12; 
-        else if (item.classList.contains('widget-2x2')) used += 4;       
-        else if (item.classList.contains('app-item')) used += 1;         
-    });
-    return 24 - used;
-}
-
-// ================= 顶部清透玻璃弹窗逻辑 =================
+// ================= 顶部弹窗 =================
 let activeNotifications = [];
 let notifCounter = 0;
 
 function showToast(msg) {
     notifCounter++;
     const id = notifCounter;
-
     const banner = document.createElement('div');
     banner.className = 'notification-banner';
-    banner.innerHTML = `
-        <div class="text-content">
-            <div class="title">提示</div>
-            <div class="message">${msg}</div>
-        </div>
-    `;
-
+    banner.innerHTML = `<div class="text-content"><div class="title">提示</div><div class="message">${msg}</div></div>`;
     document.body.appendChild(banner);
     activeNotifications.unshift({ id, el: banner });
-    void banner.offsetWidth; // 触发重绘
+    void banner.offsetWidth; 
     updateStack();
-
-    setTimeout(() => {
-        removeNotification(id);
-    }, 1500);
+    setTimeout(() => removeNotification(id), 1500);
 }
 
 function updateStack() {
     activeNotifications.forEach((notif, index) => {
         const el = notif.el;
-        if (index === 0) {
-            el.style.transform = `translate(-50%, 0) scale(1)`;
-            el.style.opacity = '1';
-            el.style.zIndex = 9999;
-        } else if (index === 1) {
-            el.style.transform = `translate(-50%, 12px) scale(0.92)`;
-            el.style.opacity = '0.85';
-            el.style.zIndex = 9998;
-        } else if (index === 2) {
-            el.style.transform = `translate(-50%, 24px) scale(0.84)`;
-            el.style.opacity = '0.5';
-            el.style.zIndex = 9997;
-        } else {
-            el.style.transform = `translate(-50%, 36px) scale(0.75)`;
-            el.style.opacity = '0';
-            el.style.zIndex = 9996;
-        }
+        if (index === 0) { el.style.transform = `translate(-50%, 0) scale(1)`; el.style.opacity = '1'; el.style.zIndex = 9999; }
+        else if (index === 1) { el.style.transform = `translate(-50%, 12px) scale(0.92)`; el.style.opacity = '0.85'; el.style.zIndex = 9998; }
+        else { el.style.transform = `translate(-50%, 24px) scale(0.84)`; el.style.opacity = '0'; el.style.zIndex = 9997; }
     });
 }
 
@@ -453,42 +415,15 @@ function removeNotification(id) {
         activeNotifications.splice(index, 1);
         notif.el.classList.add('leaving');
         updateStack();
-        setTimeout(() => {
-            if (notif.el.parentNode) notif.el.parentNode.removeChild(notif.el);
-        }, 400);
+        setTimeout(() => { if (notif.el.parentNode) notif.el.parentNode.removeChild(notif.el); }, 400);
     }
 }
 
-// 插入组件到当前页
-function addWidgetToCurrentPage(htmlString, capacityNeeded) {
-    const pageIndex = getCurrentPageIndex();
-    const pages = document.querySelectorAll('.pages-container .page');
-    if (pageIndex >= pages.length) return;
-    
-    const page = pages[pageIndex];
-    const appGrid = page.querySelector('.app-grid');
-    if (!appGrid) return;
-
-    const currentCapacity = getPageCapacity(page);
-    if (currentCapacity < capacityNeeded) {
-        showToast('空间不足，无法添加');
-        return;
-    }
-
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlString.trim();
-    const newElement = tempDiv.firstChild;
-
-    appGrid.appendChild(newElement);
-    bindAllDynamicEvents();
-    saveCurrentState();
-}
-
-// 图片组件模板
-function getImageWidgetHTML() {
+// ================= 添加组件逻辑 =================
+function getImageWidgetHTML(sizeClass) {
     const widgetId = 'img-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
     return `
-    <div class="widget-2x2 jiggle-item" data-widget-id="${widgetId}">
+    <div class="${sizeClass} jiggle-item" data-widget-id="${widgetId}">
         <div class="delete-btn">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg>
         </div>
@@ -503,7 +438,6 @@ function getImageWidgetHTML() {
     `;
 }
 
-// 音乐组件模板 (恢复原样)
 const musicWidgetHTML = `
 <div class="widget-4x3 jiggle-item">
     <div class="delete-btn">
@@ -547,18 +481,169 @@ const musicWidgetHTML = `
 </div>
 `;
 
-// ================= 取消修改逻辑 =================
+document.querySelectorAll('.widget-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+        const type = opt.getAttribute('data-widget-type');
+        let html = '';
+        if (type.startsWith('img-')) {
+            const size = type.split('-')[1]; 
+            html = getImageWidgetHTML(`widget-${size}`);
+        } else if (type === 'music-4x3') {
+            html = musicWidgetHTML;
+        }
+        
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html.trim();
+        const newElement = tempDiv.firstChild;
+        
+        const pageIndex = getCurrentPageIndex();
+        const pages = document.querySelectorAll('.pages-container .page');
+        const page = pages[pageIndex];
+        
+        if (canFitInPage(page, newElement)) {
+            page.querySelector('.app-grid').appendChild(newElement);
+            bindAllDynamicEvents();
+            saveCurrentState();
+            widgetPanel.classList.remove('show');
+        } else {
+            showToast('当前页面空间不足');
+        }
+    });
+});
+
+// ================= 原生级自由拖拽系统 =================
+let draggingElement = null;
+let dragClone = null;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+let pageSwitchTimer = null;
+let targetPageIndex = 0;
+
+function initDragAndDrop() {
+    const screen = document.getElementById('screen');
+    
+    screen.addEventListener('pointerdown', (e) => {
+        if (!screen.classList.contains('edit-mode')) return;
+        
+        const item = e.target.closest('.app-item, [class*="widget-"]');
+        if (!item || e.target.closest('.delete-btn')) return;
+        
+        e.preventDefault();
+        
+        draggingElement = item;
+        const rect = item.getBoundingClientRect();
+        dragOffsetX = e.clientX - rect.left;
+        dragOffsetY = e.clientY - rect.top;
+        
+        dragClone = item.cloneNode(true);
+        dragClone.classList.add('drag-clone');
+        dragClone.style.width = `${rect.width}px`;
+        dragClone.style.height = `${rect.height}px`;
+        dragClone.style.left = `${rect.left}px`;
+        dragClone.style.top = `${rect.top}px`;
+        document.body.appendChild(dragClone);
+        
+        item.classList.add('is-dragging');
+        targetPageIndex = getCurrentPageIndex();
+    });
+    
+    document.addEventListener('pointermove', (e) => {
+        if (!draggingElement || !dragClone) return;
+        
+        dragClone.style.left = `${e.clientX - dragOffsetX}px`;
+        dragClone.style.top = `${e.clientY - dragOffsetY}px`;
+        
+        // 边缘停留翻页逻辑
+        const edgeThreshold = 40;
+        if (e.clientX < edgeThreshold) {
+            if (!pageSwitchTimer) {
+                pageSwitchTimer = setTimeout(() => {
+                    const container = document.querySelector('.pages-container');
+                    targetPageIndex = Math.max(0, targetPageIndex - 1);
+                    container.scrollTo({ left: container.clientWidth * targetPageIndex, behavior: 'smooth' });
+                    
+                    setTimeout(() => {
+                        const grids = document.querySelectorAll('.app-grid');
+                        if (grids[targetPageIndex] && canFitInPage(grids[targetPageIndex].closest('.page'), draggingElement)) {
+                            grids[targetPageIndex].appendChild(draggingElement);
+                        }
+                    }, 300);
+                }, 800); // 停留 0.8 秒
+            }
+        } else if (e.clientX > window.innerWidth - edgeThreshold) {
+            if (!pageSwitchTimer) {
+                pageSwitchTimer = setTimeout(() => {
+                    const container = document.querySelector('.pages-container');
+                    targetPageIndex = Math.min(document.querySelectorAll('.page').length - 1, targetPageIndex + 1);
+                    container.scrollTo({ left: container.clientWidth * targetPageIndex, behavior: 'smooth' });
+                    
+                    setTimeout(() => {
+                        const grids = document.querySelectorAll('.app-grid');
+                        if (grids[targetPageIndex] && canFitInPage(grids[targetPageIndex].closest('.page'), draggingElement)) {
+                            grids[targetPageIndex].appendChild(draggingElement);
+                        }
+                    }, 300);
+                }, 800);
+            }
+        } else {
+            clearTimeout(pageSwitchTimer);
+            pageSwitchTimer = null;
+        }
+        
+        // 网格重排逻辑
+        dragClone.style.display = 'none';
+        const target = document.elementFromPoint(e.clientX, e.clientY);
+        dragClone.style.display = 'block';
+        
+        if (target) {
+            const targetItem = target.closest('.app-item, [class*="widget-"]');
+            if (targetItem && targetItem !== draggingElement) {
+                const grid = targetItem.closest('.app-grid');
+                if (grid && draggingElement.closest('.app-grid')) {
+                    const page = grid.closest('.page');
+                    const rect = targetItem.getBoundingClientRect();
+                    const isAfter = (e.clientX - rect.left) > (rect.width / 2);
+                    
+                    const parent = draggingElement.parentNode;
+                    const nextSibling = draggingElement.nextSibling;
+                    
+                    if (isAfter) targetItem.after(draggingElement);
+                    else targetItem.before(draggingElement);
+                    
+                    // 如果重排后打破了 4x6 布局，则撤销移动
+                    if (!canFitInPage(page)) {
+                        if (nextSibling) parent.insertBefore(draggingElement, nextSibling);
+                        else parent.appendChild(draggingElement);
+                    }
+                }
+            }
+        }
+    });
+    
+    document.addEventListener('pointerup', (e) => {
+        if (!draggingElement) return;
+        
+        dragClone.remove();
+        dragClone = null;
+        
+        draggingElement.classList.remove('is-dragging');
+        draggingElement = null;
+        
+        clearTimeout(pageSwitchTimer);
+        pageSwitchTimer = null;
+    });
+}
+
+// ================= 取消修改、壁纸、预览逻辑 =================
 document.getElementById('menu-cancel').addEventListener('click', (e) => {
     e.stopPropagation();
     document.querySelector('.pages-container').innerHTML = backupPagesHTML;
     document.querySelector('.dock-container').innerHTML = backupDockHTML;
     bindAllDynamicEvents();
-    
     screen.classList.remove('edit-mode');
     editMenu.classList.remove('show');
 });
 
-// ================= 真实更换壁纸逻辑 =================
 const wallpaperInput = document.getElementById('wallpaper-input');
 document.getElementById('menu-wallpaper').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -579,7 +664,6 @@ wallpaperInput.addEventListener('change', (e) => {
     editMenu.classList.remove('show');
 });
 
-// ================= 页面预览跳转逻辑 =================
 document.getElementById('menu-preview').addEventListener('click', (e) => {
     e.stopPropagation();
     editMenu.classList.remove('show');
@@ -615,10 +699,7 @@ document.getElementById('menu-preview').addEventListener('click', (e) => {
         
         wrapper.addEventListener('click', () => {
             const pagesContainer = document.querySelector('.pages-container');
-            pagesContainer.scrollTo({
-                left: pagesContainer.clientWidth * index,
-                behavior: 'smooth'
-            });
+            pagesContainer.scrollTo({ left: pagesContainer.clientWidth * index, behavior: 'smooth' });
             overlay.classList.remove('show');
         });
         
