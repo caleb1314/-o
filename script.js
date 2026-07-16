@@ -7,7 +7,9 @@ function initDB() {
         const request = indexedDB.open(DB_NAME, 1);
         request.onupgradeneeded = (e) => {
             const db = e.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME);
+            }
         };
         request.onsuccess = (e) => resolve(e.target.result);
         request.onerror = (e) => reject(e.target.error);
@@ -24,7 +26,9 @@ async function saveToDB(key, value) {
             request.onsuccess = () => resolve();
             request.onerror = () => reject();
         });
-    } catch (e) { console.error('DB Save Error', e); }
+    } catch (e) {
+        console.error('DB Save Error', e);
+    }
 }
 
 async function getFromDB(key) {
@@ -37,98 +41,39 @@ async function getFromDB(key) {
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject();
         });
-    } catch (e) { return null; }
+    } catch (e) {
+        console.error('DB Get Error', e);
+        return null;
+    }
 }
 
-// ================= 实时时钟与电量 =================
+// ================= 实时时钟逻辑 =================
 const clockElement = document.getElementById('clock');
 function updateTime() {
     const now = new Date();
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
-    if (clockElement) clockElement.textContent = `${hours}:${minutes}`;
+    if (clockElement) {
+        clockElement.textContent = `${hours}:${minutes}`;
+    }
 }
 updateTime(); 
 setInterval(updateTime, 1000);
 
+// ================= 真实电量获取逻辑 =================
 if ('getBattery' in navigator) {
     navigator.getBattery().then(function(battery) {
         function updateBattery() {
             const level = Math.round(battery.level * 100);
             const batteryText = document.getElementById('battery-text');
             const batteryLevel = document.getElementById('battery-level');
+            
             if (batteryText) batteryText.textContent = level;
             if (batteryLevel) batteryLevel.setAttribute('width', (level / 100) * 20);
         }
         updateBattery();
         battery.addEventListener('levelchange', updateBattery);
     });
-}
-
-// ================= 核心：绝对网格坐标初始化 =================
-function initGridCoordinates() {
-    document.querySelectorAll('.page').forEach(page => {
-        const grid = Array(6).fill(0).map(() => Array(4).fill(null));
-        const items = page.querySelectorAll('.app-item, [class*="widget-"]');
-        
-        items.forEach(item => {
-            if (item.classList.contains('drag-clone')) return;
-            
-            let w = parseInt(getComputedStyle(item).getPropertyValue('--w')) || 1;
-            let h = parseInt(getComputedStyle(item).getPropertyValue('--h')) || 1;
-            
-            let row = parseInt(item.getAttribute('data-row'));
-            let col = parseInt(item.getAttribute('data-col'));
-            
-            // 如果没有坐标，或者坐标冲突，自动寻找空位分配
-            if (!row || !col || !canPlace(grid, row-1, col-1, w, h)) {
-                const pos = findEmptySpot(grid, w, h);
-                if (pos) {
-                    row = pos.r + 1;
-                    col = pos.c + 1;
-                    item.setAttribute('data-row', row);
-                    item.setAttribute('data-col', col);
-                } else {
-                    // 如果实在放不下，隐藏或移除（防止破坏布局）
-                    item.style.display = 'none';
-                    return;
-                }
-            }
-            
-            if (row && col) {
-                item.style.setProperty('--row', row);
-                item.style.setProperty('--col', col);
-                markGrid(grid, row-1, col-1, w, h, item);
-            }
-        });
-    });
-}
-
-function canPlace(grid, r, c, w, h, ignoreItem = null) {
-    if (r < 0 || c < 0 || r + h > 6 || c + w > 4) return false;
-    for (let i = 0; i < h; i++) {
-        for (let j = 0; j < w; j++) {
-            if (grid[r + i][c + j] && grid[r + i][c + j] !== ignoreItem) return false;
-        }
-    }
-    return true;
-}
-
-function markGrid(grid, r, c, w, h, item) {
-    for (let i = 0; i < h; i++) {
-        for (let j = 0; j < w; j++) {
-            grid[r + i][c + j] = item;
-        }
-    }
-}
-
-function findEmptySpot(grid, w, h) {
-    for (let r = 0; r <= 6 - h; r++) {
-        for (let c = 0; c <= 4 - w; c++) {
-            if (canPlace(grid, r, c, w, h)) return {r, c};
-        }
-    }
-    return null;
 }
 
 // ================= 全局删除事件委托 =================
@@ -142,7 +87,6 @@ screen.addEventListener('click', (e) => {
             item.classList.add('removing');
             setTimeout(async () => {
                 item.remove();
-                initGridCoordinates(); // 删除后重新计算网格
                 await saveCurrentState();
             }, 300);
         }
@@ -151,7 +95,8 @@ screen.addEventListener('click', (e) => {
 
 // ================= 动态事件绑定 =================
 function bindAllDynamicEvents() {
-    document.querySelectorAll('.app-item').forEach(item => {
+    const appItems = document.querySelectorAll('.app-item');
+    appItems.forEach(item => {
         const newBtn = item.cloneNode(true);
         item.replaceWith(newBtn);
     });
@@ -165,12 +110,16 @@ function bindAllDynamicEvents() {
             icon.style.transform = 'scale(0.92) scaleX(1.05) scaleY(0.92)';
             icon.style.boxShadow = 'inset 0 2px 4px rgba(255, 255, 255, 0.9), inset 0 -1px 3px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.05)';
         };
+
         const pressUpAnim = () => {
             if (screen.classList.contains('edit-mode')) return;
             icon.style.transform = 'scale(1.05) scaleX(0.95) scaleY(1.05)';
             icon.style.boxShadow = '';
-            setTimeout(() => { icon.style.transform = 'scale(1)'; }, 150);
+            setTimeout(() => {
+                icon.style.transform = 'scale(1)';
+            }, 150);
         };
+
         const cancelPressAnim = () => {
             if (screen.classList.contains('edit-mode')) return;
             icon.style.transform = 'scale(1)';
@@ -185,15 +134,14 @@ function bindAllDynamicEvents() {
         item.addEventListener('mouseleave', cancelPressAnim);
     });
 
-    document.querySelectorAll('.image-widget-content').forEach(content => {
-        const widget = content.closest('[class*="widget-"]');
-        if (!widget) return;
+    const imgWidgets = document.querySelectorAll('.widget-2x2');
+    imgWidgets.forEach(widget => {
         const newWidget = widget.cloneNode(true);
         widget.replaceWith(newWidget);
     });
 
-    document.querySelectorAll('.image-widget-content').forEach(content => {
-        const widget = content.closest('[class*="widget-"]');
+    document.querySelectorAll('.widget-2x2').forEach(widget => {
+        const content = widget.querySelector('.image-widget-content');
         const input = widget.querySelector('.widget-img-input');
         const widgetId = widget.getAttribute('data-widget-id');
 
@@ -240,36 +188,34 @@ function bindAllDynamicEvents() {
 // ================= 页面初始化加载缓存 =================
 window.addEventListener('DOMContentLoaded', async () => {
     const savedWallpaper = await getFromDB('wallpaper');
-    if (savedWallpaper) document.getElementById('screen').style.backgroundImage = `url(${savedWallpaper})`;
+    if (savedWallpaper) {
+        document.getElementById('screen').style.backgroundImage = `url(${savedWallpaper})`;
+    }
     
     const savedPages = await getFromDB('pagesHTML');
     const savedDock = await getFromDB('dockHTML');
     if (savedPages) document.querySelector('.pages-container').innerHTML = savedPages;
     if (savedDock) document.querySelector('.dock-container').innerHTML = savedDock;
     
-    const widgets = document.querySelectorAll('[class*="widget-"]:not(.widget-4x3)');
+    const widgets = document.querySelectorAll('.widget-2x2');
     for (const widget of widgets) {
         const widgetId = widget.getAttribute('data-widget-id');
         if (widgetId) {
             const base64 = await getFromDB(`widget_${widgetId}`);
             if (base64) {
                 const content = widget.querySelector('.image-widget-content');
-                if (content) {
-                    content.style.backgroundImage = `url(${base64})`;
-                    content.classList.add('has-image');
-                    const placeholder = content.querySelector('.upload-placeholder');
-                    if (placeholder) placeholder.style.display = 'none';
-                }
+                content.style.backgroundImage = `url(${base64})`;
+                content.classList.add('has-image');
+                const placeholder = content.querySelector('.upload-placeholder');
+                if (placeholder) placeholder.style.display = 'none';
             }
         }
     }
 
-    initGridCoordinates(); // 初始化绝对坐标
     bindAllDynamicEvents();
-    initDragAndDrop(); // 启动全新拖拽系统
 });
 
-// ================= 长按进入编辑模式 =================
+// ================= 长按进入编辑模式逻辑 =================
 let pressTimer = null;
 let startX = 0;
 let startY = 0;
@@ -278,10 +224,13 @@ const LONG_PRESS_DURATION = 600;
 let backupPagesHTML = '';
 let backupDockHTML = '';
 
-screen.addEventListener('contextmenu', (e) => e.preventDefault());
+screen.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+});
 
 const startPress = (e) => {
     if (screen.classList.contains('edit-mode')) return;
+    
     if (e.type === 'touchstart') {
         startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
@@ -293,8 +242,11 @@ const startPress = (e) => {
     pressTimer = setTimeout(() => {
         backupPagesHTML = document.querySelector('.pages-container').innerHTML;
         backupDockHTML = document.querySelector('.dock-container').innerHTML;
+        
         screen.classList.add('edit-mode');
-        if (navigator.vibrate) navigator.vibrate(50);
+        if (navigator.vibrate) {
+            navigator.vibrate(50);
+        }
     }, LONG_PRESS_DURATION);
 };
 
@@ -330,7 +282,7 @@ screen.addEventListener('mousemove', movePress);
 screen.addEventListener('mouseup', cancelPress);
 screen.addEventListener('mouseleave', cancelPress);
 
-// ================= 编辑控制栏与弹窗 =================
+// ================= 编辑控制栏与弹窗逻辑 =================
 const editBtn = document.getElementById('edit-btn');
 const editMenu = document.getElementById('edit-menu');
 const doneBtn = document.getElementById('done-btn');
@@ -359,9 +311,13 @@ if (editBtn && editMenu) {
     });
 }
 
-// ================= 组件面板逻辑 =================
+// ================= 添加组件逻辑 =================
 const widgetPanel = document.getElementById('widget-panel');
 const closePanelBtn = document.getElementById('close-panel');
+const panelAddBtn = document.getElementById('panel-add-btn');
+
+let selectedWidgetHTML = null;
+let selectedWidgetCapacity = 0;
 
 document.getElementById('menu-add').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -371,50 +327,122 @@ document.getElementById('menu-add').addEventListener('click', (e) => {
 
 closePanelBtn.addEventListener('click', () => {
     widgetPanel.classList.remove('show');
+    clearWidgetSelection();
 });
 
-document.getElementById('panel-add-btn').addEventListener('click', () => {
-    showToast('自定义组件功能开发中');
+document.addEventListener('click', (e) => {
+    if (editMenu && editMenu.classList.contains('show')) {
+        if (!editBtn.contains(e.target) && !editMenu.contains(e.target)) {
+            editMenu.classList.remove('show');
+        }
+    }
+    if (widgetPanel && widgetPanel.classList.contains('show')) {
+        if (!widgetPanel.contains(e.target) && e.target.id !== 'menu-add') {
+            widgetPanel.classList.remove('show');
+            clearWidgetSelection();
+        }
+    }
 });
 
-document.querySelectorAll('.panel-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.widget-tab-content').forEach(c => c.classList.remove('active'));
+// 选中组件逻辑
+document.querySelectorAll('.widget-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+        document.querySelectorAll('.widget-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
         
-        tab.classList.add('active');
-        document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+        if (opt.id === 'add-img-widget') {
+            selectedWidgetHTML = getImageWidgetHTML();
+            selectedWidgetCapacity = 4; // 2x2 = 4
+        } else if (opt.id === 'add-music-widget') {
+            selectedWidgetHTML = musicWidgetHTML;
+            selectedWidgetCapacity = 12; // 4x3 = 12
+        }
     });
 });
 
-function getCurrentPageIndex() {
-    const container = document.querySelector('.pages-container');
-    return Math.round(container.scrollLeft / container.clientWidth);
+// 点击添加按键
+panelAddBtn.addEventListener('click', () => {
+    if (selectedWidgetHTML) {
+        addWidgetToCurrentPage(selectedWidgetHTML, selectedWidgetCapacity);
+        widgetPanel.classList.remove('show');
+        clearWidgetSelection();
+    } else {
+        showToast('请先选择一个组件');
+    }
+});
+
+function clearWidgetSelection() {
+    selectedWidgetHTML = null;
+    document.querySelectorAll('.widget-option').forEach(o => o.classList.remove('selected'));
 }
 
-// ================= 顶部弹窗 =================
+// 获取当前页码
+function getCurrentPageIndex() {
+    const container = document.querySelector('.pages-container');
+    const scrollLeft = container.scrollLeft;
+    const width = container.clientWidth;
+    return Math.round(scrollLeft / width);
+}
+
+// 计算页面容量 (最大24 = 4x6)
+function getPageCapacity(page) {
+    let used = 0;
+    const items = page.querySelectorAll('.app-item, .widget-2x2, .widget-4x3');
+    items.forEach(item => {
+        if (item.classList.contains('widget-4x3')) used += 12; 
+        else if (item.classList.contains('widget-2x2')) used += 4;       
+        else if (item.classList.contains('app-item')) used += 1;         
+    });
+    return 24 - used;
+}
+
+// ================= 顶部清透玻璃弹窗逻辑 =================
 let activeNotifications = [];
 let notifCounter = 0;
 
 function showToast(msg) {
     notifCounter++;
     const id = notifCounter;
+
     const banner = document.createElement('div');
     banner.className = 'notification-banner';
-    banner.innerHTML = `<div class="text-content"><div class="title">提示</div><div class="message">${msg}</div></div>`;
+    banner.innerHTML = `
+        <div class="text-content">
+            <div class="title">提示</div>
+            <div class="message">${msg}</div>
+        </div>
+    `;
+
     document.body.appendChild(banner);
     activeNotifications.unshift({ id, el: banner });
-    void banner.offsetWidth; 
+    void banner.offsetWidth; // 触发重绘
     updateStack();
-    setTimeout(() => removeNotification(id), 1500);
+
+    setTimeout(() => {
+        removeNotification(id);
+    }, 1500);
 }
 
 function updateStack() {
     activeNotifications.forEach((notif, index) => {
         const el = notif.el;
-        if (index === 0) { el.style.transform = `translate(-50%, 0) scale(1)`; el.style.opacity = '1'; el.style.zIndex = 9999; }
-        else if (index === 1) { el.style.transform = `translate(-50%, 12px) scale(0.92)`; el.style.opacity = '0.85'; el.style.zIndex = 9998; }
-        else { el.style.transform = `translate(-50%, 24px) scale(0.84)`; el.style.opacity = '0'; el.style.zIndex = 9997; }
+        if (index === 0) {
+            el.style.transform = `translate(-50%, 0) scale(1)`;
+            el.style.opacity = '1';
+            el.style.zIndex = 9999;
+        } else if (index === 1) {
+            el.style.transform = `translate(-50%, 12px) scale(0.92)`;
+            el.style.opacity = '0.85';
+            el.style.zIndex = 9998;
+        } else if (index === 2) {
+            el.style.transform = `translate(-50%, 24px) scale(0.84)`;
+            el.style.opacity = '0.5';
+            el.style.zIndex = 9997;
+        } else {
+            el.style.transform = `translate(-50%, 36px) scale(0.75)`;
+            el.style.opacity = '0';
+            el.style.zIndex = 9996;
+        }
     });
 }
 
@@ -425,15 +453,42 @@ function removeNotification(id) {
         activeNotifications.splice(index, 1);
         notif.el.classList.add('leaving');
         updateStack();
-        setTimeout(() => { if (notif.el.parentNode) notif.el.parentNode.removeChild(notif.el); }, 400);
+        setTimeout(() => {
+            if (notif.el.parentNode) notif.el.parentNode.removeChild(notif.el);
+        }, 400);
     }
 }
 
-// ================= 添加组件逻辑 =================
-function getImageWidgetHTML(sizeClass) {
+// 插入组件到当前页
+function addWidgetToCurrentPage(htmlString, capacityNeeded) {
+    const pageIndex = getCurrentPageIndex();
+    const pages = document.querySelectorAll('.pages-container .page');
+    if (pageIndex >= pages.length) return;
+    
+    const page = pages[pageIndex];
+    const appGrid = page.querySelector('.app-grid');
+    if (!appGrid) return;
+
+    const currentCapacity = getPageCapacity(page);
+    if (currentCapacity < capacityNeeded) {
+        showToast('空间不足，无法添加');
+        return;
+    }
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlString.trim();
+    const newElement = tempDiv.firstChild;
+
+    appGrid.appendChild(newElement);
+    bindAllDynamicEvents();
+    saveCurrentState();
+}
+
+// 图片组件模板
+function getImageWidgetHTML() {
     const widgetId = 'img-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
     return `
-    <div class="${sizeClass} jiggle-item" data-widget-id="${widgetId}">
+    <div class="widget-2x2 jiggle-item" data-widget-id="${widgetId}">
         <div class="delete-btn">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg>
         </div>
@@ -448,14 +503,21 @@ function getImageWidgetHTML(sizeClass) {
     `;
 }
 
+// 音乐组件模板 (恢复原样)
 const musicWidgetHTML = `
 <div class="widget-4x3 jiggle-item">
     <div class="delete-btn">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg>
     </div>
     <svg class="connecting-lines" viewBox="0 0 400 250" preserveAspectRatio="xMidYMin slice">
-        <defs><linearGradient id="fade-grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#555555;stop-opacity:1" /><stop offset="85%" style="stop-color:#555555;stop-opacity:0" /></linearGradient></defs>
-        <circle cx="151" cy="100" r="4" fill="#555555" /><circle cx="249" cy="100" r="4" fill="#555555" />
+        <defs>
+            <linearGradient id="fade-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#555555;stop-opacity:1" />
+                <stop offset="85%" style="stop-color:#555555;stop-opacity:0" />
+            </linearGradient>
+        </defs>
+        <circle cx="151" cy="100" r="4" fill="#555555" />
+        <circle cx="249" cy="100" r="4" fill="#555555" />
         <path d="M 151 100 Q 100 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/>
         <path d="M 249 100 Q 300 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/>
     </svg>
@@ -468,7 +530,9 @@ const musicWidgetHTML = `
         <div class="music-title">Pink Lavender</div>
         <div class="music-subtitle" contenteditable="true" spellcheck="false">· ⁺ ⋆ ‿ ıllıllı ‿ ⋆ ⁺ ·</div>
         <div class="progress-container">
-            <div class="time-label">1:26</div><div class="progress-bar"><div class="progress-fill"></div></div><div class="time-label">3:48</div>
+            <div class="time-label">1:26</div>
+            <div class="progress-bar"><div class="progress-fill"></div></div>
+            <div class="time-label">3:48</div>
         </div>
         <div class="controls-row">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="#666"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -483,230 +547,18 @@ const musicWidgetHTML = `
 </div>
 `;
 
-document.querySelectorAll('.widget-option').forEach(opt => {
-    opt.addEventListener('click', () => {
-        const type = opt.getAttribute('data-widget-type');
-        let html = '';
-        if (type.startsWith('img-')) {
-            const size = type.split('-')[1]; 
-            html = getImageWidgetHTML(`widget-${size}`);
-        } else if (type === 'music-4x3') {
-            html = musicWidgetHTML;
-        }
-        
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html.trim();
-        const newElement = tempDiv.firstChild;
-        
-        const pageIndex = getCurrentPageIndex();
-        const pages = document.querySelectorAll('.pages-container .page');
-        const page = pages[pageIndex];
-        
-        // 尝试在当前页寻找空位
-        const grid = Array(6).fill(0).map(() => Array(4).fill(null));
-        const items = page.querySelectorAll('.app-item, [class*="widget-"]');
-        items.forEach(item => {
-            let w = parseInt(getComputedStyle(item).getPropertyValue('--w')) || 1;
-            let h = parseInt(getComputedStyle(item).getPropertyValue('--h')) || 1;
-            let row = parseInt(item.getAttribute('data-row')) - 1;
-            let col = parseInt(item.getAttribute('data-col')) - 1;
-            if (row >= 0 && col >= 0) markGrid(grid, row, col, w, h, item);
-        });
-        
-        let newW = parseInt(getComputedStyle(newElement).getPropertyValue('--w')) || 1;
-        let newH = parseInt(getComputedStyle(newElement).getPropertyValue('--h')) || 1;
-        
-        // 临时插入 DOM 以获取正确的 CSS 变量
-        page.querySelector('.app-grid').appendChild(newElement);
-        newW = parseInt(getComputedStyle(newElement).getPropertyValue('--w')) || 1;
-        newH = parseInt(getComputedStyle(newElement).getPropertyValue('--h')) || 1;
-        page.querySelector('.app-grid').removeChild(newElement);
-
-        const pos = findEmptySpot(grid, newW, newH);
-        
-        if (pos) {
-            newElement.setAttribute('data-row', pos.r + 1);
-            newElement.setAttribute('data-col', pos.c + 1);
-            newElement.style.setProperty('--row', pos.r + 1);
-            newElement.style.setProperty('--col', pos.c + 1);
-            
-            page.querySelector('.app-grid').appendChild(newElement);
-            bindAllDynamicEvents();
-            saveCurrentState();
-            widgetPanel.classList.remove('show');
-        } else {
-            showToast('当前页面空间不足');
-        }
-    });
-});
-
-// ================= 全新：绝对坐标系拖拽系统 =================
-let draggingElement = null;
-let dragClone = null;
-let dragOffsetX = 0;
-let dragOffsetY = 0;
-let pageSwitchTimer = null;
-let targetPageIndex = 0;
-
-function getGridData(gridElement, ignoreItem = null) {
-    const grid = Array(6).fill(0).map(() => Array(4).fill(null));
-    const items = gridElement.querySelectorAll('.app-item, [class*="widget-"]');
-    items.forEach(item => {
-        if (item === ignoreItem || item.classList.contains('drag-clone')) return;
-        let w = parseInt(getComputedStyle(item).getPropertyValue('--w')) || 1;
-        let h = parseInt(getComputedStyle(item).getPropertyValue('--h')) || 1;
-        let row = parseInt(item.getAttribute('data-row')) - 1;
-        let col = parseInt(item.getAttribute('data-col')) - 1;
-        if (row >= 0 && col >= 0) markGrid(grid, row, col, w, h, item);
-    });
-    return grid;
-}
-
-function getOverlappingItems(grid, r, c, w, h) {
-    const items = new Set();
-    if (r < 0 || c < 0 || r + h > 6 || c + w > 4) return ['OUT_OF_BOUNDS'];
-    for (let i = 0; i < h; i++) {
-        for (let j = 0; j < w; j++) {
-            if (grid[r + i][c + j]) items.add(grid[r + i][c + j]);
-        }
-    }
-    return Array.from(items);
-}
-
-function updateItemPos(item, row, col, targetGridElement) {
-    item.setAttribute('data-row', row);
-    item.setAttribute('data-col', col);
-    item.style.setProperty('--row', row);
-    item.style.setProperty('--col', col);
-    if (item.closest('.app-grid') !== targetGridElement) {
-        targetGridElement.appendChild(item);
-    }
-}
-
-function initDragAndDrop() {
-    const screen = document.getElementById('screen');
-    
-    screen.addEventListener('pointerdown', (e) => {
-        if (!screen.classList.contains('edit-mode')) return;
-        const item = e.target.closest('.app-item, [class*="widget-"]');
-        if (!item || e.target.closest('.delete-btn') || item.closest('.dock-container')) return;
-        
-        e.preventDefault();
-        draggingElement = item;
-        const rect = item.getBoundingClientRect();
-        dragOffsetX = e.clientX - rect.left;
-        dragOffsetY = e.clientY - rect.top;
-        
-        dragClone = item.cloneNode(true);
-        dragClone.classList.add('drag-clone');
-        dragClone.style.width = `${rect.width}px`;
-        dragClone.style.height = `${rect.height}px`;
-        dragClone.style.left = `${rect.left}px`;
-        dragClone.style.top = `${rect.top}px`;
-        document.body.appendChild(dragClone);
-        
-        item.classList.add('is-dragging');
-        targetPageIndex = getCurrentPageIndex();
-    });
-    
-    document.addEventListener('pointermove', (e) => {
-        if (!draggingElement || !dragClone) return;
-        
-        dragClone.style.left = `${e.clientX - dragOffsetX}px`;
-        dragClone.style.top = `${e.clientY - dragOffsetY}px`;
-        
-        // 边缘停留翻页逻辑
-        const edgeThreshold = 40;
-        if (e.clientX < edgeThreshold) {
-            if (!pageSwitchTimer) {
-                pageSwitchTimer = setTimeout(() => {
-                    const container = document.querySelector('.pages-container');
-                    targetPageIndex = Math.max(0, targetPageIndex - 1);
-                    container.scrollTo({ left: container.clientWidth * targetPageIndex, behavior: 'smooth' });
-                }, 800);
-            }
-        } else if (e.clientX > window.innerWidth - edgeThreshold) {
-            if (!pageSwitchTimer) {
-                pageSwitchTimer = setTimeout(() => {
-                    const container = document.querySelector('.pages-container');
-                    targetPageIndex = Math.min(document.querySelectorAll('.page').length - 1, targetPageIndex + 1);
-                    container.scrollTo({ left: container.clientWidth * targetPageIndex, behavior: 'smooth' });
-                }, 800);
-            }
-        } else {
-            clearTimeout(pageSwitchTimer);
-            pageSwitchTimer = null;
-        }
-        
-        // 实时计算落点
-        const pages = document.querySelectorAll('.page');
-        const targetPage = pages[targetPageIndex];
-        if (!targetPage) return;
-        const targetGrid = targetPage.querySelector('.app-grid');
-        const gridRect = targetGrid.getBoundingClientRect();
-        
-        const cellW = gridRect.width / 4;
-        const cellH = gridRect.height / 6;
-        
-        const dragW = parseInt(getComputedStyle(draggingElement).getPropertyValue('--w')) || 1;
-        const dragH = parseInt(getComputedStyle(draggingElement).getPropertyValue('--h')) || 1;
-        
-        // 计算鼠标中心点所在的格子
-        const centerX = e.clientX - gridRect.left;
-        const centerY = e.clientY - gridRect.top;
-        
-        let hoverCol = Math.floor(centerX / cellW) + 1;
-        let hoverRow = Math.floor(centerY / cellH) + 1;
-        
-        // 防止越界
-        hoverCol = Math.max(1, Math.min(4 - dragW + 1, hoverCol));
-        hoverRow = Math.max(1, Math.min(6 - dragH + 1, hoverRow));
-        
-        const gridData = getGridData(targetGrid, draggingElement);
-        const overlappingItems = getOverlappingItems(gridData, hoverRow-1, hoverCol-1, dragW, dragH);
-        
-        if (overlappingItems.length === 0) {
-            // 完全空位，直接移动（拖到哪就是哪）
-            updateItemPos(draggingElement, hoverRow, hoverCol, targetGrid);
-        } else if (overlappingItems.length === 1 && overlappingItems[0] !== 'OUT_OF_BOUNDS') {
-            // 遇到一个元素，检查是否同尺寸，同尺寸则互换位置
-            const targetItem = overlappingItems[0];
-            const targetW = parseInt(getComputedStyle(targetItem).getPropertyValue('--w')) || 1;
-            const targetH = parseInt(getComputedStyle(targetItem).getPropertyValue('--h')) || 1;
-            
-            if (targetW === dragW && targetH === dragH) {
-                const tempRow = draggingElement.getAttribute('data-row');
-                const tempCol = draggingElement.getAttribute('data-col');
-                const tempGrid = draggingElement.closest('.app-grid');
-                
-                updateItemPos(draggingElement, hoverRow, hoverCol, targetGrid);
-                updateItemPos(targetItem, tempRow, tempCol, tempGrid);
-            }
-        }
-    });
-    
-    document.addEventListener('pointerup', (e) => {
-        if (!draggingElement) return;
-        dragClone.remove();
-        dragClone = null;
-        draggingElement.classList.remove('is-dragging');
-        draggingElement = null;
-        clearTimeout(pageSwitchTimer);
-        pageSwitchTimer = null;
-    });
-}
-
-// ================= 取消修改、壁纸、预览逻辑 =================
+// ================= 取消修改逻辑 =================
 document.getElementById('menu-cancel').addEventListener('click', (e) => {
     e.stopPropagation();
     document.querySelector('.pages-container').innerHTML = backupPagesHTML;
     document.querySelector('.dock-container').innerHTML = backupDockHTML;
-    initGridCoordinates();
     bindAllDynamicEvents();
+    
     screen.classList.remove('edit-mode');
     editMenu.classList.remove('show');
 });
 
+// ================= 真实更换壁纸逻辑 =================
 const wallpaperInput = document.getElementById('wallpaper-input');
 document.getElementById('menu-wallpaper').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -727,6 +579,7 @@ wallpaperInput.addEventListener('change', (e) => {
     editMenu.classList.remove('show');
 });
 
+// ================= 页面预览跳转逻辑 =================
 document.getElementById('menu-preview').addEventListener('click', (e) => {
     e.stopPropagation();
     editMenu.classList.remove('show');
@@ -762,7 +615,10 @@ document.getElementById('menu-preview').addEventListener('click', (e) => {
         
         wrapper.addEventListener('click', () => {
             const pagesContainer = document.querySelector('.pages-container');
-            pagesContainer.scrollTo({ left: pagesContainer.clientWidth * index, behavior: 'smooth' });
+            pagesContainer.scrollTo({
+                left: pagesContainer.clientWidth * index,
+                behavior: 'smooth'
+            });
             overlay.classList.remove('show');
         });
         
