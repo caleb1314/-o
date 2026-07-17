@@ -19,6 +19,8 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .status-bar.dark-mode .status-icons > svg:nth-child(2) { fill: #000; } /* WiFi实心黑 */
 .status-bar.dark-mode .status-icons > svg:nth-child(2) path { stroke: #000; } 
 .status-bar.dark-mode #battery-level { fill: #000; }
+/* 电池文字设为与设置页背景一致的颜色，实现镂空视觉效果 */
+.status-bar.dark-mode #battery-text { fill: #f2f2f7; }
 .status-bar.dark-mode .status-icons > svg:nth-child(3) rect[fill="rgba(255,255,255,0.3)"] { fill: rgba(0,0,0,0.25); }
 .status-bar.dark-mode .status-icons > svg:nth-child(3) path { fill: rgba(0,0,0,0.4); }
 
@@ -183,35 +185,36 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 /* 设置页面样式 */
 .settings-page { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #f2f2f7; z-index: 150; transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.36, 0.66, 0.04, 1); display: flex; flex-direction: column; overflow: hidden; }
 .settings-page.show { transform: translateX(0); }
-.settings-title-container { padding: 0 16px; margin-top: calc(10px + env(safe-area-inset-top)); margin-bottom: 10px; }
-.settings-title { font-size: 26px; font-weight: 700; color: #000; letter-spacing: 0.5px; cursor: pointer; display: inline-block; transition: opacity 0.2s; }
+/* 下移标题，避免被顶栏遮挡导致点击失效 */
+.settings-title-container { padding: 0 16px; margin-top: calc(44px + env(safe-area-inset-top)); margin-bottom: 10px; }
+.settings-title { font-size: 24px; font-weight: 600; color: #000; letter-spacing: 0.5px; cursor: pointer; display: inline-block; transition: opacity 0.2s; }
 .settings-title:active { opacity: 0.5; }
-.settings-search { margin: 0 16px 16px; height: 32px; background: rgba(118, 118, 128, 0.12); border-radius: 8px; display: flex; align-items: center; padding: 0 8px; flex-shrink: 0; gap: 6px; }
-.settings-search input { flex: 1; background: transparent; border: none; outline: none; font-size: 15px; color: #000; }
+.settings-search { margin: 0 16px 12px; height: 30px; background: rgba(118, 118, 128, 0.12); border-radius: 8px; display: flex; align-items: center; padding: 0 8px; flex-shrink: 0; gap: 6px; }
+.settings-search input { flex: 1; background: transparent; border: none; outline: none; font-size: 14px; color: #000; }
 .settings-search input::placeholder { color: #8e8e93; }
 .settings-content { flex: 1; overflow-y: auto; padding: 0 16px 30px; }
 .settings-card { background: #fff; border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
-.id-card { display: flex; align-items: center; padding: 12px 15px; cursor: pointer; }
-.id-avatar-wrapper { width: 48px; height: 48px; border-radius: 50%; background: #d1d1d6; margin-right: 12px; overflow: hidden; position: relative; flex-shrink: 0; }
+.id-card { display: flex; align-items: center; padding: 10px 12px; cursor: pointer; }
+.id-avatar-wrapper { width: 44px; height: 44px; border-radius: 50%; background: #d1d1d6; margin-right: 12px; overflow: hidden; position: relative; flex-shrink: 0; }
 .id-avatar { width: 100%; height: 100%; object-fit: cover; display: none; }
 .id-avatar.has-img { display: block; }
 .id-avatar-placeholder { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
 .id-avatar.has-img + .id-avatar-placeholder { display: none; }
 .id-info { flex: 1; }
-.id-name { font-size: 17px; font-weight: 500; color: #000; margin-bottom: 4px; outline: none; }
-.id-desc { font-size: 12px; color: #8e8e93; }
+.id-name { font-size: 16px; font-weight: 400; color: #000; margin-bottom: 4px; outline: none; }
+.id-desc { font-size: 11px; color: #8e8e93; }
 .id-arrow { display: flex; align-items: center; }
-.settings-item { display: flex; align-items: center; padding: 8px 12px; min-height: 40px; background: #fff; cursor: pointer; position: relative; }
+.settings-item { display: flex; align-items: center; padding: 6px 12px; min-height: 36px; background: #fff; cursor: pointer; position: relative; }
 .settings-item:active { background: #e5e5ea; }
-.settings-item:not(:last-child)::after { content: ''; position: absolute; bottom: 0; left: 50px; right: 0; height: 1px; background: #c6c6c8; transform: scaleY(0.5); }
-.item-icon { width: 26px; height: 26px; border-radius: 6px; display: flex; justify-content: center; align-items: center; margin-right: 12px; flex-shrink: 0; }
-.item-name { flex: 1; font-size: 15px; color: #000; }
-.item-right { display: flex; align-items: center; color: #8e8e93; font-size: 14px; gap: 6px; }
+.settings-item:not(:last-child)::after { content: ''; position: absolute; bottom: 0; left: 48px; right: 0; height: 1px; background: #c6c6c8; transform: scaleY(0.5); }
+.item-icon { width: 24px; height: 24px; border-radius: 5px; display: flex; justify-content: center; align-items: center; margin-right: 12px; flex-shrink: 0; }
+.item-name { flex: 1; font-size: 14px; font-weight: 400; color: #000; }
+.item-right { display: flex; align-items: center; color: #8e8e93; font-size: 13px; gap: 6px; }
 
 /* iOS Switch */
-.ios-switch { position: relative; width: 42px; height: 26px; }
+.ios-switch { position: relative; width: 38px; height: 24px; }
 .ios-switch input { opacity: 0; width: 100%; height: 100%; position: absolute; z-index: 2; cursor: pointer; }
-.ios-switch div { width: 100%; height: 100%; background: #e9e9ea; border-radius: 26px; transition: background 0.3s; position: relative; }
-.ios-switch div::after { content: ''; position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; background: #fff; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.3s; }
+.ios-switch div { width: 100%; height: 100%; background: #e9e9ea; border-radius: 24px; transition: background 0.3s; position: relative; }
+.ios-switch div::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.3s; }
 .ios-switch input:checked + div { background: #34c759; }
-.ios-switch input:checked + div::after { transform: translateX(16px); }
+.ios-switch input:checked + div::after { transform: translateX(14px); }
