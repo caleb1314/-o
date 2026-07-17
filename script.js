@@ -229,7 +229,6 @@ document.getElementById('crop-done').addEventListener('click', async () => {
     
     ctx.drawImage(cropImg, rectImg.left - rectBox.left, rectImg.top - rectBox.top, rectImg.width, rectImg.height);
     
-    // 【核心修复】：将 image/jpeg 改为 image/png，完美保留透明背景！
     const base64 = canvas.toDataURL('image/png');
     
     const content = currentCropWidget.querySelector('.image-widget-content');
@@ -439,7 +438,6 @@ function handleDragMove(e) {
     const pagesContainer = document.querySelector('.pages-container');
     const pageW = pagesContainer.clientWidth;
     
-    // 边缘翻页
     if (clientX > window.innerWidth - 40) {
         if (!pageScrollTimer) pageScrollTimer = setTimeout(() => { pagesContainer.scrollBy({ left: pageW, behavior: 'smooth' }); }, 600);
     } else if (clientX < 40) {
@@ -453,7 +451,6 @@ function handleDragMove(e) {
     const dockRect = dock.getBoundingClientRect();
     const isOverDock = clientX >= dockRect.left && clientX <= dockRect.right && clientY >= dockRect.top && clientY <= dockRect.bottom;
 
-    // 只有 1x1 的应用可以放入 Dock
     const isApp = draggingItem.classList.contains('app-item');
 
     if (isOverDock && isApp) {
@@ -467,7 +464,6 @@ function handleDragMove(e) {
             draggingItem.style.removeProperty('--col');
             draggingItem.style.removeProperty('--row');
         } else {
-            // Dock 内部排序
             const siblings = [...dock.querySelectorAll('.app-item:not(.dragging)')];
             const nextSibling = siblings.find(sib => {
                 return clientX <= sib.getBoundingClientRect().left + sib.offsetWidth / 2;
@@ -475,7 +471,6 @@ function handleDragMove(e) {
             dock.insertBefore(draggingItem, nextSibling);
         }
     } else {
-        // 在桌面网格区域
         if (draggingItem.parentNode === dock) {
             if (dock.querySelectorAll('.app-item').length <= 2) {
                 showToast('Dock栏最少保留2个软件！');
@@ -539,7 +534,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     
     const widgets = document.querySelectorAll('.widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2');
     for (const widget of widgets) {
-        // 排除自定义组件
         if (widget.classList.contains('custom-widget-item')) continue;
 
         const widgetId = widget.getAttribute('data-widget-id');
@@ -559,7 +553,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         }
     }
     
-    // 加载自定义组件
     await loadCustomWidgets();
     bindAllDynamicEvents();
 });
@@ -655,7 +648,6 @@ screen.addEventListener('click', (e) => {
         e.stopPropagation();
         const item = deleteBtn.closest('.jiggle-item');
         if (item) {
-            // 检查 Dock 栏最少保留2个的限制
             if (item.parentNode.classList.contains('dock-container')) {
                 if (item.parentNode.querySelectorAll('.app-item').length <= 2) {
                     showToast('Dock栏最少保留2个软件！');
@@ -883,7 +875,6 @@ async function loadCustomWidgets() {
 // 渲染自定义组件到组件面板
 function renderCustomWidgetsToPanel() {
     const widgetList = document.getElementById('widget-list');
-    // 移除旧的自定义组件选项
     widgetList.querySelectorAll('.custom-widget-opt').forEach(el => el.remove());
 
     const currentTabSize = document.querySelector('.size-tab.active').dataset.size;
@@ -894,7 +885,6 @@ function renderCustomWidgetsToPanel() {
         opt.dataset.size = widget.size;
         opt.dataset.id = widget.id;
 
-        // 计算在面板中的缩放比例 (面板预览框是 60x60)
         const realW = widget.w * 76 + (widget.w - 1) * 15;
         const realH = widget.h * 78 + (widget.h - 1) * 12;
         const scale = Math.min(50 / realW, 50 / realH);
@@ -910,7 +900,6 @@ function renderCustomWidgetsToPanel() {
             <div class="widget-name">${widget.name}</div>
         `;
 
-        // 点击添加到桌面
         opt.addEventListener('click', () => {
             const htmlString = `
                 <div class="widget-${widget.w}x${widget.h} jiggle-item grid-item custom-widget-item" data-custom-id="${widget.id}">
@@ -933,7 +922,6 @@ function injectCustomWidgetsCSS() {
     const styleTag = document.getElementById('custom-widgets-style');
     let combinedCSS = '';
     customWidgets.forEach(widget => {
-        // 简单的 CSS 作用域限制，防止污染全局
         const scopedCSS = widget.css.replace(/(^|\})\s*([^{]+)\s*\{/g, (match, p1, p2) => {
             if(p2.trim().startsWith('@')) return match;
             const scopedSelectors = p2.split(',').map(s => `[data-custom-id="${widget.id}"] ${s.trim()}`).join(', ');
@@ -958,8 +946,6 @@ let currentCwSize = 'small';
 // 打开弹窗
 document.getElementById('panel-new-btn').addEventListener('click', (e) => {
     e.stopPropagation();
-    
-    // 核心修改：打开弹窗时，先收起底部的组件面板，保持屏幕清爽
     document.getElementById('widget-panel').classList.remove('show');
     
     cwName.value = '';
@@ -990,20 +976,17 @@ function updateCwPreview() {
     const w = parseInt(cwW.value) || 2;
     const h = parseInt(cwH.value) || 2;
     
-    // 模拟网格真实尺寸 (列宽约76px，行高78px，间距15/12)
     const realW = w * 76 + (w - 1) * 15;
     const realH = h * 78 + (h - 1) * 12;
     
     cwPreviewBox.style.width = `${realW}px`;
     cwPreviewBox.style.height = `${realH}px`;
     
-    // 计算缩放以适应预览容器
     const containerW = document.querySelector('.cw-preview-container').clientWidth - 20;
-    const containerH = 120; // 容器高度减去内边距
+    const containerH = 120;
     const scale = Math.min(1, containerW / realW, containerH / realH);
     cwPreviewBox.style.transform = `scale(${scale})`;
 
-    // 注入临时 ID 用于预览作用域
     const tempId = 'preview-temp';
     cwPreviewBox.setAttribute('data-custom-id', tempId);
     cwPreviewBox.innerHTML = cwHtml.value;
