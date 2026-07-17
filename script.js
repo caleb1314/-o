@@ -250,7 +250,6 @@ document.getElementById('crop-done').addEventListener('click', async () => {
 const screen = document.getElementById('screen');
 
 function bindAllDynamicEvents() {
-    // 【重要】克隆节点时，清除自定义组件的 JS 初始化标记，以便重新绑定 JS
     document.querySelectorAll('.app-item, .widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .widget-4x3, .custom-widget-item').forEach(item => {
         const newBtn = item.cloneNode(true);
         delete newBtn.dataset.jsInited; 
@@ -288,7 +287,6 @@ function bindAllDynamicEvents() {
         item.addEventListener('mouseleave', cancelPressAnim);
     });
 
-    // 绑定全局图片上传逻辑
     document.querySelectorAll('.widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .custom-widget-item').forEach(widget => {
         const content = widget.querySelector('.image-widget-content');
         const input = widget.querySelector('.widget-img-input');
@@ -345,16 +343,14 @@ function bindAllDynamicEvents() {
 
     initDragSystem();
     
-    // 【新增】执行自定义组件的 JS 代码
     document.querySelectorAll('.custom-widget-item').forEach(el => {
-        if (el.dataset.jsInited) return; // 避免重复绑定
+        if (el.dataset.jsInited) return; 
         const customId = el.getAttribute('data-custom-id');
         const widgetData = customWidgets.find(w => w.id === customId);
         if (widgetData && widgetData.js) {
             try {
-                // 动态创建一个函数，将 widget 作为参数传入
                 const func = new Function('widget', widgetData.js);
-                func(el); // 执行该函数
+                func(el);
             } catch(e) {
                 console.error('自定义组件 JS 执行错误:', e);
             }
@@ -363,7 +359,7 @@ function bindAllDynamicEvents() {
     });
 }
 
-// ================= 拖拽系统 (支持 Dock 互通) =================
+// ================= 拖拽系统 =================
 let draggingItem = null;
 let ghostEl = null;
 let pageScrollTimer = null;
@@ -569,6 +565,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     
     await loadCustomWidgets();
+    renderDefaultWidgetsPreview(); // 渲染默认组件预览
     bindAllDynamicEvents();
 });
 
@@ -687,7 +684,7 @@ document.getElementById('menu-add').addEventListener('click', (e) => {
     widgetPanel.classList.add('show');
 });
 document.addEventListener('click', (e) => {
-    if (!widgetPanel.contains(e.target) && e.target.id !== 'menu-add') {
+    if (!widgetPanel.contains(e.target) && !e.target.closest('#menu-add')) {
         widgetPanel.classList.remove('show');
     }
 });
@@ -771,6 +768,56 @@ const musicWidgetHTML = `<div class="widget-4x3 jiggle-item grid-item">
     </div>
 </div>`;
 
+// ================= 默认组件预览渲染 =================
+function renderDefaultWidgetsPreview() {
+    const bgImg = document.getElementById('screen').style.backgroundImage || '';
+    
+    const defaults = [
+        { id: 'add-img-1x2', w: 1, h: 2, html: getImgPreviewHTML() },
+        { id: 'add-img-2x1', w: 2, h: 1, html: getImgPreviewHTML() },
+        { id: 'add-img-widget', w: 2, h: 2, html: getImgPreviewHTML() },
+        { id: 'add-img-4x2', w: 4, h: 2, html: getImgPreviewHTML() },
+        { id: 'add-music-widget', w: 4, h: 3, html: getMusicPreviewHTML() }
+    ];
+
+    defaults.forEach(def => {
+        const opt = document.getElementById(def.id);
+        if (!opt) return;
+        
+        const realW = def.w * 76 + (def.w - 1) * 15;
+        const realH = def.h * 78 + (def.h - 1) * 12;
+        const scale = Math.min(50 / realW, 50 / realH);
+
+        const oldPreview = opt.querySelector('.custom-widget-preview-wrapper');
+        if (oldPreview) oldPreview.remove();
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'custom-widget-preview-wrapper';
+        wrapper.style.backgroundImage = bgImg;
+        wrapper.innerHTML = `
+            <div class="custom-widget-scale" style="width: ${realW}px; height: ${realH}px; transform: translate(-50%, -50%) scale(${scale});">
+                <div style="width:100%; height:100%;">
+                    ${def.html}
+                </div>
+            </div>
+        `;
+        opt.insertBefore(wrapper, opt.firstChild);
+    });
+}
+
+function getImgPreviewHTML() {
+    return `<div class="image-widget-content liquid-glass" style="width:100%;height:100%;"><div class="upload-placeholder"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>添加</span></div></div>`;
+}
+
+function getMusicPreviewHTML() {
+    return `<div class="music-widget-inner" style="width:100%;height:100%;transform:scale(0.88);">
+        <svg class="connecting-lines" viewBox="0 0 400 250" preserveAspectRatio="xMidYMin slice"><defs><linearGradient id="fade-grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#555555;stop-opacity:1" /><stop offset="85%" style="stop-color:#555555;stop-opacity:0" /></linearGradient></defs><circle cx="151" cy="100" r="4" fill="#555555" /><circle cx="249" cy="100" r="4" fill="#555555" /><path d="M 151 100 Q 100 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/><path d="M 249 100 Q 300 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <div class="avatars-wrapper"><div class="avatar-group"><div class="speech-bubble">你在左边</div><div class="avatar-circle"></div></div><div class="avatar-group"><div class="speech-bubble">我紧靠右</div><div class="avatar-circle"></div></div></div>
+        <div class="center-text">Twenty four seven with us</div>
+        <div class="music-player-v2"><div class="music-title">Pink Lavender</div><div class="music-subtitle">· ⁺ ⋆ ‿ ıllıllı ‿ ⋆ ⁺ ·</div><div class="progress-container"><div class="time-label">1:26</div><div class="progress-bar"><div class="progress-fill"></div></div><div class="time-label">3:48</div></div><div class="controls-row"><svg width="20" height="20" viewBox="0 0 24 24" fill="#666"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><div class="main-controls"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M22 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg><svg width="32" height="32" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="2" fill="#333"/><rect x="14" y="5" width="4" height="14" rx="2" fill="#333"/></svg><svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M13 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><path d="M9.52 14.47 A 3.5 3.5 0 1 1 14.48 14.47"/><path d="M7.05 16.95 A 7 7 0 1 1 16.95 16.95"/><path d="M4.58 19.42 A 10.5 10.5 0 1 1 19.42 19.42"/><path d="M12 15.5L16.5 21H7.5L12 15.5Z" fill="#333"/></svg></div></div>
+    </div>`;
+}
+
 // ================= 换壁纸与预览逻辑 =================
 const wallpaperInput = document.getElementById('wallpaper-input');
 document.getElementById('menu-wallpaper').addEventListener('click', (e) => { 
@@ -787,6 +834,7 @@ wallpaperInput.addEventListener('change', (e) => {
             document.getElementById('screen').style.backgroundImage = `url(${base64})`;
             await saveToDB('wallpaper', base64);
             renderCustomWidgetsToPanel();
+            renderDefaultWidgetsPreview(); // 更新默认组件预览图背景
         };
         reader.readAsDataURL(file);
     }
@@ -1001,7 +1049,7 @@ const cwW = document.getElementById('cw-w');
 const cwH = document.getElementById('cw-h');
 const cwHtml = document.getElementById('cw-html');
 const cwCss = document.getElementById('cw-css');
-const cwJs = document.getElementById('cw-js'); // 新增 JS 框
+const cwJs = document.getElementById('cw-js'); 
 const cwPreviewBox = document.getElementById('cw-preview-box');
 const cwPreviewStyle = document.getElementById('cw-preview-style');
 let currentCwSize = 'small';
@@ -1016,7 +1064,7 @@ function openEditModal(widget) {
     cwH.value = widget.h;
     cwHtml.value = widget.html;
     cwCss.value = widget.css;
-    cwJs.value = widget.js || ''; // 载入 JS
+    cwJs.value = widget.js || ''; 
     
     document.querySelectorAll('.cw-size-opt').forEach(o => {
         o.classList.toggle('active', o.dataset.size === widget.size);
@@ -1092,7 +1140,6 @@ function updateCwPreview() {
     cwH.addEventListener(evt, updateCwPreview);
 });
 
-// 填入示例代码 (改为点击计数器，展示 JS 控制能力)
 document.getElementById('cw-example-btn').addEventListener('click', () => {
     cwHtml.value = `<div class="custom-counter liquid-glass">
     <div class="count-val">0</div>
@@ -1110,7 +1157,6 @@ const valDisplay = widget.querySelector('.count-val');
 let count = 0;
 
 counterBox.addEventListener('click', () => {
-    // 防止在编辑模式下触发
     if (document.getElementById('screen').classList.contains('edit-mode')) return;
     count++;
     valDisplay.textContent = count;
@@ -1136,7 +1182,7 @@ document.getElementById('cw-save').addEventListener('click', async () => {
                 h: parseInt(cwH.value) || 2,
                 html: cwHtml.value,
                 css: cwCss.value,
-                js: cwJs.value // 保存 JS
+                js: cwJs.value 
             };
             
             document.querySelectorAll(`.custom-widget-item[data-custom-id="${editingWidgetId}"]`).forEach(el => {
@@ -1171,7 +1217,7 @@ document.getElementById('cw-save').addEventListener('click', async () => {
             h: parseInt(cwH.value) || 2,
             html: cwHtml.value,
             css: cwCss.value,
-            js: cwJs.value // 保存 JS
+            js: cwJs.value 
         };
         customWidgets.push(newWidget);
     }
@@ -1202,4 +1248,76 @@ document.getElementById('cw-delete').addEventListener('click', async () => {
     
     cwModalOverlay.classList.remove('show');
     showToast('组件已删除');
+});
+
+// ================= 组件导入与导出逻辑 =================
+const importInput = document.getElementById('import-widget-input');
+
+document.getElementById('panel-import-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    importInput.click();
+});
+
+importInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        try {
+            const data = JSON.parse(event.target.result);
+            if (!data.name || !data.html) {
+                showToast('无效的组件文件！');
+                return;
+            }
+            
+            const newWidget = {
+                id: 'cw_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+                name: data.name + ' (导入)',
+                size: data.size || 'small',
+                w: data.w || 2,
+                h: data.h || 2,
+                html: data.html || '',
+                css: data.css || '',
+                js: data.js || ''
+            };
+            
+            customWidgets.push(newWidget);
+            await saveToDB('customWidgets', customWidgets);
+            renderCustomWidgetsToPanel();
+            injectCustomWidgetsCSS();
+            showToast('组件导入成功！');
+        } catch (err) {
+            showToast('解析文件失败！');
+        }
+        importInput.value = ''; 
+    };
+    reader.readAsText(file);
+});
+
+document.getElementById('cw-export-btn').addEventListener('click', () => {
+    const name = cwName.value.trim() || '未命名组件';
+    const exportData = {
+        name: name,
+        size: currentCwSize,
+        w: parseInt(cwW.value) || 2,
+        h: parseInt(cwH.value) || 2,
+        html: cwHtml.value,
+        css: cwCss.value,
+        js: cwJs.value
+    };
+    
+    const jsonStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${name}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showToast('组件已导出！');
 });
