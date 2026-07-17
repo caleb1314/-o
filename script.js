@@ -1353,6 +1353,7 @@ document.getElementById('cw-export-btn').addEventListener('click', () => {
     
     showToast('组件已导出！');
 });
+
 // ================= 设置页面交互逻辑 =================
 const settingsPage = document.getElementById('settings-page');
 const statusBar = document.querySelector('.status-bar');
