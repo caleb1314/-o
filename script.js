@@ -286,10 +286,8 @@ function bindAllDynamicEvents() {
         item.addEventListener('mouseleave', cancelPressAnim);
     });
 
-    document.querySelectorAll('.widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2').forEach(widget => {
-        // 排除自定义组件，因为自定义组件不需要点击上传图片
-        if (widget.classList.contains('custom-widget-item')) return;
-        
+    // 【修复】将 .custom-widget-item 也加入到图片上传的绑定中
+    document.querySelectorAll('.widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .custom-widget-item').forEach(widget => {
         const content = widget.querySelector('.image-widget-content');
         const input = widget.querySelector('.widget-img-input');
         if (!content || !input) return;
@@ -532,10 +530,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (savedPages) document.querySelector('.pages-container').innerHTML = savedPages;
     if (savedDock) document.querySelector('.dock-container').innerHTML = savedDock;
     
-    const widgets = document.querySelectorAll('.widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2');
+    // 恢复所有组件（含自定义）的上传图片状态
+    const widgets = document.querySelectorAll('.widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .custom-widget-item');
     for (const widget of widgets) {
-        if (widget.classList.contains('custom-widget-item')) continue;
-
         const widgetId = widget.getAttribute('data-widget-id');
         if (widgetId) {
             const base64 = await getFromDB(`widget_${widgetId}`);
@@ -683,12 +680,10 @@ document.querySelectorAll('.size-tab').forEach(tab => {
         tab.classList.add('active');
         const size = tab.dataset.size;
         
-        // 切换默认组件
         document.querySelectorAll('.default-widget').forEach(opt => {
             opt.classList.toggle('hidden', opt.dataset.size !== size);
         });
         
-        // 切换自定义组件
         document.querySelectorAll('.custom-widget-opt').forEach(opt => {
             opt.classList.toggle('hidden', opt.dataset.size !== size);
         });
@@ -861,8 +856,8 @@ document.getElementById('preview-done-btn').addEventListener('click', async (e) 
 // ================= 自定义组件逻辑 =================
 
 let customWidgets = [];
+let editingWidgetId = null; // 记录当前正在编辑的组件ID
 
-// 初始化加载自定义组件
 async function loadCustomWidgets() {
     const saved = await getFromDB('customWidgets');
     if (saved) {
@@ -872,7 +867,6 @@ async function loadCustomWidgets() {
     }
 }
 
-// 渲染自定义组件到组件面板
 function renderCustomWidgetsToPanel() {
     const widgetList = document.getElementById('widget-list');
     widgetList.querySelectorAll('.custom-widget-opt').forEach(el => el.remove());
@@ -900,11 +894,47 @@ function renderCustomWidgetsToPanel() {
             <div class="widget-name">${widget.name}</div>
         `;
 
+        // 长按编辑逻辑
+        let cwPressTimer = null;
+        let isCwDragging = false;
+        let longPressed = false;
+
+        const startCwPress = () => {
+            isCwDragging = false;
+            longPressed = false;
+            cwPressTimer = setTimeout(() => {
+                longPressed = true;
+                openEditModal(widget);
+            }, 2000);
+        };
+
+        const moveCwPress = () => {
+            isCwDragging = true;
+            clearTimeout(cwPressTimer);
+        };
+
+        const cancelCwPress = () => {
+            clearTimeout(cwPressTimer);
+        };
+
+        opt.addEventListener('touchstart', startCwPress, { passive: true });
+        opt.addEventListener('touchmove', moveCwPress, { passive: true });
+        opt.addEventListener('touchend', cancelCwPress);
+        
+        opt.addEventListener('mousedown', startCwPress);
+        opt.addEventListener('mousemove', moveCwPress);
+        opt.addEventListener('mouseup', cancelCwPress);
+        opt.addEventListener('mouseleave', cancelCwPress);
+
+        // 点击添加逻辑
         opt.addEventListener('click', () => {
+            if (isCwDragging || longPressed) return; // 如果是拖动或长按，则不触发添加
+            
+            const instanceId = 'cw-inst-' + Date.now() + '-' + Math.floor(Math.random()*1000);
             const htmlString = `
-                <div class="widget-${widget.w}x${widget.h} jiggle-item grid-item custom-widget-item" data-custom-id="${widget.id}">
+                <div class="widget-${widget.w}x${widget.h} jiggle-item grid-item custom-widget-item" data-custom-id="${widget.id}" data-widget-id="${instanceId}">
                     <div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220,220,225,0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div>
-                    <div class="custom-widget-content">
+                    <div class="custom-widget-content" style="width:100%; height:100%;">
                         ${widget.html}
                     </div>
                 </div>
@@ -917,7 +947,6 @@ function renderCustomWidgetsToPanel() {
     });
 }
 
-// 注入所有自定义组件的 CSS
 function injectCustomWidgetsCSS() {
     const styleTag = document.getElementById('custom-widgets-style');
     let combinedCSS = '';
@@ -943,10 +972,36 @@ const cwPreviewBox = document.getElementById('cw-preview-box');
 const cwPreviewStyle = document.getElementById('cw-preview-style');
 let currentCwSize = 'small';
 
-// 打开弹窗
+// 打开编辑弹窗
+function openEditModal(widget) {
+    editingWidgetId = widget.id;
+    document.getElementById('cw-modal-title').textContent = '编辑组件';
+    document.getElementById('cw-delete').style.display = 'block';
+    
+    cwName.value = widget.name;
+    cwW.value = widget.w;
+    cwH.value = widget.h;
+    cwHtml.value = widget.html;
+    cwCss.value = widget.css;
+    
+    document.querySelectorAll('.cw-size-opt').forEach(o => {
+        o.classList.toggle('active', o.dataset.size === widget.size);
+    });
+    currentCwSize = widget.size;
+    
+    updateCwPreview();
+    cwModalOverlay.classList.add('show');
+    if (navigator.vibrate) navigator.vibrate(50);
+}
+
+// 打开新建弹窗
 document.getElementById('panel-new-btn').addEventListener('click', (e) => {
     e.stopPropagation();
     document.getElementById('widget-panel').classList.remove('show');
+    
+    editingWidgetId = null;
+    document.getElementById('cw-modal-title').textContent = '新建组件';
+    document.getElementById('cw-delete').style.display = 'none';
     
     cwName.value = '';
     cwHtml.value = '';
@@ -1006,6 +1061,29 @@ function updateCwPreview() {
     cwH.addEventListener(evt, updateCwPreview);
 });
 
+// 填入示例代码
+document.getElementById('cw-example-btn').addEventListener('click', () => {
+    cwHtml.value = `<div class="image-widget-content liquid-glass" style="position:relative; width:100%; height:100%; border-radius:22px; overflow:hidden;">
+    <input type="file" class="widget-img-input" accept="image/*" style="display:none;">
+    <div class="upload-placeholder" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); color:#fff; text-align:center;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <div style="font-size:12px; margin-top:4px;">点击传图</div>
+    </div>
+    <div class="custom-text">自定义文本</div>
+</div>`;
+    cwCss.value = `.custom-text {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    pointer-events: none;
+}`;
+    updateCwPreview();
+});
+
 // 保存自定义组件
 document.getElementById('cw-save').addEventListener('click', async () => {
     const name = cwName.value.trim();
@@ -1014,22 +1092,86 @@ document.getElementById('cw-save').addEventListener('click', async () => {
         return;
     }
     
-    const newWidget = {
-        id: 'cw_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-        name: name,
-        size: currentCwSize,
-        w: parseInt(cwW.value) || 2,
-        h: parseInt(cwH.value) || 2,
-        html: cwHtml.value,
-        css: cwCss.value
-    };
+    if (editingWidgetId) {
+        // 更新现有组件
+        const index = customWidgets.findIndex(w => w.id === editingWidgetId);
+        if (index > -1) {
+            customWidgets[index] = {
+                ...customWidgets[index],
+                name: name,
+                size: currentCwSize,
+                w: parseInt(cwW.value) || 2,
+                h: parseInt(cwH.value) || 2,
+                html: cwHtml.value,
+                css: cwCss.value
+            };
+            
+            // 同步更新桌面上已存在的该组件实例
+            document.querySelectorAll(`.custom-widget-item[data-custom-id="${editingWidgetId}"]`).forEach(el => {
+                // 备份可能存在的图片背景，防止修改代码后图片丢失
+                const oldImgContent = el.querySelector('.image-widget-content');
+                const bgImage = oldImgContent ? oldImgContent.style.backgroundImage : '';
+                
+                el.style.setProperty('--w', customWidgets[index].w);
+                el.style.setProperty('--h', customWidgets[index].h);
+                el.className = `widget-${customWidgets[index].w}x${customWidgets[index].h} jiggle-item grid-item custom-widget-item`;
+                
+                const content = el.querySelector('.custom-widget-content');
+                if (content) {
+                    content.innerHTML = customWidgets[index].html;
+                    // 恢复图片
+                    const newImgContent = content.querySelector('.image-widget-content');
+                    if (newImgContent && bgImage && bgImage !== 'none') {
+                        newImgContent.style.backgroundImage = bgImage;
+                        newImgContent.style.backgroundColor = 'transparent';
+                        newImgContent.style.border = 'none';
+                        newImgContent.style.boxShadow = 'none';
+                        const placeholder = newImgContent.querySelector('.upload-placeholder');
+                        if (placeholder) placeholder.style.display = 'none';
+                    }
+                }
+            });
+        }
+    } else {
+        // 创建新组件
+        const newWidget = {
+            id: 'cw_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+            name: name,
+            size: currentCwSize,
+            w: parseInt(cwW.value) || 2,
+            h: parseInt(cwH.value) || 2,
+            html: cwHtml.value,
+            css: cwCss.value
+        };
+        customWidgets.push(newWidget);
+    }
 
-    customWidgets.push(newWidget);
     await saveToDB('customWidgets', customWidgets);
+    await saveCurrentState(); 
+    
+    renderCustomWidgetsToPanel();
+    injectCustomWidgetsCSS();
+    bindAllDynamicEvents(); // 重新绑定事件（确保新修改的图片上传等生效）
+    
+    cwModalOverlay.classList.remove('show');
+    showToast('组件保存成功！');
+});
+
+// 删除自定义组件
+document.getElementById('cw-delete').addEventListener('click', async () => {
+    if (!editingWidgetId) return;
+    
+    customWidgets = customWidgets.filter(w => w.id !== editingWidgetId);
+    
+    // 从桌面上移除该组件的所有实例
+    document.querySelectorAll(`.custom-widget-item[data-custom-id="${editingWidgetId}"]`).forEach(el => el.remove());
+    
+    await saveToDB('customWidgets', customWidgets);
+    await saveCurrentState();
     
     renderCustomWidgetsToPanel();
     injectCustomWidgetsCSS();
     
     cwModalOverlay.classList.remove('show');
-    showToast('组件保存成功！');
+    showToast('组件已删除');
 });
