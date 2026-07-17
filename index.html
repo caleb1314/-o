@@ -8,7 +8,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <!-- 恢复桌面下载 PWA 核心链接 -->
     <link rel="manifest" href="manifest.json">
     
     <title>液态玻璃手机主页</title>
@@ -34,15 +33,16 @@
             </div>
         </div>
 
-        <!-- 编辑模式控制栏 (修复弹窗UI) -->
+        <!-- 编辑模式控制栏 -->
         <div class="edit-controls">
             <div style="position: relative;">
                 <div class="edit-btn liquid-glass" id="edit-btn">编辑</div>
-                <div class="edit-menu" id="edit-menu">
-                    <div class="edit-menu-item liquid-glass" id="menu-add">添加组件</div>
-                    <div class="edit-menu-item liquid-glass" id="menu-wallpaper">更换壁纸</div>
-                    <div class="edit-menu-item liquid-glass" id="menu-preview">页面预览</div>
-                    <div class="edit-menu-item liquid-glass" id="menu-cancel">取消修改</div>
+                <!-- 恢复原版一体化弹窗 -->
+                <div class="edit-menu liquid-glass" id="edit-menu">
+                    <div class="edit-menu-item" id="menu-add">添加组件</div>
+                    <div class="edit-menu-item" id="menu-wallpaper">更换壁纸</div>
+                    <div class="edit-menu-item" id="menu-preview">页面预览</div>
+                    <div class="edit-menu-item" id="menu-cancel">取消修改</div>
                 </div>
             </div>
             <div class="done-btn liquid-glass" id="done-btn">完成</div>
