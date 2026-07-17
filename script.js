@@ -229,7 +229,8 @@ document.getElementById('crop-done').addEventListener('click', async () => {
     
     ctx.drawImage(cropImg, rectImg.left - rectBox.left, rectImg.top - rectBox.top, rectImg.width, rectImg.height);
     
-    const base64 = canvas.toDataURL('image/jpeg', 0.9);
+    // 【核心修复】：将 image/jpeg 改为 image/png，完美保留透明背景！
+    const base64 = canvas.toDataURL('image/png');
     
     const content = currentCropWidget.querySelector('.image-widget-content');
     content.style.backgroundImage = `url(${base64})`;
