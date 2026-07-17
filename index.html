@@ -12,6 +12,8 @@
     
     <title>液态玻璃手机主页</title>
     <link rel="stylesheet" href="style.css">
+    <!-- 用于注入自定义组件的CSS -->
+    <style id="custom-widgets-style"></style>
 </head>
 <body>
 
@@ -95,7 +97,7 @@
                 </div>
             </div>
 
-            <!-- 第三页 (新增备忘录) -->
+            <!-- 第三页 -->
             <div class="page">
                 <div class="app-grid">
                     <div class="app-item jiggle-item grid-item" style="--col: 1; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">异世界</div></div>
@@ -105,7 +107,7 @@
             </div>
         </div>
 
-        <!-- 底部 Dock 栏 (动态流体版) -->
+        <!-- 底部 Dock 栏 -->
         <div class="dock-container liquid-glass">
             <div class="app-item jiggle-item" style="--w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">设置</div></div>
             <div class="app-item jiggle-item" style="--w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">电话</div></div>
@@ -137,12 +139,14 @@
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </div>
             </div>
-            <div class="widget-list">
-                <div class="widget-option" id="add-img-1x2" data-size="small"><div class="widget-preview"><svg width="20" height="36" viewBox="0 0 20 36" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="18" height="34" rx="4"/><circle cx="7" cy="10" r="2"/><polyline points="1 22 7 16 13 22 18 18 19 19"/></svg></div><div class="widget-name">竖图 (1×2)</div></div>
-                <div class="widget-option" id="add-img-2x1" data-size="small"><div class="widget-preview"><svg width="36" height="20" viewBox="0 0 36 20" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="34" height="18" rx="4"/><circle cx="10" cy="7" r="2"/><polyline points="1 13 10 7 18 13 26 9 35 11"/></svg></div><div class="widget-name">横图 (2×1)</div></div>
-                <div class="widget-option hidden" id="add-img-widget" data-size="medium"><div class="widget-preview"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div><div class="widget-name">方图 (2×2)</div></div>
-                <div class="widget-option hidden" id="add-img-4x2" data-size="medium"><div class="widget-preview"><svg width="44" height="22" viewBox="0 0 44 22" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="42" height="20" rx="4"/><circle cx="10" cy="8" r="2.5"/><polyline points="1 15 10 8 20 15 32 9 43 12"/></svg></div><div class="widget-name">宽图 (4×2)</div></div>
-                <div class="widget-option hidden" id="add-music-widget" data-size="large"><div class="widget-preview"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="15.5" r="2.5"/><path d="M8 17V5l12-2v12"/></svg></div><div class="widget-name">音乐播放器</div></div>
+            <div class="widget-list" id="widget-list">
+                <!-- 默认组件 -->
+                <div class="widget-option default-widget" id="add-img-1x2" data-size="small"><div class="widget-preview"><svg width="20" height="36" viewBox="0 0 20 36" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="18" height="34" rx="4"/><circle cx="7" cy="10" r="2"/><polyline points="1 22 7 16 13 22 18 18 19 19"/></svg></div><div class="widget-name">竖图 (1×2)</div></div>
+                <div class="widget-option default-widget" id="add-img-2x1" data-size="small"><div class="widget-preview"><svg width="36" height="20" viewBox="0 0 36 20" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="34" height="18" rx="4"/><circle cx="10" cy="7" r="2"/><polyline points="1 13 10 7 18 13 26 9 35 11"/></svg></div><div class="widget-name">横图 (2×1)</div></div>
+                <div class="widget-option default-widget hidden" id="add-img-widget" data-size="medium"><div class="widget-preview"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div><div class="widget-name">方图 (2×2)</div></div>
+                <div class="widget-option default-widget hidden" id="add-img-4x2" data-size="medium"><div class="widget-preview"><svg width="44" height="22" viewBox="0 0 44 22" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="42" height="20" rx="4"/><circle cx="10" cy="8" r="2.5"/><polyline points="1 15 10 8 20 15 32 9 43 12"/></svg></div><div class="widget-name">宽图 (4×2)</div></div>
+                <div class="widget-option default-widget hidden" id="add-music-widget" data-size="large"><div class="widget-preview"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="15.5" r="2.5"/><path d="M8 17V5l12-2v12"/></svg></div><div class="widget-name">音乐播放器</div></div>
+                <!-- 自定义组件将动态插入到这里 -->
             </div>
         </div>
 
@@ -155,6 +159,51 @@
             <div class="crop-area" id="crop-area">
                 <img id="crop-img" src="" alt="crop">
                 <div class="crop-box" id="crop-box"></div>
+            </div>
+        </div>
+
+        <!-- 自定义组件创建弹窗 -->
+        <div id="custom-widget-modal" class="custom-widget-modal">
+            <div class="cw-header">
+                <div class="cw-btn" id="cw-cancel">取消</div>
+                <div class="cw-title">新建组件</div>
+                <div class="cw-btn" id="cw-save">保存</div>
+            </div>
+            <div class="cw-body">
+                <div class="cw-input-group">
+                    <input type="text" id="cw-name" placeholder="给组件起个名字" autocomplete="off">
+                </div>
+                <div class="cw-input-group">
+                    <label>所属分类</label>
+                    <div class="cw-size-select">
+                        <div class="cw-size-opt active" data-size="small">小</div>
+                        <div class="cw-size-opt" data-size="medium">中</div>
+                        <div class="cw-size-opt" data-size="large">大</div>
+                    </div>
+                </div>
+                <div class="cw-input-group">
+                    <label>网格占比 (宽 × 高)</label>
+                    <div class="cw-grid-select">
+                        <input type="number" id="cw-w" value="2" min="1" max="4">
+                        <span>×</span>
+                        <input type="number" id="cw-h" value="2" min="1" max="6">
+                    </div>
+                </div>
+                <div class="cw-input-group">
+                    <label>HTML 代码</label>
+                    <textarea id="cw-html" placeholder="输入 HTML 代码..."></textarea>
+                </div>
+                <div class="cw-input-group">
+                    <label>CSS 代码</label>
+                    <textarea id="cw-css" placeholder="输入 CSS 代码...（无需包裹 <style>）"></textarea>
+                </div>
+                <div class="cw-preview-section">
+                    <label>实时预览</label>
+                    <div class="cw-preview-container">
+                        <style id="cw-preview-style"></style>
+                        <div class="cw-preview-box" id="cw-preview-box"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
