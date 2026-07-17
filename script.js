@@ -147,6 +147,103 @@ function updateStack() {
     });
 }
 
+// ================= 图片裁剪器逻辑 =================
+let currentCropWidget = null;
+let cropImgX = 0, cropImgY = 0, cropImgScale = 1;
+let cropStartX = 0, cropStartY = 0, cropStartDist = 0;
+let isDraggingCrop = false, isPinchingCrop = false;
+
+const cropArea = document.getElementById('crop-area');
+const cropImg = document.getElementById('crop-img');
+const cropBox = document.getElementById('crop-box');
+
+function updateCropImgTransform() {
+    cropImg.style.transform = `translate(calc(-50% + ${cropImgX}px), calc(-50% + ${cropImgY}px)) scale(${cropImgScale})`;
+}
+
+// 触摸事件 (移动端)
+cropArea.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+        isDraggingCrop = true;
+        cropStartX = e.touches[0].clientX - cropImgX;
+        cropStartY = e.touches[0].clientY - cropImgY;
+    } else if (e.touches.length === 2) {
+        isPinchingCrop = true;
+        cropStartDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    }
+});
+
+cropArea.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (isPinchingCrop && e.touches.length === 2) {
+        const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        cropImgScale *= dist / cropStartDist;
+        cropStartDist = dist;
+        updateCropImgTransform();
+    } else if (isDraggingCrop && e.touches.length === 1) {
+        cropImgX = e.touches[0].clientX - cropStartX;
+        cropImgY = e.touches[0].clientY - cropStartY;
+        updateCropImgTransform();
+    }
+}, { passive: false });
+
+cropArea.addEventListener('touchend', () => { isDraggingCrop = false; isPinchingCrop = false; });
+
+// 鼠标事件 (PC端)
+let isMouseDownCrop = false;
+cropArea.addEventListener('mousedown', e => {
+    isMouseDownCrop = true;
+    cropStartX = e.clientX - cropImgX;
+    cropStartY = e.clientY - cropImgY;
+});
+window.addEventListener('mousemove', e => {
+    if (!isMouseDownCrop) return;
+    cropImgX = e.clientX - cropStartX;
+    cropImgY = e.clientY - cropStartY;
+    updateCropImgTransform();
+});
+window.addEventListener('mouseup', () => isMouseDownCrop = false);
+cropArea.addEventListener('wheel', e => {
+    e.preventDefault();
+    cropImgScale *= e.deltaY > 0 ? 0.95 : 1.05;
+    updateCropImgTransform();
+}, { passive: false });
+
+document.getElementById('crop-cancel').addEventListener('click', () => {
+    document.getElementById('crop-modal').classList.remove('show');
+});
+
+document.getElementById('crop-done').addEventListener('click', async () => {
+    const canvas = document.createElement('canvas');
+    const rectBox = cropBox.getBoundingClientRect();
+    const rectImg = cropImg.getBoundingClientRect();
+    
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rectBox.width * dpr;
+    canvas.height = rectBox.height * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    
+    // 核心：利用屏幕绝对坐标计算相对偏移量，直接截取可见区域
+    ctx.drawImage(cropImg, rectImg.left - rectBox.left, rectImg.top - rectBox.top, rectImg.width, rectImg.height);
+    
+    const base64 = canvas.toDataURL('image/jpeg', 0.9);
+    
+    const content = currentCropWidget.querySelector('.image-widget-content');
+    content.style.backgroundImage = `url(${base64})`;
+    content.style.backgroundColor = 'transparent';
+    content.style.border = 'none';
+    content.style.boxShadow = 'none';
+    const placeholder = content.querySelector('.upload-placeholder');
+    if (placeholder) placeholder.style.display = 'none';
+    
+    const widgetId = currentCropWidget.getAttribute('data-widget-id');
+    await saveToDB(`widget_${widgetId}`, base64);
+    await saveCurrentState();
+    
+    document.getElementById('crop-modal').classList.remove('show');
+});
+
 // ================= 动态事件绑定 =================
 const screen = document.getElementById('screen');
 
@@ -170,9 +267,7 @@ function bindAllDynamicEvents() {
             if (screen.classList.contains('edit-mode')) return;
             icon.style.transform = 'scale(1.05) scaleX(0.95) scaleY(1.05)';
             icon.style.boxShadow = '';
-            setTimeout(() => {
-                icon.style.transform = 'scale(1)';
-            }, 150);
+            setTimeout(() => { icon.style.transform = 'scale(1)'; }, 150);
         };
 
         const cancelPressAnim = () => {
@@ -192,16 +287,9 @@ function bindAllDynamicEvents() {
     document.querySelectorAll('.widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2').forEach(widget => {
         const content = widget.querySelector('.image-widget-content');
         const input = widget.querySelector('.widget-img-input');
-        const widgetId = widget.getAttribute('data-widget-id');
 
-        const pressDownAnim = () => {
-            if (screen.classList.contains('edit-mode')) return;
-            content.style.transform = 'scale(0.95)';
-        };
-        const pressUpAnim = () => {
-            if (screen.classList.contains('edit-mode')) return;
-            content.style.transform = 'scale(1)';
-        };
+        const pressDownAnim = () => { if (!screen.classList.contains('edit-mode')) content.style.transform = 'scale(0.95)'; };
+        const pressUpAnim = () => { if (!screen.classList.contains('edit-mode')) content.style.transform = 'scale(1)'; };
 
         widget.addEventListener('touchstart', pressDownAnim, { passive: true });
         widget.addEventListener('touchend', pressUpAnim);
@@ -210,7 +298,7 @@ function bindAllDynamicEvents() {
         widget.addEventListener('mouseup', pressUpAnim);
         widget.addEventListener('mouseleave', pressUpAnim);
 
-        content.addEventListener('click', (e) => {
+        content.addEventListener('click', () => {
             if (screen.classList.contains('edit-mode')) return;
             input.click();
         });
@@ -219,17 +307,32 @@ function bindAllDynamicEvents() {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = async (event) => {
-                    const base64 = event.target.result;
-                    content.style.backgroundImage = `url(${base64})`;
-                    content.style.backgroundSize = 'cover';
-                    content.style.backgroundColor = 'transparent';
-                    content.style.border = 'none';
-                    content.style.boxShadow = 'none';
-                    const placeholder = content.querySelector('.upload-placeholder');
-                    if (placeholder) placeholder.style.display = 'none';
-                    await saveToDB(`widget_${widgetId}`, base64);
-                    await saveCurrentState();
+                reader.onload = (event) => {
+                    currentCropWidget = widget;
+                    cropImg.src = event.target.result;
+                    
+                    // 动态计算裁剪框比例
+                    const widgetRect = widget.getBoundingClientRect();
+                    const ratio = widgetRect.width / widgetRect.height;
+                    let boxW = window.innerWidth * 0.8;
+                    let boxH = boxW / ratio;
+                    if (boxH > window.innerHeight * 0.6) {
+                        boxH = window.innerHeight * 0.6;
+                        boxW = boxH * ratio;
+                    }
+                    cropBox.style.width = boxW + 'px';
+                    cropBox.style.height = boxH + 'px';
+
+                    // 初始化图片位置与缩放
+                    cropImgX = 0; cropImgY = 0;
+                    cropImg.onload = () => {
+                        const imgRatio = cropImg.naturalWidth / cropImg.naturalHeight;
+                        cropImgScale = (imgRatio > ratio) ? (boxH / cropImg.naturalHeight) : (boxW / cropImg.naturalWidth);
+                        cropImgScale *= 1.05; // 稍微放大一点防止露边
+                        updateCropImgTransform();
+                        document.getElementById('crop-modal').classList.add('show');
+                    };
+                    input.value = ''; // 清空以便重复上传同一张
                 };
                 reader.readAsDataURL(file);
             }
@@ -586,12 +689,15 @@ function getImgHTML(w, h) {
     </div>`;
 }
 
+// 音乐组件HTML更新，加入了 music-widget-inner 缩放容器
 const musicWidgetHTML = `<div class="widget-4x3 jiggle-item grid-item">
     <div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div>
-    <svg class="connecting-lines" viewBox="0 0 400 250" preserveAspectRatio="xMidYMin slice"><defs><linearGradient id="fade-grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#555555;stop-opacity:1" /><stop offset="85%" style="stop-color:#555555;stop-opacity:0" /></linearGradient></defs><circle cx="151" cy="100" r="4" fill="#555555" /><circle cx="249" cy="100" r="4" fill="#555555" /><path d="M 151 100 Q 100 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/><path d="M 249 100 Q 300 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/></svg>
-    <div class="avatars-wrapper"><div class="avatar-group"><div class="speech-bubble" contenteditable="true" spellcheck="false">你在左边</div><div class="avatar-circle"></div></div><div class="avatar-group"><div class="speech-bubble" contenteditable="true" spellcheck="false">我紧靠右</div><div class="avatar-circle"></div></div></div>
-    <div class="center-text" contenteditable="true" spellcheck="false">Twenty four seven with us</div>
-    <div class="music-player-v2"><div class="music-title">Pink Lavender</div><div class="music-subtitle" contenteditable="true" spellcheck="false">· ⁺ ⋆ ‿ ıllıllı ‿ ⋆ ⁺ ·</div><div class="progress-container"><div class="time-label">1:26</div><div class="progress-bar"><div class="progress-fill"></div></div><div class="time-label">3:48</div></div><div class="controls-row"><svg width="20" height="20" viewBox="0 0 24 24" fill="#666"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><div class="main-controls"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M22 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg><svg width="32" height="32" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="2" fill="#333"/><rect x="14" y="5" width="4" height="14" rx="2" fill="#333"/></svg><svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M13 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><path d="M9.52 14.47 A 3.5 3.5 0 1 1 14.48 14.47"/><path d="M7.05 16.95 A 7 7 0 1 1 16.95 16.95"/><path d="M4.58 19.42 A 10.5 10.5 0 1 1 19.42 19.42"/><path d="M12 15.5L16.5 21H7.5L12 15.5Z" fill="#333"/></svg></div></div>
+    <div class="music-widget-inner">
+        <svg class="connecting-lines" viewBox="0 0 400 250" preserveAspectRatio="xMidYMin slice"><defs><linearGradient id="fade-grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#555555;stop-opacity:1" /><stop offset="85%" style="stop-color:#555555;stop-opacity:0" /></linearGradient></defs><circle cx="151" cy="100" r="4" fill="#555555" /><circle cx="249" cy="100" r="4" fill="#555555" /><path d="M 151 100 Q 100 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/><path d="M 249 100 Q 300 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <div class="avatars-wrapper"><div class="avatar-group"><div class="speech-bubble" contenteditable="true" spellcheck="false">你在左边</div><div class="avatar-circle"></div></div><div class="avatar-group"><div class="speech-bubble" contenteditable="true" spellcheck="false">我紧靠右</div><div class="avatar-circle"></div></div></div>
+        <div class="center-text" contenteditable="true" spellcheck="false">Twenty four seven with us</div>
+        <div class="music-player-v2"><div class="music-title">Pink Lavender</div><div class="music-subtitle" contenteditable="true" spellcheck="false">· ⁺ ⋆ ‿ ıllıllı ‿ ⋆ ⁺ ·</div><div class="progress-container"><div class="time-label">1:26</div><div class="progress-bar"><div class="progress-fill"></div></div><div class="time-label">3:48</div></div><div class="controls-row"><svg width="20" height="20" viewBox="0 0 24 24" fill="#666"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><div class="main-controls"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M22 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg><svg width="32" height="32" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="2" fill="#333"/><rect x="14" y="5" width="4" height="14" rx="2" fill="#333"/></svg><svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M13 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><path d="M9.52 14.47 A 3.5 3.5 0 1 1 14.48 14.47"/><path d="M7.05 16.95 A 7 7 0 1 1 16.95 16.95"/><path d="M4.58 19.42 A 10.5 10.5 0 1 1 19.42 19.42"/><path d="M12 15.5L16.5 21H7.5L12 15.5Z" fill="#333"/></svg></div></div>
+    </div>
 </div>`;
 
 // ================= 换壁纸与预览逻辑 =================
@@ -637,7 +743,6 @@ function renderPreview() {
         checkBtn.className = 'preview-check';
         checkBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 13l4 4L19 7" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
         
-        // 点击对勾删除逻辑
         checkBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const items = page.querySelectorAll('.grid-item');
@@ -649,14 +754,13 @@ function renderPreview() {
                     return;
                 }
                 page.remove();
-                renderPreview(); // 重新渲染预览
+                renderPreview();
             }
         });
 
         wrapper.appendChild(scaleBox);
         wrapper.appendChild(checkBtn);
         
-        // 点击页面跳转
         wrapper.addEventListener('click', () => {
             const pc = document.querySelector('.pages-container');
             pc.scrollTo({ left: pc.clientWidth * index, behavior: 'smooth' });
@@ -675,7 +779,6 @@ document.getElementById('menu-preview').addEventListener('click', (e) => {
     document.getElementById('preview-overlay').classList.add('show');
 });
 
-// 预览界面：添加新页面
 document.getElementById('preview-add-btn').addEventListener('click', (e) => {
     e.stopPropagation();
     const newPage = document.createElement('div');
@@ -684,17 +787,15 @@ document.getElementById('preview-add-btn').addEventListener('click', (e) => {
     document.querySelector('.pages-container').appendChild(newPage);
     renderPreview();
     
-    // 自动滚动到最新一页
     const pc = document.querySelector('.pages-container');
     setTimeout(() => {
         pc.scrollTo({ left: pc.scrollWidth, behavior: 'smooth' });
     }, 100);
 });
 
-// 预览界面：完成并保存
 document.getElementById('preview-done-btn').addEventListener('click', async (e) => {
     e.stopPropagation();
     document.getElementById('preview-overlay').classList.remove('show');
     await saveCurrentState();
-    bindAllDynamicEvents(); // 重新绑定新页面的拖拽事件
+    bindAllDynamicEvents();
 });
