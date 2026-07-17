@@ -84,7 +84,7 @@ if ('getBattery' in navigator) {
     });
 }
 
-// ================= 顶部清透玻璃弹窗逻辑 (已修复消失Bug) =================
+// ================= 顶部清透玻璃弹窗逻辑 =================
 let activeNotifications = [];
 let notifCounter = 0;
 
@@ -106,13 +106,11 @@ function showToast(msg) {
     void banner.offsetWidth; // 触发重绘
     updateStack();
 
-    // 1.2秒后自动消失
     setTimeout(() => {
         removeNotification(id);
     }, 1200);
 }
 
-// 补回被误删的消失动画函数
 function removeNotification(id) {
     const index = activeNotifications.findIndex(n => n.id === id);
     if (index > -1) {
@@ -343,6 +341,8 @@ function handleDragMove(e) {
     const pageIndex = Math.round(pagesContainer.scrollLeft / pageW);
     const pages = document.querySelectorAll('.page');
     const currentPage = pages[pageIndex];
+    if (!currentPage) return;
+    
     const grid = currentPage.querySelector('.app-grid');
     const gridRect = grid.getBoundingClientRect();
 
@@ -553,6 +553,7 @@ function addWidgetToCurrentPage(htmlString, w, h) {
     const pagesContainer = document.querySelector('.pages-container');
     const pageIndex = Math.round(pagesContainer.scrollLeft / pagesContainer.clientWidth);
     const page = document.querySelectorAll('.page')[pageIndex];
+    if (!page) return;
     const appGrid = page.querySelector('.app-grid');
     
     const slot = findFirstAvailableSlot(page, w, h);
@@ -593,7 +594,7 @@ const musicWidgetHTML = `<div class="widget-4x3 jiggle-item grid-item">
     <div class="music-player-v2"><div class="music-title">Pink Lavender</div><div class="music-subtitle" contenteditable="true" spellcheck="false">· ⁺ ⋆ ‿ ıllıllı ‿ ⋆ ⁺ ·</div><div class="progress-container"><div class="time-label">1:26</div><div class="progress-bar"><div class="progress-fill"></div></div><div class="time-label">3:48</div></div><div class="controls-row"><svg width="20" height="20" viewBox="0 0 24 24" fill="#666"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><div class="main-controls"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M22 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg><svg width="32" height="32" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="2" fill="#333"/><rect x="14" y="5" width="4" height="14" rx="2" fill="#333"/></svg><svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M13 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><path d="M9.52 14.47 A 3.5 3.5 0 1 1 14.48 14.47"/><path d="M7.05 16.95 A 7 7 0 1 1 16.95 16.95"/><path d="M4.58 19.42 A 10.5 10.5 0 1 1 19.42 19.42"/><path d="M12 15.5L16.5 21H7.5L12 15.5Z" fill="#333"/></svg></div></div>
 </div>`;
 
-// ================= 换壁纸与预览 =================
+// ================= 换壁纸与预览逻辑 =================
 const wallpaperInput = document.getElementById('wallpaper-input');
 document.getElementById('menu-wallpaper').addEventListener('click', (e) => { 
     e.stopPropagation(); 
@@ -614,10 +615,7 @@ wallpaperInput.addEventListener('change', (e) => {
     document.getElementById('edit-menu').classList.remove('show');
 });
 
-document.getElementById('menu-preview').addEventListener('click', (e) => {
-    e.stopPropagation();
-    document.getElementById('edit-menu').classList.remove('show');
-    const overlay = document.getElementById('preview-overlay');
+function renderPreview() {
     const container = document.getElementById('preview-container');
     container.innerHTML = '';
     const currentBg = document.getElementById('screen').style.backgroundImage;
@@ -625,27 +623,78 @@ document.getElementById('menu-preview').addEventListener('click', (e) => {
     document.querySelectorAll('.pages-container .page').forEach((page, index) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'preview-page-wrapper';
+        
         const scaleBox = document.createElement('div');
         scaleBox.className = 'preview-scale-box liquid-glass';
         scaleBox.style.backgroundImage = currentBg;
+        
         const scaleContent = document.createElement('div');
         scaleContent.className = 'preview-scale-content';
         scaleContent.appendChild(page.cloneNode(true));
         scaleBox.appendChild(scaleContent);
-        wrapper.innerHTML = `<div class="preview-check"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 13l4 4L19 7" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;
-        wrapper.insertBefore(scaleBox, wrapper.firstChild);
+        
+        const checkBtn = document.createElement('div');
+        checkBtn.className = 'preview-check';
+        checkBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 13l4 4L19 7" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        
+        // 点击对勾删除逻辑
+        checkBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const items = page.querySelectorAll('.grid-item');
+            if (items.length > 0) {
+                showToast('该页面还有组件或软件，无法删除！');
+            } else {
+                if (document.querySelectorAll('.pages-container .page').length <= 1) {
+                    showToast('至少保留一个主页！');
+                    return;
+                }
+                page.remove();
+                renderPreview(); // 重新渲染预览
+            }
+        });
+
+        wrapper.appendChild(scaleBox);
+        wrapper.appendChild(checkBtn);
+        
+        // 点击页面跳转
         wrapper.addEventListener('click', () => {
             const pc = document.querySelector('.pages-container');
             pc.scrollTo({ left: pc.clientWidth * index, behavior: 'smooth' });
-            overlay.classList.remove('show');
+            document.getElementById('preview-overlay').classList.remove('show');
+            saveCurrentState();
         });
+        
         container.appendChild(wrapper);
     });
-    overlay.classList.add('show');
+}
+
+document.getElementById('menu-preview').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('edit-menu').classList.remove('show');
+    renderPreview();
+    document.getElementById('preview-overlay').classList.add('show');
 });
 
-document.getElementById('preview-overlay').addEventListener('click', (e) => {
-    if (e.target.id === 'preview-overlay' || e.target.id === 'preview-container') {
-        e.target.classList.remove('show');
-    }
+// 预览界面：添加新页面
+document.getElementById('preview-add-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const newPage = document.createElement('div');
+    newPage.className = 'page';
+    newPage.innerHTML = `<div class="app-grid"></div>`;
+    document.querySelector('.pages-container').appendChild(newPage);
+    renderPreview();
+    
+    // 自动滚动到最新一页
+    const pc = document.querySelector('.pages-container');
+    setTimeout(() => {
+        pc.scrollTo({ left: pc.scrollWidth, behavior: 'smooth' });
+    }, 100);
+});
+
+// 预览界面：完成并保存
+document.getElementById('preview-done-btn').addEventListener('click', async (e) => {
+    e.stopPropagation();
+    document.getElementById('preview-overlay').classList.remove('show');
+    await saveCurrentState();
+    bindAllDynamicEvents(); // 重新绑定新页面的拖拽事件
 });
