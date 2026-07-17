@@ -84,7 +84,7 @@ if ('getBattery' in navigator) {
     });
 }
 
-// ================= 顶部清透玻璃弹窗逻辑 =================
+// ================= 顶部清透玻璃弹窗逻辑 (已修复消失Bug) =================
 let activeNotifications = [];
 let notifCounter = 0;
 
@@ -106,9 +106,24 @@ function showToast(msg) {
     void banner.offsetWidth; // 触发重绘
     updateStack();
 
+    // 1.2秒后自动消失
     setTimeout(() => {
         removeNotification(id);
-    }, 1500);
+    }, 1200);
+}
+
+// 补回被误删的消失动画函数
+function removeNotification(id) {
+    const index = activeNotifications.findIndex(n => n.id === id);
+    if (index > -1) {
+        const notif = activeNotifications[index];
+        notif.el.classList.add('leaving');
+        setTimeout(() => {
+            if (notif.el.parentNode) notif.el.parentNode.removeChild(notif.el);
+        }, 500);
+        activeNotifications.splice(index, 1);
+        updateStack();
+    }
 }
 
 function updateStack() {
@@ -134,17 +149,15 @@ function updateStack() {
     });
 }
 
-// ================= 动态事件绑定 (满血恢复点击动效) =================
+// ================= 动态事件绑定 =================
 const screen = document.getElementById('screen');
 
 function bindAllDynamicEvents() {
-    // 1. 克隆节点以清除旧的事件监听器，防止重复绑定
     document.querySelectorAll('.app-item, .widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .widget-4x3').forEach(item => {
         const newBtn = item.cloneNode(true);
         item.replaceWith(newBtn);
     });
 
-    // 2. 恢复软件图标的 Q弹物理点击动效
     document.querySelectorAll('.app-item').forEach(item => {
         const icon = item.querySelector('.app-icon-box') || item.querySelector('.dock-item');
         if (!icon) return;
@@ -178,7 +191,6 @@ function bindAllDynamicEvents() {
         item.addEventListener('mouseleave', cancelPressAnim);
     });
 
-    // 3. 恢复图片组件的点击动效与上传逻辑
     document.querySelectorAll('.widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2').forEach(widget => {
         const content = widget.querySelector('.image-widget-content');
         const input = widget.querySelector('.widget-img-input');
@@ -226,11 +238,10 @@ function bindAllDynamicEvents() {
         });
     });
 
-    // 4. 重新绑定拖拽系统
     initDragSystem();
 }
 
-// ================= 拖拽系统 (自由摆放 & 碰撞检测) =================
+// ================= 拖拽系统 =================
 let draggingItem = null;
 let ghostEl = null;
 let pageScrollTimer = null;
@@ -281,7 +292,7 @@ function initDragSystem() {
 
 function handleDragStart(e) {
     if (!screen.classList.contains('edit-mode') || e.target.closest('.delete-btn')) return;
-    e.preventDefault(); // 阻止默认滚动
+    e.preventDefault(); 
     draggingItem = e.currentTarget;
     draggingItem.classList.add('dragging');
 
@@ -320,7 +331,6 @@ function handleDragMove(e) {
     const pagesContainer = document.querySelector('.pages-container');
     const pageW = pagesContainer.clientWidth;
     
-    // 边缘悬停换页
     if (clientX > window.innerWidth - 40) {
         if (!pageScrollTimer) pageScrollTimer = setTimeout(() => { pagesContainer.scrollBy({ left: pageW, behavior: 'smooth' }); }, 600);
     } else if (clientX < 40) {
@@ -405,7 +415,7 @@ const saveCurrentState = async () => {
     await saveToDB('dockHTML', document.querySelector('.dock-container').innerHTML);
 };
 
-// ================= 满血恢复长按进入编辑模式 =================
+// ================= 长按进入编辑模式 =================
 let pressTimer = null;
 let startX = 0, startY = 0;
 screen.addEventListener('contextmenu', e => e.preventDefault());
@@ -452,7 +462,6 @@ const cancelPress = () => {
     } 
 };
 
-// 恢复所有端（PC+移动）的事件监听
 screen.addEventListener('touchstart', startPress, { passive: true });
 screen.addEventListener('touchmove', movePress, { passive: true });
 screen.addEventListener('touchend', cancelPress);
