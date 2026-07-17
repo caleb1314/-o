@@ -16,7 +16,9 @@ function initDB() {
         const request = indexedDB.open(DB_NAME, 1);
         request.onupgradeneeded = (e) => {
             const db = e.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME);
+            }
         };
         request.onsuccess = (e) => resolve(e.target.result);
         request.onerror = (e) => reject(e.target.error);
@@ -28,9 +30,14 @@ async function saveToDB(key, value) {
         const db = await initDB();
         return new Promise((resolve, reject) => {
             const tx = db.transaction(STORE_NAME, 'readwrite');
-            tx.objectStore(STORE_NAME).put(value, key).onsuccess = resolve;
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.put(value, key);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject();
         });
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        console.error('DB Save Error', e);
+    }
 }
 
 async function getFromDB(key) {
@@ -38,57 +45,95 @@ async function getFromDB(key) {
         const db = await initDB();
         return new Promise((resolve, reject) => {
             const tx = db.transaction(STORE_NAME, 'readonly');
-            const req = tx.objectStore(STORE_NAME).get(key);
-            req.onsuccess = () => resolve(req.result);
-            req.onerror = () => reject();
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.get(key);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject();
         });
-    } catch (e) { return null; }
+    } catch (e) {
+        console.error('DB Get Error', e);
+        return null;
+    }
 }
 
-// ================= 基础功能 (时钟、电量) =================
-setInterval(() => {
+// ================= 实时时钟与电量逻辑 =================
+const clockElement = document.getElementById('clock');
+function updateTime() {
     const now = new Date();
-    const clock = document.getElementById('clock');
-    if (clock) clock.textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-}, 1000);
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    if (clockElement) {
+        clockElement.textContent = `${hours}:${minutes}`;
+    }
+}
+updateTime(); 
+setInterval(updateTime, 1000);
 
 if ('getBattery' in navigator) {
-    navigator.getBattery().then(battery => {
-        const update = () => {
-            const lvl = Math.round(battery.level * 100);
-            const text = document.getElementById('battery-text');
-            const bar = document.getElementById('battery-level');
-            if (text) text.textContent = lvl;
-            if (bar) bar.setAttribute('width', (lvl / 100) * 20);
-        };
-        update();
-        battery.addEventListener('levelchange', update);
+    navigator.getBattery().then(function(battery) {
+        function updateBattery() {
+            const level = Math.round(battery.level * 100);
+            const batteryText = document.getElementById('battery-text');
+            const batteryLevel = document.getElementById('battery-level');
+            
+            if (batteryText) batteryText.textContent = level;
+            if (batteryLevel) batteryLevel.setAttribute('width', (level / 100) * 20);
+        }
+        updateBattery();
+        battery.addEventListener('levelchange', updateBattery);
     });
 }
 
-// ================= 弹窗提示 =================
+// ================= 顶部清透玻璃弹窗逻辑 =================
 let activeNotifications = [];
 let notifCounter = 0;
+
 function showToast(msg) {
     notifCounter++;
     const id = notifCounter;
+
     const banner = document.createElement('div');
     banner.className = 'notification-banner';
-    banner.innerHTML = `<div class="text-content"><div class="title">提示</div><div class="message">${msg}</div></div>`;
+    banner.innerHTML = `
+        <div class="text-content">
+            <div class="title">提示</div>
+            <div class="message">${msg}</div>
+        </div>
+    `;
+
     document.body.appendChild(banner);
     activeNotifications.unshift({ id, el: banner });
-    void banner.offsetWidth;
+    void banner.offsetWidth; // 触发重绘
     updateStack();
-    setTimeout(() => removeNotification(id), 1500);
+
+    setTimeout(() => {
+        removeNotification(id);
+    }, 1500);
 }
+
 function updateStack() {
     activeNotifications.forEach((notif, index) => {
         const el = notif.el;
-        if (index === 0) { el.style.transform = `translate(-50%, 0) scale(1)`; el.style.opacity = '1'; }
-        else if (index === 1) { el.style.transform = `translate(-50%, 12px) scale(0.92)`; el.style.opacity = '0.85'; }
-        else { el.style.transform = `translate(-50%, 24px) scale(0.84)`; el.style.opacity = '0'; }
+        if (index === 0) {
+            el.style.transform = `translate(-50%, 0) scale(1)`;
+            el.style.opacity = '1';
+            el.style.zIndex = 9999;
+        } else if (index === 1) {
+            el.style.transform = `translate(-50%, 12px) scale(0.92)`;
+            el.style.opacity = '0.85';
+            el.style.zIndex = 9998;
+        } else if (index === 2) {
+            el.style.transform = `translate(-50%, 24px) scale(0.84)`;
+            el.style.opacity = '0.5';
+            el.style.zIndex = 9997;
+        } else {
+            el.style.transform = `translate(-50%, 36px) scale(0.75)`;
+            el.style.opacity = '0';
+            el.style.zIndex = 9996;
+        }
     });
 }
+
 function removeNotification(id) {
     const index = activeNotifications.findIndex(n => n.id === id);
     if (index > -1) {
@@ -96,37 +141,82 @@ function removeNotification(id) {
         activeNotifications.splice(index, 1);
         notif.el.classList.add('leaving');
         updateStack();
-        setTimeout(() => { if (notif.el.parentNode) notif.el.parentNode.removeChild(notif.el); }, 400);
+        setTimeout(() => {
+            if (notif.el.parentNode) notif.el.parentNode.removeChild(notif.el);
+        }, 400);
     }
 }
 
-// ================= 动态事件绑定 (图片上传 & 点击动效) =================
+// ================= 动态事件绑定 (满血恢复点击动效) =================
+const screen = document.getElementById('screen');
+
 function bindAllDynamicEvents() {
+    // 1. 克隆节点以清除旧的事件监听器，防止重复绑定
     document.querySelectorAll('.app-item, .widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .widget-4x3').forEach(item => {
         const newBtn = item.cloneNode(true);
         item.replaceWith(newBtn);
     });
 
+    // 2. 恢复软件图标的 Q弹物理点击动效
     document.querySelectorAll('.app-item').forEach(item => {
         const icon = item.querySelector('.app-icon-box') || item.querySelector('.dock-item');
         if (!icon) return;
-        const down = () => { if (!screen.classList.contains('edit-mode')) icon.style.transform = 'scale(0.92)'; };
-        const up = () => { if (!screen.classList.contains('edit-mode')) icon.style.transform = 'scale(1)'; };
-        item.addEventListener('touchstart', down, { passive: true });
-        item.addEventListener('touchend', up);
+
+        const pressDownAnim = () => {
+            if (screen.classList.contains('edit-mode')) return;
+            icon.style.transform = 'scale(0.92) scaleX(1.05) scaleY(0.92)';
+            icon.style.boxShadow = 'inset 0 2px 4px rgba(255, 255, 255, 0.9), inset 0 -1px 3px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.05)';
+        };
+
+        const pressUpAnim = () => {
+            if (screen.classList.contains('edit-mode')) return;
+            icon.style.transform = 'scale(1.05) scaleX(0.95) scaleY(1.05)';
+            icon.style.boxShadow = '';
+            setTimeout(() => {
+                icon.style.transform = 'scale(1)';
+            }, 150);
+        };
+
+        const cancelPressAnim = () => {
+            if (screen.classList.contains('edit-mode')) return;
+            icon.style.transform = 'scale(1)';
+            icon.style.boxShadow = '';
+        };
+
+        item.addEventListener('touchstart', pressDownAnim, { passive: true });
+        item.addEventListener('touchend', pressUpAnim);
+        item.addEventListener('touchcancel', cancelPressAnim);
+        item.addEventListener('mousedown', pressDownAnim);
+        item.addEventListener('mouseup', pressUpAnim);
+        item.addEventListener('mouseleave', cancelPressAnim);
     });
 
+    // 3. 恢复图片组件的点击动效与上传逻辑
     document.querySelectorAll('.widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2').forEach(widget => {
         const content = widget.querySelector('.image-widget-content');
         const input = widget.querySelector('.widget-img-input');
         const widgetId = widget.getAttribute('data-widget-id');
 
-        const down = () => { if (!screen.classList.contains('edit-mode')) content.style.transform = 'scale(0.95)'; };
-        const up = () => { if (!screen.classList.contains('edit-mode')) content.style.transform = 'scale(1)'; };
-        widget.addEventListener('touchstart', down, { passive: true });
-        widget.addEventListener('touchend', up);
+        const pressDownAnim = () => {
+            if (screen.classList.contains('edit-mode')) return;
+            content.style.transform = 'scale(0.95)';
+        };
+        const pressUpAnim = () => {
+            if (screen.classList.contains('edit-mode')) return;
+            content.style.transform = 'scale(1)';
+        };
 
-        content.addEventListener('click', () => { if (!screen.classList.contains('edit-mode')) input.click(); });
+        widget.addEventListener('touchstart', pressDownAnim, { passive: true });
+        widget.addEventListener('touchend', pressUpAnim);
+        widget.addEventListener('touchcancel', pressUpAnim);
+        widget.addEventListener('mousedown', pressDownAnim);
+        widget.addEventListener('mouseup', pressUpAnim);
+        widget.addEventListener('mouseleave', pressUpAnim);
+
+        content.addEventListener('click', (e) => {
+            if (screen.classList.contains('edit-mode')) return;
+            input.click();
+        });
 
         input.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -149,6 +239,7 @@ function bindAllDynamicEvents() {
         });
     });
 
+    // 4. 重新绑定拖拽系统
     initDragSystem();
 }
 
@@ -203,7 +294,7 @@ function initDragSystem() {
 
 function handleDragStart(e) {
     if (!screen.classList.contains('edit-mode') || e.target.closest('.delete-btn')) return;
-    e.preventDefault();
+    e.preventDefault(); // 阻止默认滚动
     draggingItem = e.currentTarget;
     draggingItem.classList.add('dragging');
 
@@ -242,6 +333,7 @@ function handleDragMove(e) {
     const pagesContainer = document.querySelector('.pages-container');
     const pageW = pagesContainer.clientWidth;
     
+    // 边缘悬停换页
     if (clientX > window.innerWidth - 40) {
         if (!pageScrollTimer) pageScrollTimer = setTimeout(() => { pagesContainer.scrollBy({ left: pageW, behavior: 'smooth' }); }, 600);
     } else if (clientX < 40) {
@@ -326,15 +418,22 @@ const saveCurrentState = async () => {
     await saveToDB('dockHTML', document.querySelector('.dock-container').innerHTML);
 };
 
-// ================= 长按进入编辑模式 =================
+// ================= 满血恢复长按进入编辑模式 =================
 let pressTimer = null;
 let startX = 0, startY = 0;
 screen.addEventListener('contextmenu', e => e.preventDefault());
 
 const startPress = (e) => {
     if (screen.classList.contains('edit-mode')) return;
-    startX = e.touches ? e.touches[0].clientX : e.clientX;
-    startY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    if (e.type === 'touchstart') {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+    } else {
+        startX = e.clientX;
+        startY = e.clientY;
+    }
+
     pressTimer = setTimeout(() => {
         backupPagesHTML = document.querySelector('.pages-container').innerHTML;
         backupDockHTML = document.querySelector('.dock-container').innerHTML;
@@ -342,20 +441,39 @@ const startPress = (e) => {
         if (navigator.vibrate) navigator.vibrate(50);
     }, 600);
 };
+
 const movePress = (e) => {
     if (!pressTimer) return;
-    const currentX = e.touches ? e.touches[0].clientX : e.clientX;
-    const currentY = e.touches ? e.touches[0].clientY : e.clientY;
-    if (Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10) { clearTimeout(pressTimer); pressTimer = null; }
+    let currentX, currentY;
+    if (e.type === 'touchmove') {
+        currentX = e.touches[0].clientX;
+        currentY = e.touches[0].clientY;
+    } else {
+        currentX = e.clientX;
+        currentY = e.clientY;
+    }
+    if (Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10) { 
+        clearTimeout(pressTimer); 
+        pressTimer = null; 
+    }
 };
-const cancelPress = () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } };
 
+const cancelPress = () => { 
+    if (pressTimer) { 
+        clearTimeout(pressTimer); 
+        pressTimer = null; 
+    } 
+};
+
+// 恢复所有端（PC+移动）的事件监听
 screen.addEventListener('touchstart', startPress, { passive: true });
 screen.addEventListener('touchmove', movePress, { passive: true });
 screen.addEventListener('touchend', cancelPress);
+screen.addEventListener('touchcancel', cancelPress);
 screen.addEventListener('mousedown', startPress);
 screen.addEventListener('mousemove', movePress);
 screen.addEventListener('mouseup', cancelPress);
+screen.addEventListener('mouseleave', cancelPress);
 
 // ================= 编辑控制栏 =================
 document.getElementById('done-btn').addEventListener('click', async () => {
@@ -363,10 +481,12 @@ document.getElementById('done-btn').addEventListener('click', async () => {
     document.getElementById('edit-menu').classList.remove('show');
     await saveCurrentState();
 });
+
 document.getElementById('edit-btn').addEventListener('click', (e) => {
     e.stopPropagation();
     document.getElementById('edit-menu').classList.toggle('show');
 });
+
 document.getElementById('menu-cancel').addEventListener('click', (e) => {
     e.stopPropagation();
     document.querySelector('.pages-container').innerHTML = backupPagesHTML;
@@ -385,7 +505,10 @@ screen.addEventListener('click', (e) => {
         if (item) {
             item.style.transform = 'scale(0)';
             item.style.opacity = '0';
-            setTimeout(async () => { item.remove(); await saveCurrentState(); }, 300);
+            setTimeout(async () => { 
+                item.remove(); 
+                await saveCurrentState(); 
+            }, 300);
         }
     }
 });
@@ -398,7 +521,9 @@ document.getElementById('menu-add').addEventListener('click', (e) => {
     widgetPanel.classList.add('show');
 });
 document.addEventListener('click', (e) => {
-    if (!widgetPanel.contains(e.target) && e.target.id !== 'menu-add') widgetPanel.classList.remove('show');
+    if (!widgetPanel.contains(e.target) && e.target.id !== 'menu-add') {
+        widgetPanel.classList.remove('show');
+    }
 });
 
 document.querySelectorAll('.size-tab').forEach(tab => {
@@ -474,7 +599,11 @@ const musicWidgetHTML = `<div class="widget-4x3 jiggle-item grid-item">
 
 // ================= 换壁纸与预览 =================
 const wallpaperInput = document.getElementById('wallpaper-input');
-document.getElementById('menu-wallpaper').addEventListener('click', (e) => { e.stopPropagation(); wallpaperInput.click(); });
+document.getElementById('menu-wallpaper').addEventListener('click', (e) => { 
+    e.stopPropagation(); 
+    wallpaperInput.click(); 
+});
+
 wallpaperInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -518,6 +647,9 @@ document.getElementById('menu-preview').addEventListener('click', (e) => {
     });
     overlay.classList.add('show');
 });
+
 document.getElementById('preview-overlay').addEventListener('click', (e) => {
-    if (e.target.id === 'preview-overlay' || e.target.id === 'preview-container') e.target.classList.remove('show');
+    if (e.target.id === 'preview-overlay' || e.target.id === 'preview-container') {
+        e.target.classList.remove('show');
+    }
 });
