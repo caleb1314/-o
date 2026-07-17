@@ -935,7 +935,7 @@ document.querySelectorAll('.size-tab').forEach(tab => {
 });
 
 // ================= 弹窗交互逻辑 =================
-const cwModal = document.getElementById('custom-widget-modal');
+const cwOverlay = document.getElementById('cw-overlay');
 const cwName = document.getElementById('cw-name');
 const cwW = document.getElementById('cw-w');
 const cwH = document.getElementById('cw-h');
@@ -954,12 +954,12 @@ document.getElementById('panel-new-btn').addEventListener('click', (e) => {
     cwW.value = 2;
     cwH.value = 2;
     updateCwPreview();
-    cwModal.classList.add('show');
+    cwOverlay.classList.add('show');
 });
 
 // 关闭弹窗
 document.getElementById('cw-cancel').addEventListener('click', () => {
-    cwModal.classList.remove('show');
+    cwOverlay.classList.remove('show');
 });
 
 // 尺寸选择
@@ -984,8 +984,8 @@ function updateCwPreview() {
     cwPreviewBox.style.height = `${realH}px`;
     
     // 计算缩放以适应预览容器
-    const containerW = document.querySelector('.cw-preview-container').clientWidth - 40;
-    const containerH = 180; // min-height
+    const containerW = document.querySelector('.cw-preview-container').clientWidth - 30;
+    const containerH = 160; // min-height
     const scale = Math.min(1, containerW / realW, containerH / realH);
     cwPreviewBox.style.transform = `scale(${scale})`;
 
@@ -1033,7 +1033,7 @@ document.getElementById('cw-save').addEventListener('click', async () => {
     renderCustomWidgetsToPanel();
     injectCustomWidgetsCSS();
     
-    cwModal.classList.remove('show');
+    cwOverlay.classList.remove('show');
     showToast('组件保存成功！');
 });
 
