@@ -31,12 +31,12 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .pages-container::-webkit-scrollbar { display: none; }
 .page { flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: start; padding: 10px 20px 20px 20px; overflow-y: hidden; position: relative; }
 
-/* 绝对定位网格系统 (修复间距，整体靠上，不再霸占全屏) */
-.app-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(6, 82px); gap: 24px 15px; align-content: start; justify-items: center; position: relative; }
+/* 绝对定位网格系统 (大幅缩短行高和间距，给下方留出大量空间) */
+.app-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(6, 78px); gap: 12px 15px; align-content: start; justify-items: center; position: relative; padding-top: 5px; }
 .grid-item { grid-column: var(--col) / span var(--w); grid-row: var(--row) / span var(--h); width: 100%; height: 100%; transition: transform 0.2s; }
 .grid-item.dragging { opacity: 0.4; transform: scale(0.9); z-index: 50; }
 
-/* 规范化组件尺寸 (完美贴合网格) */
+/* 规范化组件尺寸 (完美贴合紧凑网格) */
 .widget-1x2 { width: 58px; height: 100%; justify-self: center; align-self: start; border-radius: 22px; position: relative; }
 .widget-2x1 { width: 100%; height: 58px; align-self: start; border-radius: 22px; position: relative; }
 .widget-2x2 { width: 100%; height: 100%; align-self: start; border-radius: 22px; position: relative; }
@@ -65,24 +65,24 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .edit-mode .jiggle-item:nth-child(odd):not(.dragging) { animation: jiggle 0.32s infinite reverse; }
 
 .delete-btn { position: absolute; width: 22px; height: 22px; z-index: 20; opacity: 0; pointer-events: none; transform: scale(0); transition: all 0.25s; }
-
-/* 软件的删除键 */
 .app-item .delete-btn { top: 44px; left: 50%; margin-left: 16px; right: auto; bottom: auto; }
-
-/* 组件的删除键 */
 .widget-4x3 .delete-btn, .widget-2x2 .delete-btn, .widget-1x2 .delete-btn, .widget-2x1 .delete-btn, .widget-4x2 .delete-btn { bottom: -6px; right: -4px; top: auto; left: auto; margin: 0; }
-
 .edit-mode .delete-btn { opacity: 1; pointer-events: auto; transform: scale(1); }
 
-/* 页面预览覆盖层 */
-.preview-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+/* 页面预览覆盖层与新增按钮 */
+.preview-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 200; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
 .preview-overlay.show { opacity: 1; pointer-events: auto; }
-.preview-container { display: flex; flex-wrap: wrap; gap: 25px; justify-content: center; padding: 20px; width: 100%; max-height: 100%; overflow-y: auto; }
-.preview-page-wrapper { display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; }
+.preview-header { position: absolute; top: calc(20px + env(safe-area-inset-top)); left: 0; width: 100%; display: flex; justify-content: space-between; padding: 0 24px; z-index: 201; }
+.preview-btn { color: #fff; font-size: 15px; font-weight: 600; padding: 6px 16px; background: rgba(255,255,255,0.15); border-radius: 16px; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); cursor: pointer; transition: transform 0.2s; }
+.preview-btn:active { transform: scale(0.95); }
+.preview-container { display: flex; flex-wrap: wrap; gap: 25px; justify-content: center; padding: 100px 20px 40px; width: 100%; height: 100%; overflow-y: auto; align-content: flex-start; }
+.preview-page-wrapper { display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: transform 0.2s; }
+.preview-page-wrapper:active { transform: scale(0.96); }
 .preview-scale-box { width: 130px; height: 280px; border-radius: 18px; overflow: hidden; position: relative; background-size: cover; background-position: center; box-shadow: 0 8px 24px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.4); }
 .preview-scale-content { width: 430px; height: 932px; transform: scale(0.302); transform-origin: top left; pointer-events: none; }
 .preview-scale-content .page { width: 100%; height: 100%; padding: 10px 20px 20px 20px; overflow: hidden; }
-.preview-check { width: 26px; height: 26px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.5); }
+.preview-check { width: 26px; height: 26px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.5); transition: background 0.2s; }
+.preview-check:active { background: rgba(255, 255, 255, 0.4); }
 
 /* 组件面板 */
 .widget-panel { position: absolute; bottom: 0; left: 0; width: 100%; height: 50vh; background: rgba(242, 242, 247, 0.95); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-top-left-radius: 32px; border-top-right-radius: 32px; z-index: 300; transform: translateY(100%); transition: transform 0.35s ease-out; display: flex; flex-direction: column; padding: 20px; box-shadow: 0 -10px 30px rgba(0,0,0,0.15); }
