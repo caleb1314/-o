@@ -134,19 +134,6 @@ function updateStack() {
     });
 }
 
-function removeNotification(id) {
-    const index = activeNotifications.findIndex(n => n.id === id);
-    if (index > -1) {
-        const notif = activeNotifications[index];
-        activeNotifications.splice(index, 1);
-        notif.el.classList.add('leaving');
-        updateStack();
-        setTimeout(() => {
-            if (notif.el.parentNode) notif.el.parentNode.removeChild(notif.el);
-        }, 400);
-    }
-}
-
 // ================= 动态事件绑定 (满血恢复点击动效) =================
 const screen = document.getElementById('screen');
 
