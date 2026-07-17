@@ -140,7 +140,6 @@
                 </div>
             </div>
             <div class="widget-list" id="widget-list">
-                <!-- 注意这里补上了 default-widget 类名 -->
                 <div class="widget-option default-widget" id="add-img-1x2" data-size="small"><div class="widget-preview"><svg width="20" height="36" viewBox="0 0 20 36" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="18" height="34" rx="4"/><circle cx="7" cy="10" r="2"/><polyline points="1 22 7 16 13 22 18 18 19 19"/></svg></div><div class="widget-name">竖图 (1×2)</div></div>
                 <div class="widget-option default-widget" id="add-img-2x1" data-size="small"><div class="widget-preview"><svg width="36" height="20" viewBox="0 0 36 20" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="34" height="18" rx="4"/><circle cx="10" cy="7" r="2"/><polyline points="1 13 10 7 18 13 26 9 35 11"/></svg></div><div class="widget-name">横图 (2×1)</div></div>
                 <div class="widget-option default-widget hidden" id="add-img-widget" data-size="medium"><div class="widget-preview"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div><div class="widget-name">方图 (2×2)</div></div>
@@ -161,13 +160,16 @@
             </div>
         </div>
 
-        <!-- 自定义组件创建弹窗 (居中清透悬浮版) -->
+        <!-- 自定义组件创建/编辑弹窗 -->
         <div id="cw-modal-overlay" class="cw-modal-overlay">
             <div class="cw-modal-content">
                 <div class="cw-header">
                     <div class="cw-btn" id="cw-cancel">取消</div>
-                    <div class="cw-title">新建组件</div>
-                    <div class="cw-btn cw-btn-primary" id="cw-save">保存</div>
+                    <div class="cw-title" id="cw-modal-title">新建组件</div>
+                    <div style="display:flex; gap:16px; align-items:center;">
+                        <div class="cw-btn" id="cw-delete" style="display:none;">删除</div>
+                        <div class="cw-btn" id="cw-save">保存</div>
+                    </div>
                 </div>
                 <div class="cw-body">
                     <div class="cw-input-group">
@@ -192,13 +194,18 @@
                         </div>
                     </div>
                     <div class="cw-input-group">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <label style="margin:0;">HTML 代码</label>
+                            <div id="cw-example-btn" style="font-size:12px; color:#007aff; cursor:pointer; font-weight:600; background:rgba(0,122,255,0.1); padding:4px 10px; border-radius:10px;">查看示例</div>
+                        </div>
                         <textarea id="cw-html" placeholder="输入 HTML 代码..."></textarea>
                     </div>
                     <div class="cw-input-group">
+                        <label>CSS 代码</label>
                         <textarea id="cw-css" placeholder="输入 CSS 代码...（无需包裹 <style>）"></textarea>
                     </div>
                     <div class="cw-preview-section">
-                        <label>实时预览</label>
+                        <label style="font-size: 13px; font-weight: 600; color: #555;">实时预览</label>
                         <div class="cw-preview-container">
                             <style id="cw-preview-style"></style>
                             <div class="cw-preview-box" id="cw-preview-box"></div>
