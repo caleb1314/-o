@@ -31,17 +31,20 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .pages-container::-webkit-scrollbar { display: none; }
 .page { flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: start; padding: 10px 20px 20px 20px; overflow-y: hidden; position: relative; }
 
-/* 绝对定位网格系统 (大幅缩短行高和间距，给下方留出大量空间) */
+/* 绝对定位网格系统 */
 .app-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(6, 78px); gap: 12px 15px; align-content: start; justify-items: center; position: relative; padding-top: 5px; }
 .grid-item { grid-column: var(--col) / span var(--w); grid-row: var(--row) / span var(--h); width: 100%; height: 100%; transition: transform 0.2s; }
 .grid-item.dragging { opacity: 0.4; transform: scale(0.9); z-index: 50; }
 
-/* 规范化组件尺寸 (完美贴合紧凑网格) */
+/* 规范化组件尺寸 */
 .widget-1x2 { width: 58px; height: 100%; justify-self: center; align-self: start; border-radius: 22px; position: relative; }
 .widget-2x1 { width: 100%; height: 58px; align-self: start; border-radius: 22px; position: relative; }
 .widget-2x2 { width: 100%; height: 100%; align-self: start; border-radius: 22px; position: relative; }
 .widget-4x2 { width: 100%; height: 100%; align-self: start; border-radius: 22px; position: relative; }
 .widget-4x3 { width: 100%; height: 100%; align-self: start; border-radius: 22px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+/* 音乐组件内部缩放容器 (缩小 12%) */
+.music-widget-inner { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: scale(0.88); position: relative; }
 
 /* 图片小组件内部样式 */
 .image-widget-content { width: 100%; height: 100%; border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; background-size: cover; background-position: center; cursor: pointer; background-color: rgba(255,255,255,0.1); transition: transform 0.2s; }
@@ -69,7 +72,7 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .widget-4x3 .delete-btn, .widget-2x2 .delete-btn, .widget-1x2 .delete-btn, .widget-2x1 .delete-btn, .widget-4x2 .delete-btn { bottom: -6px; right: -4px; top: auto; left: auto; margin: 0; }
 .edit-mode .delete-btn { opacity: 1; pointer-events: auto; transform: scale(1); }
 
-/* 页面预览覆盖层与新增按钮 */
+/* 页面预览覆盖层 */
 .preview-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 200; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
 .preview-overlay.show { opacity: 1; pointer-events: auto; }
 .preview-header { position: absolute; top: calc(20px + env(safe-area-inset-top)); left: 0; width: 100%; display: flex; justify-content: space-between; padding: 0 24px; z-index: 201; }
@@ -106,6 +109,16 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .notification-banner .text-content { flex-grow: 1; text-align: center; }
 .notification-banner .title { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 2px; }
 .notification-banner .message { font-size: 12px; font-weight: 400; color: #555555; }
+
+/* 图片裁剪器样式 */
+.crop-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: rgba(0,0,0,0.9); display: none; flex-direction: column; }
+.crop-modal.show { display: flex; }
+.crop-header { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; margin-top: env(safe-area-inset-top); z-index: 10; }
+.crop-btn { color: #fff; font-size: 15px; font-weight: 600; padding: 6px 16px; background: rgba(255,255,255,0.15); border-radius: 16px; cursor: pointer; }
+.crop-btn:active { transform: scale(0.95); }
+.crop-area { flex: 1; position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+#crop-img { position: absolute; top: 50%; left: 50%; transform-origin: center; will-change: transform; }
+.crop-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 2px solid rgba(255,255,255,0.8); box-shadow: 0 0 0 2000px rgba(0,0,0,0.65); pointer-events: none; z-index: 2; border-radius: 12px; }
 
 /* 音乐组件内部样式 */
 .connecting-lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
