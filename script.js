@@ -286,7 +286,6 @@ function bindAllDynamicEvents() {
         item.addEventListener('mouseleave', cancelPressAnim);
     });
 
-    // 【修复】将 .custom-widget-item 也加入到图片上传的绑定中
     document.querySelectorAll('.widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .custom-widget-item').forEach(widget => {
         const content = widget.querySelector('.image-widget-content');
         const input = widget.querySelector('.widget-img-input');
@@ -530,7 +529,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (savedPages) document.querySelector('.pages-container').innerHTML = savedPages;
     if (savedDock) document.querySelector('.dock-container').innerHTML = savedDock;
     
-    // 恢复所有组件（含自定义）的上传图片状态
     const widgets = document.querySelectorAll('.widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .custom-widget-item');
     for (const widget of widgets) {
         const widgetId = widget.getAttribute('data-widget-id');
@@ -768,6 +766,8 @@ wallpaperInput.addEventListener('change', (e) => {
             const base64 = event.target.result;
             document.getElementById('screen').style.backgroundImage = `url(${base64})`;
             await saveToDB('wallpaper', base64);
+            // 刷新面板预览底图
+            renderCustomWidgetsToPanel();
         };
         reader.readAsDataURL(file);
     }
@@ -856,7 +856,7 @@ document.getElementById('preview-done-btn').addEventListener('click', async (e) 
 // ================= 自定义组件逻辑 =================
 
 let customWidgets = [];
-let editingWidgetId = null; // 记录当前正在编辑的组件ID
+let editingWidgetId = null; 
 
 async function loadCustomWidgets() {
     const saved = await getFromDB('customWidgets');
@@ -872,6 +872,7 @@ function renderCustomWidgetsToPanel() {
     widgetList.querySelectorAll('.custom-widget-opt').forEach(el => el.remove());
 
     const currentTabSize = document.querySelector('.size-tab.active').dataset.size;
+    const bgImg = document.getElementById('screen').style.backgroundImage || '';
 
     customWidgets.forEach(widget => {
         const opt = document.createElement('div');
@@ -883,9 +884,10 @@ function renderCustomWidgetsToPanel() {
         const realH = widget.h * 78 + (widget.h - 1) * 12;
         const scale = Math.min(50 / realW, 50 / realH);
 
+        // 注入当前壁纸作为预览底图，完美还原真实效果
         opt.innerHTML = `
-            <div class="custom-widget-preview-wrapper">
-                <div class="custom-widget-scale" style="width: ${realW}px; height: ${realH}px; transform: scale(${scale});">
+            <div class="custom-widget-preview-wrapper" style="background-image: ${bgImg}">
+                <div class="custom-widget-scale" style="width: ${realW}px; height: ${realH}px; transform: translate(-50%, -50%) scale(${scale});">
                     <div data-custom-id="${widget.id}" style="width:100%; height:100%;">
                         ${widget.html}
                     </div>
@@ -894,32 +896,44 @@ function renderCustomWidgetsToPanel() {
             <div class="widget-name">${widget.name}</div>
         `;
 
-        // 长按编辑逻辑
+        // 修复后的长按编辑逻辑 (防滑动冲突)
         let cwPressTimer = null;
-        let isCwDragging = false;
         let longPressed = false;
+        let startX = 0, startY = 0;
 
-        const startCwPress = () => {
-            isCwDragging = false;
+        const startCwPress = (e) => {
+            const touch = e.touches ? e.touches[0] : e;
+            startX = touch.clientX;
+            startY = touch.clientY;
             longPressed = false;
+            
             cwPressTimer = setTimeout(() => {
                 longPressed = true;
                 openEditModal(widget);
-            }, 2000);
+            }, 1000); // 1秒长按触发
         };
 
-        const moveCwPress = () => {
-            isCwDragging = true;
-            clearTimeout(cwPressTimer);
+        const moveCwPress = (e) => {
+            if (!cwPressTimer) return;
+            const touch = e.touches ? e.touches[0] : e;
+            // 允许 10px 的微小滑动容差
+            if (Math.abs(touch.clientX - startX) > 10 || Math.abs(touch.clientY - startY) > 10) {
+                clearTimeout(cwPressTimer);
+                cwPressTimer = null;
+            }
         };
 
         const cancelCwPress = () => {
-            clearTimeout(cwPressTimer);
+            if (cwPressTimer) {
+                clearTimeout(cwPressTimer);
+                cwPressTimer = null;
+            }
         };
 
         opt.addEventListener('touchstart', startCwPress, { passive: true });
         opt.addEventListener('touchmove', moveCwPress, { passive: true });
         opt.addEventListener('touchend', cancelCwPress);
+        opt.addEventListener('touchcancel', cancelCwPress);
         
         opt.addEventListener('mousedown', startCwPress);
         opt.addEventListener('mousemove', moveCwPress);
@@ -927,8 +941,12 @@ function renderCustomWidgetsToPanel() {
         opt.addEventListener('mouseleave', cancelCwPress);
 
         // 点击添加逻辑
-        opt.addEventListener('click', () => {
-            if (isCwDragging || longPressed) return; // 如果是拖动或长按，则不触发添加
+        opt.addEventListener('click', (e) => {
+            if (longPressed) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
             
             const instanceId = 'cw-inst-' + Date.now() + '-' + Math.floor(Math.random()*1000);
             const htmlString = `
@@ -1151,7 +1169,7 @@ document.getElementById('cw-save').addEventListener('click', async () => {
     
     renderCustomWidgetsToPanel();
     injectCustomWidgetsCSS();
-    bindAllDynamicEvents(); // 重新绑定事件（确保新修改的图片上传等生效）
+    bindAllDynamicEvents(); 
     
     cwModalOverlay.classList.remove('show');
     showToast('组件保存成功！');
