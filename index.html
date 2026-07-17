@@ -162,45 +162,45 @@
             </div>
         </div>
 
-        <!-- 自定义组件创建弹窗 (清透居中版) -->
-        <div id="cw-overlay" class="cw-overlay">
-            <div class="cw-modal liquid-glass">
+        <!-- 自定义组件创建弹窗 (居中清透悬浮版) -->
+        <div id="cw-modal-overlay" class="cw-modal-overlay">
+            <div class="cw-modal-content">
                 <div class="cw-header">
                     <div class="cw-btn" id="cw-cancel">取消</div>
                     <div class="cw-title">新建组件</div>
-                    <div class="cw-btn" id="cw-save">保存</div>
+                    <div class="cw-btn cw-btn-primary" id="cw-save">保存</div>
                 </div>
                 <div class="cw-body">
                     <div class="cw-input-group">
-                        <input type="text" id="cw-name" class="cw-input" placeholder="给组件起个名字" autocomplete="off">
+                        <input type="text" id="cw-name" placeholder="给组件起个名字" autocomplete="off">
                     </div>
-                    <div class="cw-input-group">
-                        <label>所属分类</label>
-                        <div class="cw-size-select">
-                            <div class="cw-size-opt active" data-size="small">小</div>
-                            <div class="cw-size-opt" data-size="medium">中</div>
-                            <div class="cw-size-opt" data-size="large">大</div>
+                    <div class="cw-row-group">
+                        <div class="cw-input-group" style="flex: 1;">
+                            <label>分类</label>
+                            <div class="cw-size-select">
+                                <div class="cw-size-opt active" data-size="small">小</div>
+                                <div class="cw-size-opt" data-size="medium">中</div>
+                                <div class="cw-size-opt" data-size="large">大</div>
+                            </div>
+                        </div>
+                        <div class="cw-input-group" style="flex: 1;">
+                            <label>网格 (宽×高)</label>
+                            <div class="cw-grid-select">
+                                <input type="number" id="cw-w" value="2" min="1" max="4">
+                                <span>×</span>
+                                <input type="number" id="cw-h" value="2" min="1" max="6">
+                            </div>
                         </div>
                     </div>
                     <div class="cw-input-group">
-                        <label>网格占比 (宽 × 高)</label>
-                        <div class="cw-grid-select">
-                            <input type="number" id="cw-w" class="cw-input" value="2" min="1" max="4">
-                            <span>×</span>
-                            <input type="number" id="cw-h" class="cw-input" value="2" min="1" max="6">
-                        </div>
+                        <textarea id="cw-html" placeholder="输入 HTML 代码..."></textarea>
                     </div>
                     <div class="cw-input-group">
-                        <label>HTML 代码</label>
-                        <textarea id="cw-html" class="cw-textarea" placeholder="输入 HTML 代码..."></textarea>
-                    </div>
-                    <div class="cw-input-group">
-                        <label>CSS 代码</label>
-                        <textarea id="cw-css" class="cw-textarea" placeholder="输入 CSS 代码...（无需包裹 <style>）"></textarea>
+                        <textarea id="cw-css" placeholder="输入 CSS 代码...（无需包裹 <style>）"></textarea>
                     </div>
                     <div class="cw-preview-section">
                         <label>实时预览</label>
-                        <div class="cw-preview-container liquid-glass">
+                        <div class="cw-preview-container">
                             <style id="cw-preview-style"></style>
                             <div class="cw-preview-box" id="cw-preview-box"></div>
                         </div>
