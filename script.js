@@ -251,7 +251,7 @@ document.getElementById('crop-done').addEventListener('click', async () => {
 const screen = document.getElementById('screen');
 
 function bindAllDynamicEvents() {
-    document.querySelectorAll('.app-item, .widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .widget-4x3').forEach(item => {
+    document.querySelectorAll('.app-item, .widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .widget-4x3, .custom-widget-item').forEach(item => {
         const newBtn = item.cloneNode(true);
         item.replaceWith(newBtn);
     });
@@ -288,8 +288,12 @@ function bindAllDynamicEvents() {
     });
 
     document.querySelectorAll('.widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2').forEach(widget => {
+        // 排除自定义组件，因为自定义组件不需要点击上传图片
+        if (widget.classList.contains('custom-widget-item')) return;
+        
         const content = widget.querySelector('.image-widget-content');
         const input = widget.querySelector('.widget-img-input');
+        if (!content || !input) return;
 
         const pressDownAnim = () => { if (!screen.classList.contains('edit-mode')) content.style.transform = 'scale(0.95)'; };
         const pressUpAnim = () => { if (!screen.classList.contains('edit-mode')) content.style.transform = 'scale(1)'; };
@@ -387,7 +391,7 @@ function findFirstAvailableSlot(page, w, h) {
 }
 
 function initDragSystem() {
-    document.querySelectorAll('.app-item, .widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .widget-4x3').forEach(item => {
+    document.querySelectorAll('.app-item, .widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .widget-4x3, .custom-widget-item').forEach(item => {
         item.addEventListener('touchstart', handleDragStart, { passive: false });
         item.addEventListener('mousedown', handleDragStart);
     });
@@ -535,20 +539,28 @@ window.addEventListener('DOMContentLoaded', async () => {
     
     const widgets = document.querySelectorAll('.widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2');
     for (const widget of widgets) {
+        // 排除自定义组件
+        if (widget.classList.contains('custom-widget-item')) continue;
+
         const widgetId = widget.getAttribute('data-widget-id');
         if (widgetId) {
             const base64 = await getFromDB(`widget_${widgetId}`);
             if (base64) {
                 const content = widget.querySelector('.image-widget-content');
-                content.style.backgroundImage = `url(${base64})`;
-                content.style.backgroundColor = 'transparent';
-                content.style.border = 'none';
-                content.style.boxShadow = 'none';
-                const placeholder = content.querySelector('.upload-placeholder');
-                if (placeholder) placeholder.style.display = 'none';
+                if(content) {
+                    content.style.backgroundImage = `url(${base64})`;
+                    content.style.backgroundColor = 'transparent';
+                    content.style.border = 'none';
+                    content.style.boxShadow = 'none';
+                    const placeholder = content.querySelector('.upload-placeholder');
+                    if (placeholder) placeholder.style.display = 'none';
+                }
             }
         }
     }
+    
+    // 加载自定义组件
+    await loadCustomWidgets();
     bindAllDynamicEvents();
 });
 
@@ -678,13 +690,20 @@ document.querySelectorAll('.size-tab').forEach(tab => {
         document.querySelectorAll('.size-tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         const size = tab.dataset.size;
-        document.querySelectorAll('.widget-option').forEach(opt => {
+        
+        // 切换默认组件
+        document.querySelectorAll('.default-widget').forEach(opt => {
+            opt.classList.toggle('hidden', opt.dataset.size !== size);
+        });
+        
+        // 切换自定义组件
+        document.querySelectorAll('.custom-widget-opt').forEach(opt => {
             opt.classList.toggle('hidden', opt.dataset.size !== size);
         });
     });
 });
 
-document.querySelectorAll('.widget-option').forEach(opt => {
+document.querySelectorAll('.default-widget').forEach(opt => {
     opt.addEventListener('click', () => {
         let html = null, w = 0, h = 0;
         if (opt.id === 'add-img-1x2') { html = getImgHTML(1, 2); w = 1; h = 2; }
@@ -846,6 +865,7 @@ document.getElementById('preview-done-btn').addEventListener('click', async (e) 
     await saveCurrentState();
     bindAllDynamicEvents();
 });
+
 // ================= 自定义组件逻辑 =================
 
 let customWidgets = [];
@@ -924,16 +944,6 @@ function injectCustomWidgetsCSS() {
     styleTag.innerHTML = combinedCSS;
 }
 
-// 监听组件面板大小切换，同步显示/隐藏自定义组件
-document.querySelectorAll('.size-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        const size = tab.dataset.size;
-        document.querySelectorAll('.custom-widget-opt').forEach(opt => {
-            opt.classList.toggle('hidden', opt.dataset.size !== size);
-        });
-    });
-});
-
 // ================= 弹窗交互逻辑 =================
 const cwModalOverlay = document.getElementById('cw-modal-overlay');
 const cwName = document.getElementById('cw-name');
@@ -948,6 +958,10 @@ let currentCwSize = 'small';
 // 打开弹窗
 document.getElementById('panel-new-btn').addEventListener('click', (e) => {
     e.stopPropagation();
+    
+    // 核心修改：打开弹窗时，先收起底部的组件面板，保持屏幕清爽
+    document.getElementById('widget-panel').classList.remove('show');
+    
     cwName.value = '';
     cwHtml.value = '';
     cwCss.value = '';
@@ -1035,9 +1049,4 @@ document.getElementById('cw-save').addEventListener('click', async () => {
     
     cwModalOverlay.classList.remove('show');
     showToast('组件保存成功！');
-});
-
-// 在页面初始化时加载自定义组件
-window.addEventListener('DOMContentLoaded', () => {
-    loadCustomWidgets();
 });
