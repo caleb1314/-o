@@ -250,8 +250,10 @@ document.getElementById('crop-done').addEventListener('click', async () => {
 const screen = document.getElementById('screen');
 
 function bindAllDynamicEvents() {
+    // 【重要】克隆节点时，清除自定义组件的 JS 初始化标记，以便重新绑定 JS
     document.querySelectorAll('.app-item, .widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .widget-4x3, .custom-widget-item').forEach(item => {
         const newBtn = item.cloneNode(true);
+        delete newBtn.dataset.jsInited; 
         item.replaceWith(newBtn);
     });
 
@@ -286,6 +288,7 @@ function bindAllDynamicEvents() {
         item.addEventListener('mouseleave', cancelPressAnim);
     });
 
+    // 绑定全局图片上传逻辑
     document.querySelectorAll('.widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .custom-widget-item').forEach(widget => {
         const content = widget.querySelector('.image-widget-content');
         const input = widget.querySelector('.widget-img-input');
@@ -341,6 +344,23 @@ function bindAllDynamicEvents() {
     });
 
     initDragSystem();
+    
+    // 【新增】执行自定义组件的 JS 代码
+    document.querySelectorAll('.custom-widget-item').forEach(el => {
+        if (el.dataset.jsInited) return; // 避免重复绑定
+        const customId = el.getAttribute('data-custom-id');
+        const widgetData = customWidgets.find(w => w.id === customId);
+        if (widgetData && widgetData.js) {
+            try {
+                // 动态创建一个函数，将 widget 作为参数传入
+                const func = new Function('widget', widgetData.js);
+                func(el); // 执行该函数
+            } catch(e) {
+                console.error('自定义组件 JS 执行错误:', e);
+            }
+        }
+        el.dataset.jsInited = 'true';
+    });
 }
 
 // ================= 拖拽系统 (支持 Dock 互通) =================
@@ -766,7 +786,6 @@ wallpaperInput.addEventListener('change', (e) => {
             const base64 = event.target.result;
             document.getElementById('screen').style.backgroundImage = `url(${base64})`;
             await saveToDB('wallpaper', base64);
-            // 刷新面板预览底图
             renderCustomWidgetsToPanel();
         };
         reader.readAsDataURL(file);
@@ -884,7 +903,6 @@ function renderCustomWidgetsToPanel() {
         const realH = widget.h * 78 + (widget.h - 1) * 12;
         const scale = Math.min(50 / realW, 50 / realH);
 
-        // 注入当前壁纸作为预览底图，完美还原真实效果
         opt.innerHTML = `
             <div class="custom-widget-preview-wrapper" style="background-image: ${bgImg}">
                 <div class="custom-widget-scale" style="width: ${realW}px; height: ${realH}px; transform: translate(-50%, -50%) scale(${scale});">
@@ -896,7 +914,6 @@ function renderCustomWidgetsToPanel() {
             <div class="widget-name">${widget.name}</div>
         `;
 
-        // 修复后的长按编辑逻辑 (防滑动冲突)
         let cwPressTimer = null;
         let longPressed = false;
         let startX = 0, startY = 0;
@@ -910,13 +927,12 @@ function renderCustomWidgetsToPanel() {
             cwPressTimer = setTimeout(() => {
                 longPressed = true;
                 openEditModal(widget);
-            }, 1000); // 1秒长按触发
+            }, 1000); 
         };
 
         const moveCwPress = (e) => {
             if (!cwPressTimer) return;
             const touch = e.touches ? e.touches[0] : e;
-            // 允许 10px 的微小滑动容差
             if (Math.abs(touch.clientX - startX) > 10 || Math.abs(touch.clientY - startY) > 10) {
                 clearTimeout(cwPressTimer);
                 cwPressTimer = null;
@@ -940,7 +956,6 @@ function renderCustomWidgetsToPanel() {
         opt.addEventListener('mouseup', cancelCwPress);
         opt.addEventListener('mouseleave', cancelCwPress);
 
-        // 点击添加逻辑
         opt.addEventListener('click', (e) => {
             if (longPressed) {
                 e.preventDefault();
@@ -986,11 +1001,11 @@ const cwW = document.getElementById('cw-w');
 const cwH = document.getElementById('cw-h');
 const cwHtml = document.getElementById('cw-html');
 const cwCss = document.getElementById('cw-css');
+const cwJs = document.getElementById('cw-js'); // 新增 JS 框
 const cwPreviewBox = document.getElementById('cw-preview-box');
 const cwPreviewStyle = document.getElementById('cw-preview-style');
 let currentCwSize = 'small';
 
-// 打开编辑弹窗
 function openEditModal(widget) {
     editingWidgetId = widget.id;
     document.getElementById('cw-modal-title').textContent = '编辑组件';
@@ -1001,6 +1016,7 @@ function openEditModal(widget) {
     cwH.value = widget.h;
     cwHtml.value = widget.html;
     cwCss.value = widget.css;
+    cwJs.value = widget.js || ''; // 载入 JS
     
     document.querySelectorAll('.cw-size-opt').forEach(o => {
         o.classList.toggle('active', o.dataset.size === widget.size);
@@ -1012,7 +1028,6 @@ function openEditModal(widget) {
     if (navigator.vibrate) navigator.vibrate(50);
 }
 
-// 打开新建弹窗
 document.getElementById('panel-new-btn').addEventListener('click', (e) => {
     e.stopPropagation();
     document.getElementById('widget-panel').classList.remove('show');
@@ -1024,18 +1039,17 @@ document.getElementById('panel-new-btn').addEventListener('click', (e) => {
     cwName.value = '';
     cwHtml.value = '';
     cwCss.value = '';
+    cwJs.value = '';
     cwW.value = 2;
     cwH.value = 2;
     updateCwPreview();
     cwModalOverlay.classList.add('show');
 });
 
-// 关闭弹窗
 document.getElementById('cw-cancel').addEventListener('click', () => {
     cwModalOverlay.classList.remove('show');
 });
 
-// 尺寸选择
 document.querySelectorAll('.cw-size-opt').forEach(opt => {
     opt.addEventListener('click', () => {
         document.querySelectorAll('.cw-size-opt').forEach(o => o.classList.remove('active'));
@@ -1044,7 +1058,6 @@ document.querySelectorAll('.cw-size-opt').forEach(opt => {
     });
 });
 
-// 实时预览更新
 function updateCwPreview() {
     const w = parseInt(cwW.value) || 2;
     const h = parseInt(cwH.value) || 2;
@@ -1079,30 +1092,32 @@ function updateCwPreview() {
     cwH.addEventListener(evt, updateCwPreview);
 });
 
-// 填入示例代码
+// 填入示例代码 (改为点击计数器，展示 JS 控制能力)
 document.getElementById('cw-example-btn').addEventListener('click', () => {
-    cwHtml.value = `<div class="image-widget-content liquid-glass" style="position:relative; width:100%; height:100%; border-radius:22px; overflow:hidden;">
-    <input type="file" class="widget-img-input" accept="image/*" style="display:none;">
-    <div class="upload-placeholder" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); color:#fff; text-align:center;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        <div style="font-size:12px; margin-top:4px;">点击传图</div>
-    </div>
-    <div class="custom-text">自定义文本</div>
+    cwHtml.value = `<div class="custom-counter liquid-glass">
+    <div class="count-val">0</div>
+    <div class="count-label">点击计数器</div>
 </div>`;
-    cwCss.value = `.custom-text {
-    position: absolute;
-    bottom: 12px;
-    left: 12px;
-    color: white;
-    font-size: 14px;
-    font-weight: bold;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
-    pointer-events: none;
-}`;
+    cwCss.value = `.custom-counter {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    border-radius: 22px; color: #fff; cursor: pointer;
+}
+.count-val { font-size: 32px; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+.count-label { font-size: 12px; opacity: 0.8; margin-top: 4px; }`;
+    cwJs.value = `const counterBox = widget.querySelector('.custom-counter');
+const valDisplay = widget.querySelector('.count-val');
+let count = 0;
+
+counterBox.addEventListener('click', () => {
+    // 防止在编辑模式下触发
+    if (document.getElementById('screen').classList.contains('edit-mode')) return;
+    count++;
+    valDisplay.textContent = count;
+});`;
     updateCwPreview();
 });
 
-// 保存自定义组件
 document.getElementById('cw-save').addEventListener('click', async () => {
     const name = cwName.value.trim();
     if (!name) {
@@ -1111,7 +1126,6 @@ document.getElementById('cw-save').addEventListener('click', async () => {
     }
     
     if (editingWidgetId) {
-        // 更新现有组件
         const index = customWidgets.findIndex(w => w.id === editingWidgetId);
         if (index > -1) {
             customWidgets[index] = {
@@ -1121,12 +1135,11 @@ document.getElementById('cw-save').addEventListener('click', async () => {
                 w: parseInt(cwW.value) || 2,
                 h: parseInt(cwH.value) || 2,
                 html: cwHtml.value,
-                css: cwCss.value
+                css: cwCss.value,
+                js: cwJs.value // 保存 JS
             };
             
-            // 同步更新桌面上已存在的该组件实例
             document.querySelectorAll(`.custom-widget-item[data-custom-id="${editingWidgetId}"]`).forEach(el => {
-                // 备份可能存在的图片背景，防止修改代码后图片丢失
                 const oldImgContent = el.querySelector('.image-widget-content');
                 const bgImage = oldImgContent ? oldImgContent.style.backgroundImage : '';
                 
@@ -1137,7 +1150,6 @@ document.getElementById('cw-save').addEventListener('click', async () => {
                 const content = el.querySelector('.custom-widget-content');
                 if (content) {
                     content.innerHTML = customWidgets[index].html;
-                    // 恢复图片
                     const newImgContent = content.querySelector('.image-widget-content');
                     if (newImgContent && bgImage && bgImage !== 'none') {
                         newImgContent.style.backgroundImage = bgImage;
@@ -1151,7 +1163,6 @@ document.getElementById('cw-save').addEventListener('click', async () => {
             });
         }
     } else {
-        // 创建新组件
         const newWidget = {
             id: 'cw_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
             name: name,
@@ -1159,7 +1170,8 @@ document.getElementById('cw-save').addEventListener('click', async () => {
             w: parseInt(cwW.value) || 2,
             h: parseInt(cwH.value) || 2,
             html: cwHtml.value,
-            css: cwCss.value
+            css: cwCss.value,
+            js: cwJs.value // 保存 JS
         };
         customWidgets.push(newWidget);
     }
@@ -1175,13 +1187,11 @@ document.getElementById('cw-save').addEventListener('click', async () => {
     showToast('组件保存成功！');
 });
 
-// 删除自定义组件
 document.getElementById('cw-delete').addEventListener('click', async () => {
     if (!editingWidgetId) return;
     
     customWidgets = customWidgets.filter(w => w.id !== editingWidgetId);
     
-    // 从桌面上移除该组件的所有实例
     document.querySelectorAll(`.custom-widget-item[data-custom-id="${editingWidgetId}"]`).forEach(el => el.remove());
     
     await saveToDB('customWidgets', customWidgets);
