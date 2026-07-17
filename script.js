@@ -846,3 +846,198 @@ document.getElementById('preview-done-btn').addEventListener('click', async (e) 
     await saveCurrentState();
     bindAllDynamicEvents();
 });
+// ================= 自定义组件逻辑 =================
+
+let customWidgets = [];
+
+// 初始化加载自定义组件
+async function loadCustomWidgets() {
+    const saved = await getFromDB('customWidgets');
+    if (saved) {
+        customWidgets = saved;
+        renderCustomWidgetsToPanel();
+        injectCustomWidgetsCSS();
+    }
+}
+
+// 渲染自定义组件到组件面板
+function renderCustomWidgetsToPanel() {
+    const widgetList = document.getElementById('widget-list');
+    // 移除旧的自定义组件选项
+    widgetList.querySelectorAll('.custom-widget-opt').forEach(el => el.remove());
+
+    const currentTabSize = document.querySelector('.size-tab.active').dataset.size;
+
+    customWidgets.forEach(widget => {
+        const opt = document.createElement('div');
+        opt.className = `widget-option custom-widget-opt ${widget.size === currentTabSize ? '' : 'hidden'}`;
+        opt.dataset.size = widget.size;
+        opt.dataset.id = widget.id;
+
+        // 计算在面板中的缩放比例 (面板预览框是 60x60)
+        const realW = widget.w * 76 + (widget.w - 1) * 15;
+        const realH = widget.h * 78 + (widget.h - 1) * 12;
+        const scale = Math.min(50 / realW, 50 / realH);
+
+        opt.innerHTML = `
+            <div class="custom-widget-preview-wrapper">
+                <div class="custom-widget-scale" style="width: ${realW}px; height: ${realH}px; transform: scale(${scale});">
+                    <div data-custom-id="${widget.id}" style="width:100%; height:100%;">
+                        ${widget.html}
+                    </div>
+                </div>
+            </div>
+            <div class="widget-name">${widget.name}</div>
+        `;
+
+        // 点击添加到桌面
+        opt.addEventListener('click', () => {
+            const htmlString = `
+                <div class="widget-${widget.w}x${widget.h} jiggle-item grid-item custom-widget-item" data-custom-id="${widget.id}">
+                    <div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220,220,225,0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+                    <div class="custom-widget-content">
+                        ${widget.html}
+                    </div>
+                </div>
+            `;
+            addWidgetToCurrentPage(htmlString, widget.w, widget.h);
+            document.getElementById('widget-panel').classList.remove('show');
+        });
+
+        widgetList.appendChild(opt);
+    });
+}
+
+// 注入所有自定义组件的 CSS
+function injectCustomWidgetsCSS() {
+    const styleTag = document.getElementById('custom-widgets-style');
+    let combinedCSS = '';
+    customWidgets.forEach(widget => {
+        // 简单的 CSS 作用域限制，防止污染全局
+        const scopedCSS = widget.css.replace(/(^|\})\s*([^{]+)\s*\{/g, (match, p1, p2) => {
+            if(p2.trim().startsWith('@')) return match;
+            const scopedSelectors = p2.split(',').map(s => `[data-custom-id="${widget.id}"] ${s.trim()}`).join(', ');
+            return `${p1} ${scopedSelectors} {`;
+        });
+        combinedCSS += scopedCSS + '\n';
+    });
+    styleTag.innerHTML = combinedCSS;
+}
+
+// 监听组件面板大小切换，同步显示/隐藏自定义组件
+document.querySelectorAll('.size-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const size = tab.dataset.size;
+        document.querySelectorAll('.custom-widget-opt').forEach(opt => {
+            opt.classList.toggle('hidden', opt.dataset.size !== size);
+        });
+    });
+});
+
+// ================= 弹窗交互逻辑 =================
+const cwModal = document.getElementById('custom-widget-modal');
+const cwName = document.getElementById('cw-name');
+const cwW = document.getElementById('cw-w');
+const cwH = document.getElementById('cw-h');
+const cwHtml = document.getElementById('cw-html');
+const cwCss = document.getElementById('cw-css');
+const cwPreviewBox = document.getElementById('cw-preview-box');
+const cwPreviewStyle = document.getElementById('cw-preview-style');
+let currentCwSize = 'small';
+
+// 打开弹窗
+document.getElementById('panel-new-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    cwName.value = '';
+    cwHtml.value = '';
+    cwCss.value = '';
+    cwW.value = 2;
+    cwH.value = 2;
+    updateCwPreview();
+    cwModal.classList.add('show');
+});
+
+// 关闭弹窗
+document.getElementById('cw-cancel').addEventListener('click', () => {
+    cwModal.classList.remove('show');
+});
+
+// 尺寸选择
+document.querySelectorAll('.cw-size-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+        document.querySelectorAll('.cw-size-opt').forEach(o => o.classList.remove('active'));
+        opt.classList.add('active');
+        currentCwSize = opt.dataset.size;
+    });
+});
+
+// 实时预览更新
+function updateCwPreview() {
+    const w = parseInt(cwW.value) || 2;
+    const h = parseInt(cwH.value) || 2;
+    
+    // 模拟网格真实尺寸 (列宽约76px，行高78px，间距15/12)
+    const realW = w * 76 + (w - 1) * 15;
+    const realH = h * 78 + (h - 1) * 12;
+    
+    cwPreviewBox.style.width = `${realW}px`;
+    cwPreviewBox.style.height = `${realH}px`;
+    
+    // 计算缩放以适应预览容器
+    const containerW = document.querySelector('.cw-preview-container').clientWidth - 40;
+    const containerH = 180; // min-height
+    const scale = Math.min(1, containerW / realW, containerH / realH);
+    cwPreviewBox.style.transform = `scale(${scale})`;
+
+    // 注入临时 ID 用于预览作用域
+    const tempId = 'preview-temp';
+    cwPreviewBox.setAttribute('data-custom-id', tempId);
+    cwPreviewBox.innerHTML = cwHtml.value;
+
+    const scopedCSS = cwCss.value.replace(/(^|\})\s*([^{]+)\s*\{/g, (match, p1, p2) => {
+        if(p2.trim().startsWith('@')) return match;
+        const scopedSelectors = p2.split(',').map(s => `[data-custom-id="${tempId}"] ${s.trim()}`).join(', ');
+        return `${p1} ${scopedSelectors} {`;
+    });
+    cwPreviewStyle.innerHTML = scopedCSS;
+}
+
+['input', 'change'].forEach(evt => {
+    cwHtml.addEventListener(evt, updateCwPreview);
+    cwCss.addEventListener(evt, updateCwPreview);
+    cwW.addEventListener(evt, updateCwPreview);
+    cwH.addEventListener(evt, updateCwPreview);
+});
+
+// 保存自定义组件
+document.getElementById('cw-save').addEventListener('click', async () => {
+    const name = cwName.value.trim();
+    if (!name) {
+        showToast('请给组件起个名字！');
+        return;
+    }
+    
+    const newWidget = {
+        id: 'cw_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        name: name,
+        size: currentCwSize,
+        w: parseInt(cwW.value) || 2,
+        h: parseInt(cwH.value) || 2,
+        html: cwHtml.value,
+        css: cwCss.value
+    };
+
+    customWidgets.push(newWidget);
+    await saveToDB('customWidgets', customWidgets);
+    
+    renderCustomWidgetsToPanel();
+    injectCustomWidgetsCSS();
+    
+    cwModal.classList.remove('show');
+    showToast('组件保存成功！');
+});
+
+// 在页面初始化时加载自定义组件
+window.addEventListener('DOMContentLoaded', () => {
+    loadCustomWidgets();
+});
