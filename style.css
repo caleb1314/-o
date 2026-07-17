@@ -89,8 +89,8 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .preview-check { width: 26px; height: 26px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.5); transition: background 0.2s; }
 .preview-check:active { background: rgba(255, 255, 255, 0.4); }
 
-/* 组件面板 (恢复半透明毛玻璃) */
-.widget-panel { position: absolute; bottom: 0; left: 0; width: 100%; height: 50vh; background: rgba(242, 242, 247, 0.65); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border-top-left-radius: 32px; border-top-right-radius: 32px; z-index: 300; transform: translateY(100%); transition: transform 0.35s ease-out; display: flex; flex-direction: column; padding: 20px; box-shadow: 0 -10px 30px rgba(0,0,0,0.15); }
+/* 组件面板 (恢复实色/高不透明度) */
+.widget-panel { position: absolute; bottom: 0; left: 0; width: 100%; height: 50vh; background: rgba(242, 242, 247, 0.98); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top-left-radius: 32px; border-top-right-radius: 32px; z-index: 300; transform: translateY(100%); transition: transform 0.35s ease-out; display: flex; flex-direction: column; padding: 20px; box-shadow: 0 -10px 30px rgba(0,0,0,0.15); }
 .widget-panel.show { transform: translateY(0); }
 .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 5px; }
 .panel-title { color: #000; font-size: 18px; font-weight: 700; }
@@ -99,7 +99,7 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .size-tab.active { background: #fff; color: #000; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 .panel-new-btn { width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; cursor: pointer; border-radius: 50%; background: rgba(0,0,0,0.05); }
 .widget-list { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; overflow-y: auto; padding-bottom: 20px; }
-.widget-option { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; border-radius: 22px; cursor: pointer; background: rgba(255,255,255,0.6); transition: transform 0.2s; }
+.widget-option { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; border-radius: 22px; cursor: pointer; background: rgba(255,255,255,0.8); transition: transform 0.2s; }
 .widget-option.hidden { display: none; }
 .widget-option:active { transform: scale(0.95); }
 .widget-preview { width: 60px; height: 60px; background: rgba(0,0,0,0.05); border-radius: 16px; display: flex; justify-content: center; align-items: center; margin-bottom: 10px; }
@@ -140,10 +140,10 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .controls-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 0 5px; }
 .main-controls { display: flex; align-items: center; gap: 20px; }
 
-/* 自定义组件弹窗样式 (恢复半透明毛玻璃) */
+/* 自定义组件弹窗样式 (恢复实色/高不透明度) */
 .cw-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 10000; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
 .cw-modal-overlay.show { opacity: 1; pointer-events: auto; }
-.cw-modal-content { width: 90%; max-width: 360px; background: rgba(250, 250, 250, 0.65); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 85vh; }
+.cw-modal-content { width: 90%; max-width: 360px; background: rgba(250, 250, 250, 0.98); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 85vh; }
 .cw-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid rgba(0,0,0,0.05); }
 .cw-btn { font-size: 15px; font-weight: 600; color: #666; cursor: pointer; transition: opacity 0.2s; }
 .cw-btn:active { opacity: 0.6; }
@@ -153,7 +153,7 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .cw-input-group label { font-size: 13px; font-weight: 600; color: #555; }
 .cw-input-group input[type="text"], .cw-input-group textarea { width: 100%; background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 10px 12px; font-size: 14px; font-family: monospace; outline: none; transition: border-color 0.2s; }
 .cw-input-group input[type="text"]:focus, .cw-input-group textarea:focus { border-color: rgba(0,0,0,0.3); }
-.cw-input-group textarea { height: 100px; resize: none; }
+.cw-input-group textarea { height: 80px; resize: none; }
 .cw-row-group { display: flex; gap: 15px; }
 .cw-size-select, .cw-grid-select { display: flex; background: rgba(0,0,0,0.05); border-radius: 12px; padding: 4px; align-items: center; }
 .cw-size-opt { flex: 1; text-align: center; padding: 6px 0; font-size: 13px; font-weight: 600; color: #666; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
