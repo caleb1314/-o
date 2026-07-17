@@ -935,7 +935,7 @@ document.querySelectorAll('.size-tab').forEach(tab => {
 });
 
 // ================= 弹窗交互逻辑 =================
-const cwOverlay = document.getElementById('cw-overlay');
+const cwModalOverlay = document.getElementById('cw-modal-overlay');
 const cwName = document.getElementById('cw-name');
 const cwW = document.getElementById('cw-w');
 const cwH = document.getElementById('cw-h');
@@ -954,12 +954,12 @@ document.getElementById('panel-new-btn').addEventListener('click', (e) => {
     cwW.value = 2;
     cwH.value = 2;
     updateCwPreview();
-    cwOverlay.classList.add('show');
+    cwModalOverlay.classList.add('show');
 });
 
 // 关闭弹窗
 document.getElementById('cw-cancel').addEventListener('click', () => {
-    cwOverlay.classList.remove('show');
+    cwModalOverlay.classList.remove('show');
 });
 
 // 尺寸选择
@@ -984,8 +984,8 @@ function updateCwPreview() {
     cwPreviewBox.style.height = `${realH}px`;
     
     // 计算缩放以适应预览容器
-    const containerW = document.querySelector('.cw-preview-container').clientWidth - 30;
-    const containerH = 160; // min-height
+    const containerW = document.querySelector('.cw-preview-container').clientWidth - 20;
+    const containerH = 120; // 容器高度减去内边距
     const scale = Math.min(1, containerW / realW, containerH / realH);
     cwPreviewBox.style.transform = `scale(${scale})`;
 
@@ -1033,7 +1033,7 @@ document.getElementById('cw-save').addEventListener('click', async () => {
     renderCustomWidgetsToPanel();
     injectCustomWidgetsCSS();
     
-    cwOverlay.classList.remove('show');
+    cwModalOverlay.classList.remove('show');
     showToast('组件保存成功！');
 });
 
