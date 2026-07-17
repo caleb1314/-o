@@ -154,7 +154,8 @@ function updateStack() {
 
 // ================= 图片裁剪器逻辑 =================
 let currentCropWidget = null;
-let cropTargetType = 'widget'; // 'widget' or 'avatar'
+let currentMusicAvatar = null;
+let cropTargetType = 'widget'; // 'widget', 'avatar', 'music-avatar'
 let cropImgX = 0, cropImgY = 0, cropImgScale = 1;
 let cropStartX = 0, cropStartY = 0, cropStartDist = 0;
 let isDraggingCrop = false, isPinchingCrop = false;
@@ -238,6 +239,12 @@ document.getElementById('crop-done').addEventListener('click', async () => {
         settingsAvatarImg.classList.add('has-img');
         await saveToDB('settings_avatar', base64);
         cropBox.style.borderRadius = '12px'; 
+    } else if (cropTargetType === 'music-avatar') {
+        if (currentMusicAvatar) {
+            currentMusicAvatar.style.backgroundImage = `url(${base64})`;
+            await saveCurrentState();
+        }
+        cropBox.style.borderRadius = '12px';
     } else {
         const content = currentCropWidget.querySelector('.image-widget-content');
         content.style.backgroundImage = `url(${base64})`;
@@ -358,6 +365,18 @@ function bindAllDynamicEvents() {
                 };
                 reader.readAsDataURL(file);
             }
+        });
+    });
+
+    // 绑定音乐组件头像点击事件
+    document.querySelectorAll('.avatar-circle').forEach(circle => {
+        if (circle.dataset.bound) return;
+        circle.dataset.bound = "true";
+        circle.addEventListener('click', () => {
+            if (screen.classList.contains('edit-mode')) return;
+            cropTargetType = 'music-avatar';
+            currentMusicAvatar = circle;
+            document.getElementById('settings-avatar-input').click();
         });
     });
 
@@ -1372,6 +1391,7 @@ document.getElementById('settings-back').addEventListener('click', () => {
 });
 
 settingsAvatarBtn.addEventListener('click', () => {
+    cropTargetType = 'avatar';
     settingsAvatarInput.click();
 });
 
@@ -1380,7 +1400,6 @@ settingsAvatarInput.addEventListener('change', (e) => {
     if (file) {
         const reader = new FileReader();
         reader.onload = (event) => {
-            cropTargetType = 'avatar';
             cropImg.src = event.target.result;
             
             let boxW = window.innerWidth * 0.8;
