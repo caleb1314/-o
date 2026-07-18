@@ -260,6 +260,7 @@ document.getElementById('crop-done').addEventListener('click', async () => {
 const screen = document.getElementById('screen');
 
 function bindAllDynamicEvents() {
+    // 每次重新绑定前，克隆节点以清除旧的事件监听器
     document.querySelectorAll('.app-item, .widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .widget-4x3, .custom-widget-item').forEach(item => {
         const newBtn = item.cloneNode(true);
         delete newBtn.dataset.jsInited; 
@@ -353,9 +354,6 @@ function bindAllDynamicEvents() {
 
     // 绑定音乐组件头像上传事件（触发裁剪器）
     document.querySelectorAll('.avatar-circle').forEach(circle => {
-        if (circle.dataset.hasUpload) return;
-        circle.dataset.hasUpload = 'true';
-        
         let input = circle.querySelector('input[type="file"]');
         if (!input) {
             input = document.createElement('input');
@@ -1576,13 +1574,15 @@ window.doSearch = async function(keyword) {
     resultArea.style.display = 'block';
     resultList.innerHTML = '<div style="text-align:center; padding: 20px; color:#888; font-size:13px;">搜索中...</div>';
     
-    const res = await fetchApi(`search?keywords=${encodeURIComponent(keyword)}`);
+    // 使用 cloudsearch 接口获取带封面的数据
+    const res = await fetchApi(`cloudsearch?keywords=${encodeURIComponent(keyword)}`);
     if (res && res.result && res.result.songs) {
         resultList.innerHTML = res.result.songs.map(song => `
             <div class="search-result-item">
+                <div class="search-result-cover" style="background-image: url(${song.al.picUrl}?param=100y100)"></div>
                 <div class="search-result-info">
                     <div class="search-result-name">${song.name}</div>
-                    <div class="search-result-artist">${song.artists.map(a=>a.name).join(' / ')} - ${song.album.name}</div>
+                    <div class="search-result-artist">${song.ar.map(a=>a.name).join(' / ')} - ${song.al.name}</div>
                 </div>
                 <div class="search-result-action">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="#ccc"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
