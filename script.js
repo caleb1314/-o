@@ -1334,9 +1334,11 @@ screen.addEventListener('click', (e) => {
     // 确保点击的不是删除按钮
     if (appItem && !e.target.closest('.delete-btn')) {
         const appName = appItem.querySelector('.app-name');
-        // 判断名字是否为“音乐” (兼容桌面和Dock栏的图标)
+        // 判断名字是否为“音乐”
         if (appName && appName.textContent.trim() === '音乐') {
             document.getElementById('music-app-overlay').classList.add('show');
+            // 核心：给 screen 添加类名，让状态栏变成黑色
+            screen.classList.add('music-active');
         }
     }
 });
@@ -1344,18 +1346,12 @@ screen.addEventListener('click', (e) => {
 // 2. 点击左上角三横线退出音乐 APP
 document.getElementById('music-back-btn').addEventListener('click', () => {
     document.getElementById('music-app-overlay').classList.remove('show');
+    // 核心：移除类名，让状态栏恢复白色
+    screen.classList.remove('music-active');
 });
 
-// 3. 隔离长按事件：防止在音乐 APP 内部长按或滑动时，误触桌面的编辑模式和翻页
+// 3. 隔离长按事件：防止在音乐 APP 内部长按触发桌面的编辑模式
 const musicAppOverlay = document.getElementById('music-app-overlay');
-const stopProp = (e) => e.stopPropagation();
-
-musicAppOverlay.addEventListener('touchstart', stopProp, { passive: true });
-musicAppOverlay.addEventListener('touchmove', stopProp, { passive: true });
-musicAppOverlay.addEventListener('touchend', stopProp);
-musicAppOverlay.addEventListener('touchcancel', stopProp);
-musicAppOverlay.addEventListener('mousedown', stopProp);
-musicAppOverlay.addEventListener('mousemove', stopProp);
-musicAppOverlay.addEventListener('mouseup', stopProp);
-musicAppOverlay.addEventListener('mouseleave', stopProp);
-musicAppOverlay.addEventListener('contextmenu', stopProp);
+musicAppOverlay.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+musicAppOverlay.addEventListener('mousedown', (e) => e.stopPropagation());
+musicAppOverlay.addEventListener('contextmenu', (e) => e.stopPropagation());
