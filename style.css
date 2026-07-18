@@ -186,9 +186,9 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .music-app-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #f7f8fa; z-index: 150; opacity: 0; pointer-events: none; transform: translateY(30px) scale(0.98); transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); display: flex; flex-direction: column; }
 .music-app-overlay.show { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
 
-/* 视图切换容器 */
-.music-view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; opacity: 0; transition: opacity 0.2s ease; background: #f7f8fa; z-index: 1; pointer-events: none; }
-.music-view.active { opacity: 1; z-index: 5; pointer-events: auto; }
+/* 视图切换容器 - 彻底修复了点击穿透拦截桌面的Bug！去掉了 pointer-events: auto */
+.music-view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; opacity: 0; transition: opacity 0.2s ease; background: #f7f8fa; z-index: 1; }
+.music-view.active { opacity: 1; z-index: 5; }
 
 /* ================= 首页视图样式 ================= */
 .music-nav-bar { width: 100%; height: calc(44px + 44px + env(safe-area-inset-top)); padding-top: calc(44px + env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; padding-left: 18px; padding-right: 18px; background: rgba(247, 248, 250, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 10; flex-shrink: 0; }
@@ -198,6 +198,7 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .music-content-area::-webkit-scrollbar { display: none; }
 .music-bg-grey-1 { background: #dcdcdc; } .music-bg-grey-2 { background: #cfcfcf; } .music-bg-grey-3 { background: #c2c2c2; } .music-bg-grey-4 { background: #b5b5b5; } .music-bg-grey-5 { background: #a8a8a8; } .music-bg-grey-6 { background: #9b9b9b; } .music-bg-grey-7 { background: #8e8e8e; }
 
+/* 顶部卡片：圆角缩小到6px，间距缩小到8px */
 .music-top-cards { display: flex; gap: 8px; padding: 0 18px 16px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .music-top-cards::-webkit-scrollbar { display: none; }
 .music-card { flex: 0 0 120px; height: 150px; border-radius: 6px; position: relative; overflow: hidden; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px; cursor: pointer; }
