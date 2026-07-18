@@ -169,3 +169,110 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 /* 面板内组件预览定位 */
 .custom-widget-preview-wrapper { width: 60px; height: 60px; background: rgba(0,0,0,0.05); border-radius: 16px; margin-bottom: 10px; overflow: hidden; position: relative; background-size: cover; background-position: center; }
 .custom-widget-scale { position: absolute; top: 50%; left: 50%; transform-origin: center; pointer-events: none; }
+/* ================= 音乐 APP 界面样式 ================= */
+.music-app-overlay {
+    position: absolute;
+    /* 核心：距离顶部刚好是状态栏的高度，完美避开重叠 */
+    top: calc(44px + env(safe-area-inset-top));
+    left: 0;
+    width: 100%;
+    /* 核心：高度减去状态栏，确保底部不超标 */
+    height: calc(100% - 44px - env(safe-area-inset-top));
+    background-color: #f7f8fa;
+    z-index: 85; /* 层级在状态栏(100)和编辑栏(90)之下，在桌面之上 */
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(30px);
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: flex;
+    flex-direction: column;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
+}
+
+.music-app-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+/* 音乐顶部导航栏 (毛玻璃) */
+.music-nav-bar {
+    width: 100%;
+    height: 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 18px;
+    background: rgba(247, 248, 250, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 10;
+    flex-shrink: 0;
+}
+.music-nav-title { font-size: 16px; font-weight: 700; color: #111; letter-spacing: 0.5px; }
+.music-nav-icon { width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; cursor: pointer; border-radius: 50%; transition: background 0.2s; }
+.music-nav-icon:active { background: rgba(0,0,0,0.05); }
+
+/* 音乐内容滚动区 */
+.music-content-area {
+    flex: 1;
+    width: 100%;
+    padding-top: 10px;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+.music-content-area::-webkit-scrollbar { display: none; }
+
+/* 灰度色块预设 */
+.music-bg-grey-1 { background: #dcdcdc; }
+.music-bg-grey-2 { background: #cfcfcf; }
+.music-bg-grey-3 { background: #c2c2c2; }
+.music-bg-grey-4 { background: #b5b5b5; }
+.music-bg-grey-5 { background: #a8a8a8; }
+.music-bg-grey-6 { background: #9b9b9b; }
+.music-bg-grey-7 { background: #8e8e8e; }
+
+/* 顶部三个卡片 */
+.music-top-cards { display: flex; gap: 10px; padding: 0 18px 20px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.music-top-cards::-webkit-scrollbar { display: none; }
+.music-card { flex: 0 0 120px; height: 150px; border-radius: 6px; position: relative; overflow: hidden; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px; cursor: pointer; transition: transform 0.2s; }
+.music-card:active { transform: scale(0.96); }
+.music-card-title { font-size: 14px; font-weight: 800; color: #fff; margin-bottom: 4px; text-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+.music-card-sub { font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.9); text-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+.music-card-play { position: absolute; right: 10px; bottom: 14px; width: 24px; height: 24px; background: rgba(255,255,255,0.95); border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+
+/* 列表区域通用 */
+.music-section { padding: 0 18px 22px; }
+.music-section-title { font-size: 16px; font-weight: 800; color: #111; margin-bottom: 14px; letter-spacing: -0.2px; display: flex; align-items: center; gap: 4px; }
+
+/* 推荐歌曲列表 */
+.music-song-item { display: flex; align-items: center; margin-bottom: 16px; cursor: pointer; transition: opacity 0.2s; }
+.music-song-item:active { opacity: 0.6; }
+.music-song-cover { width: 46px; height: 46px; border-radius: 6px; margin-right: 12px; flex-shrink: 0; }
+.music-song-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+.music-song-name { font-size: 14px; font-weight: 700; color: #111; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.music-song-artist { font-size: 11px; color: #888; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+.music-tag { font-size: 9px; padding: 2px 4px; border-radius: 4px; background: rgba(0, 0, 0, 0.06); color: #666; font-weight: 700; }
+.music-song-action { width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+
+/* 推荐歌单 */
+.music-section-full { padding-bottom: 22px; }
+.music-section-full .music-section-title { padding: 0 18px; margin-bottom: 14px; }
+.music-playlist-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0 18px; }
+.music-playlist-item { width: 100%; cursor: pointer; transition: transform 0.2s; }
+.music-playlist-item:active { transform: scale(0.96); }
+.music-playlist-cover-box { width: 100%; aspect-ratio: 1 / 1; border-radius: 6px; position: relative; margin-bottom: 8px; overflow: hidden; }
+.music-playlist-tag { position: absolute; left: 6px; bottom: 6px; background: rgba(255,255,255,0.95); color: #333; font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.music-playlist-play { position: absolute; right: 6px; bottom: 6px; width: 22px; height: 22px; display: flex; justify-content: center; align-items: center; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+.music-playlist-title { font-size: 12px; color: #333; font-weight: 500; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* 音乐底部导航栏 (毛玻璃) */
+.music-bottom-bar { position: absolute; bottom: 0; left: 0; width: 100%; height: calc(48px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: rgba(247, 248, 250, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; justify-content: space-around; align-items: center; z-index: 10; border-top: 0.5px solid rgba(0,0,0,0.04); }
+.music-tab-item { display: flex; justify-content: center; align-items: center; height: 100%; flex: 1; cursor: pointer; }
+.music-tab-text { font-size: 14px; font-weight: 700; color: #999; transition: color 0.2s; }
+.music-tab-item.active .music-tab-text { color: #111; }
