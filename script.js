@@ -1,4 +1,3 @@
-
 // ================= 恢复 PWA Service Worker 注册 =================
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -78,7 +77,8 @@ if ('getBattery' in navigator) {
             const batteryLevel = document.getElementById('battery-level');
             
             if (batteryText) batteryText.textContent = level;
-            if (batteryLevel) batteryLevel.setAttribute('width', (level / 100) * 20);
+            // 修复电量满格显示：最大宽度改为27
+            if (batteryLevel) batteryLevel.setAttribute('width', (level / 100) * 27);
         }
         updateBattery();
         battery.addEventListener('levelchange', updateBattery);
@@ -336,6 +336,40 @@ function bindAllDynamicEvents() {
                         document.getElementById('crop-modal').classList.add('show');
                     };
                     input.value = ''; 
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+
+    // 绑定音乐组件头像上传事件
+    document.querySelectorAll('.avatar-circle').forEach(circle => {
+        if (circle.dataset.hasUpload) return;
+        circle.dataset.hasUpload = 'true';
+        
+        let input = circle.querySelector('input[type="file"]');
+        if (!input) {
+            input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.style.display = 'none';
+            circle.appendChild(input);
+        }
+        
+        circle.addEventListener('click', (e) => {
+            if (screen.classList.contains('edit-mode')) return;
+            e.stopPropagation();
+            input.click();
+        });
+        
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    circle.style.backgroundImage = `url(${event.target.result})`;
+                    circle.style.backgroundColor = 'transparent';
+                    saveCurrentState();
                 };
                 reader.readAsDataURL(file);
             }
@@ -724,21 +758,7 @@ const musicWidgetHTML = `<div class="widget-4x3 jiggle-item grid-item">
         <div class="avatars-wrapper"><div class="avatar-group"><div class="speech-bubble" contenteditable="true" spellcheck="false">你在左边</div><div class="avatar-circle"></div></div><div class="avatar-group"><div class="speech-bubble" contenteditable="true" spellcheck="false">我紧靠右</div><div class="avatar-circle"></div></div></div>
         <div class="center-text" contenteditable="true" spellcheck="false">Twenty four seven with us</div>
         <div class="music-player-v2"><div class="music-title">Pink Lavender</div><div class="music-subtitle" contenteditable="true" spellcheck="false">· ⁺ ⋆ ‿ ıllıllı ‿ ⋆ ⁺ ·</div><div class="progress-container"><div class="time-label">1:26</div><div class="progress-bar"><div class="progress-fill"></div></div><div class="time-label">3:48</div></div><div class="controls-row"><svg width="20" height="20" viewBox="0 0 24 24" fill="#666"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><div class="main-controls"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M22 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg><svg width="32" height="32" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="2" fill="#333"/><rect x="14" y="5" width="4" height="14" rx="2" fill="#333"/></svg><svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M13 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><path d="M9.52 14.47 A 3.5 3.5 0 1 1 14.48 14.47"/><path d="M7.05 16.95 A 7 7 0 1 1 16.95 16.95"/><path d="M4.58 19.42 A 10.5 10.5 0 1 1 19.42 19.42"/><path d="M12 15.5L16.5 21H7.5L12 15.5Z" fill="#333"/></svg></div></div>
-    </div>
-</div>`;
-
-function getImgPreviewHTML() {
-    return `<div class="image-widget-content liquid-glass" style="width:100%;height:100%;"><div class="upload-placeholder"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>添加</span></div></div>`;
-}
-
-function getMusicPreviewHTML() {
-    return `<div class="music-widget-inner" style="width:100%;height:100%;transform:scale(0.88);">
-        <svg class="connecting-lines" viewBox="0 0 400 250" preserveAspectRatio="xMidYMin slice"><defs><linearGradient id="fade-grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#555555;stop-opacity:1" /><stop offset="85%" style="stop-color:#555555;stop-opacity:0" /></linearGradient></defs><circle cx="151" cy="100" r="4" fill="#555555" /><circle cx="249" cy="100" r="4" fill="#555555" /><path d="M 151 100 Q 100 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/><path d="M 249 100 Q 300 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/></svg>
-        <div class="avatars-wrapper"><div class="avatar-group"><div class="speech-bubble">你在左边</div><div class="avatar-circle"></div></div><div class="avatar-group"><div class="speech-bubble">我紧靠右</div><div class="avatar-circle"></div></div></div>
-        <div class="center-text">Twenty four seven with us</div>
-        <div class="music-player-v2"><div class="music-title">Pink Lavender</div><div class="music-subtitle">· ⁺ ⋆ ‿ ıllıllı ‿ ⋆ ⁺ ·</div><div class="progress-container"><div class="time-label">1:26</div><div class="progress-bar"><div class="progress-fill"></div></div><div class="time-label">3:48</div></div><div class="controls-row"><svg width="20" height="20" viewBox="0 0 24 24" fill="#666"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><div class="main-controls"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M22 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg><svg width="32" height="32" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="2" fill="#333"/><rect x="14" y="5" width="4" height="14" rx="2" fill="#333"/></svg><svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M13 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><path d="M9.52 14.47 A 3.5 3.5 0 1 1 14.48 14.47"/><path d="M7.05 16.95 A 7 7 0 1 1 16.95 16.95"/><path d="M4.58 19.42 A 10.5 10.5 0 1 1 19.42 19.42"/><path d="M12 15.5L16.5 21H7.5L12 15.5Z" fill="#333"/></svg></div></div>
     </div>`;
-}
 
 document.querySelectorAll('.default-widget').forEach(opt => {
     opt.addEventListener('click', () => {
@@ -817,6 +837,19 @@ function renderDefaultWidgetsPreview() {
         `;
         opt.insertBefore(wrapper, opt.firstChild);
     });
+}
+
+function getImgPreviewHTML() {
+    return `<div class="image-widget-content liquid-glass" style="width:100%;height:100%;"><div class="upload-placeholder"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>添加</span></div></div>`;
+}
+
+function getMusicPreviewHTML() {
+    return `<div class="music-widget-inner" style="width:100%;height:100%;transform:scale(0.88);">
+        <svg class="connecting-lines" viewBox="0 0 400 250" preserveAspectRatio="xMidYMin slice"><defs><linearGradient id="fade-grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#555555;stop-opacity:1" /><stop offset="85%" style="stop-color:#555555;stop-opacity:0" /></linearGradient></defs><circle cx="151" cy="100" r="4" fill="#555555" /><circle cx="249" cy="100" r="4" fill="#555555" /><path d="M 151 100 Q 100 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/><path d="M 249 100 Q 300 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <div class="avatars-wrapper"><div class="avatar-group"><div class="speech-bubble">你在左边</div><div class="avatar-circle"></div></div><div class="avatar-group"><div class="speech-bubble">我紧靠右</div><div class="avatar-circle"></div></div></div>
+        <div class="center-text">Twenty four seven with us</div>
+        <div class="music-player-v2"><div class="music-title">Pink Lavender</div><div class="music-subtitle">· ⁺ ⋆ ‿ ıllıllı ‿ ⋆ ⁺ ·</div><div class="progress-container"><div class="time-label">1:26</div><div class="progress-bar"><div class="progress-fill"></div></div><div class="time-label">3:48</div></div><div class="controls-row"><svg width="20" height="20" viewBox="0 0 24 24" fill="#666"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><div class="main-controls"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M22 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg><svg width="32" height="32" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="2" fill="#333"/><rect x="14" y="5" width="4" height="14" rx="2" fill="#333"/></svg><svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M13 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><path d="M9.52 14.47 A 3.5 3.5 0 1 1 14.48 14.47"/><path d="M7.05 16.95 A 7 7 0 1 1 16.95 16.95"/><path d="M4.58 19.42 A 10.5 10.5 0 1 1 19.42 19.42"/><path d="M12 15.5L16.5 21H7.5L12 15.5Z" fill="#333"/></svg></div></div>
+    </div>`;
 }
 
 // ================= 换壁纸与预览逻辑 =================
@@ -1333,14 +1366,12 @@ screen.addEventListener('click', (e) => {
         const appName = appItem.querySelector('.app-name');
         if (appName && appName.textContent.trim() === '音乐') {
             document.getElementById('music-app-overlay').classList.add('show');
-            // 默认展示首页，状态栏变黑
             document.querySelectorAll('.music-view').forEach(v => v.classList.remove('active'));
             document.getElementById('view-home').classList.add('active');
             document.querySelectorAll('.music-tab-item').forEach(t => t.classList.remove('active'));
             document.querySelector('.music-tab-item[data-target="view-home"]').classList.add('active');
             screen.classList.add('music-active');
             
-            // 如果有API，尝试拉取数据
             if (apiUrl && !window.musicDataLoaded) {
                 fetchUserData();
                 window.musicDataLoaded = true;
@@ -1377,10 +1408,6 @@ document.querySelectorAll('.music-tab-item').forEach(tab => {
             screen.classList.remove('music-active');
         } else {
             screen.classList.add('music-active');
-        }
-
-        if(target === 'view-search' && apiUrl && !document.getElementById('hot-search-list').dataset.loaded) {
-            fetchHotSearch();
         }
     });
 });
@@ -1501,27 +1528,12 @@ document.getElementById('qr-cancel').addEventListener('click', () => {
 // 7. 搜索逻辑
 const searchInput = document.getElementById('search-input');
 const searchCancel = document.getElementById('search-cancel');
-const hotArea = document.getElementById('search-hot-area');
 const resultArea = document.getElementById('search-result-area');
 const resultList = document.getElementById('search-result-list');
-
-async function fetchHotSearch() {
-    const res = await fetchApi('search/hot/detail');
-    if (res && res.data) {
-        const list = document.getElementById('hot-search-list');
-        list.innerHTML = res.data.map((item, index) => {
-            const isTop = index < 3;
-            const icon = item.iconUrl ? `<img src="${item.iconUrl}" style="height:12px; margin-left:4px;">` : '';
-            return `<div class="hot-search-tag ${isTop ? 'top-3' : ''}" onclick="doSearch('${item.searchWord}')">${item.searchWord} ${icon}</div>`;
-        }).join('');
-        list.dataset.loaded = 'true';
-    }
-}
 
 window.doSearch = async function(keyword) {
     if(!keyword) return;
     searchInput.value = keyword;
-    hotArea.style.display = 'none';
     resultArea.style.display = 'block';
     resultList.innerHTML = '<div style="text-align:center; padding: 20px; color:#888; font-size:13px;">搜索中...</div>';
     
@@ -1534,7 +1546,7 @@ window.doSearch = async function(keyword) {
                     <div class="search-result-artist">${song.artists.map(a=>a.name).join(' / ')} - ${song.album.name}</div>
                 </div>
                 <div class="search-result-action">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="#999"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#ccc"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
                 </div>
             </div>
         `).join('');
@@ -1552,7 +1564,6 @@ searchInput.addEventListener('keypress', (e) => {
 
 searchCancel.addEventListener('click', () => {
     searchInput.value = '';
-    hotArea.style.display = 'block';
     resultArea.style.display = 'none';
 });
 
@@ -1560,7 +1571,6 @@ searchCancel.addEventListener('click', () => {
 async function fetchUserData() {
     if (!apiUrl) return;
     try {
-        // 获取账号信息
         const accRes = await fetchApi('user/account');
         if (accRes && accRes.profile) {
             const p = accRes.profile;
@@ -1578,14 +1588,11 @@ async function fetchUserData() {
             if (plRes && plRes.playlist) renderUserPlaylist(plRes.playlist);
         }
         
-        // 获取首页推荐歌单
-        const recPlRes = await fetchApi('personalized?limit=6');
+        const recPlRes = await fetchApi('personalized?limit=3');
         if(recPlRes && recPlRes.result) {
-            renderTopCards(recPlRes.result.slice(0, 3));
-            renderHomePlaylist(recPlRes.result.slice(3, 6));
+            renderTopCards(recPlRes.result);
         }
         
-        // 获取首页推荐新音乐
         const recSongRes = await fetchApi('personalized/newsong?limit=3');
         if(recSongRes && recSongRes.result) renderHomeSongs(recSongRes.result);
         
@@ -1624,19 +1631,6 @@ function renderUserPlaylist(list) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="#ccc"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
         </div>
     `).join('');
-}
-
-function renderHomePlaylist(list) {
-    const grids = document.querySelectorAll('.music-playlist-item');
-    list.forEach((item, i) => {
-        if(grids[i]) {
-            const box = grids[i].querySelector('.music-playlist-cover-box');
-            box.style.backgroundImage = `url(${item.picUrl}?param=200y200)`;
-            box.style.backgroundSize = 'cover';
-            box.className = 'music-playlist-cover-box';
-            grids[i].querySelector('.music-playlist-title').textContent = item.name;
-        }
-    });
 }
 
 function renderHomeSongs(list) {
