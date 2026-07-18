@@ -7,10 +7,10 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .liquid-glass { background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2), inset 0 -1px 2px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); }
 
 /* 顶栏 */
-.status-bar { position: absolute; top: 0; left: 0; width: 100%; height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; padding-top: env(safe-area-inset-top); z-index: 100; }
-.time { color: #fff; font-size: 17px; font-weight: 700; letter-spacing: -0.5px; transform: translate(6px, 3px); text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.status-bar { position: absolute; top: 0; left: 0; width: 100%; height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; padding-top: env(safe-area-inset-top); z-index: 200; } /* 提升了层级，确保永远在最顶层 */
+.time { color: #fff; font-size: 17px; font-weight: 700; letter-spacing: -0.5px; transform: translate(6px, 3px); text-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: color 0.3s, text-shadow 0.3s; }
 .status-icons { display: flex; align-items: center; gap: 6px; }
-.status-icons svg { filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)); }
+.status-icons svg { filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)); transition: fill 0.3s, stroke 0.3s, filter 0.3s; }
 
 /* 编辑控制栏 */
 .edit-controls { position: absolute; top: calc(44px + env(safe-area-inset-top) + 5px); left: 0; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; z-index: 90; opacity: 0; pointer-events: none; transform: translateY(-10px); transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
@@ -169,43 +169,52 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 /* 面板内组件预览定位 */
 .custom-widget-preview-wrapper { width: 60px; height: 60px; background: rgba(0,0,0,0.05); border-radius: 16px; margin-bottom: 10px; overflow: hidden; position: relative; background-size: cover; background-position: center; }
 .custom-widget-scale { position: absolute; top: 50%; left: 50%; transform-origin: center; pointer-events: none; }
+
 /* ================= 音乐 APP 界面样式 ================= */
+
+/* 当打开音乐APP时，动态让状态栏的文字和图标变成黑色 */
+.screen.music-active .time { color: #000 !important; text-shadow: none !important; }
+.screen.music-active .status-icons svg { filter: none !important; }
+.screen.music-active .status-icons svg[fill="#fff"] { fill: #000 !important; }
+.screen.music-active .status-icons path[stroke="#fff"] { stroke: #000 !important; }
+.screen.music-active .status-icons rect[fill="#fff"] { fill: #000 !important; }
+.screen.music-active .status-icons rect[fill="rgba(255,255,255,0.3)"] { fill: rgba(0,0,0,0.15) !important; }
+.screen.music-active .status-icons path[fill="rgba(255,255,255,0.5)"] { fill: rgba(0,0,0,0.3) !important; }
+
+/* 音乐 APP 全屏覆盖层 */
 .music-app-overlay {
     position: absolute;
-    /* 核心：距离顶部刚好是状态栏的高度，完美避开重叠 */
-    top: calc(44px + env(safe-area-inset-top));
+    top: 0;
     left: 0;
     width: 100%;
-    /* 核心：高度减去状态栏，确保底部不超标 */
-    height: calc(100% - 44px - env(safe-area-inset-top));
+    height: 100%;
     background-color: #f7f8fa;
-    z-index: 85; /* 层级在状态栏(100)和编辑栏(90)之下，在桌面之上 */
+    z-index: 150; /* 核心：高于Dock栏(100)，低于状态栏(200) */
     opacity: 0;
     pointer-events: none;
-    transform: translateY(30px);
+    transform: translateY(30px) scale(0.98);
     transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
     display: flex;
     flex-direction: column;
-    border-top-left-radius: 24px;
-    border-top-right-radius: 24px;
-    overflow: hidden;
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
 }
 
 .music-app-overlay.show {
     opacity: 1;
     pointer-events: auto;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
 }
 
 /* 音乐顶部导航栏 (毛玻璃) */
 .music-nav-bar {
     width: 100%;
-    height: 50px;
+    /* 核心：高度加上状态栏的高度，并将内容往下挤，完美融合 */
+    height: calc(44px + 44px + env(safe-area-inset-top));
+    padding-top: calc(44px + env(safe-area-inset-top));
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 18px;
+    padding-left: 18px;
+    padding-right: 18px;
     background: rgba(247, 248, 250, 0.85);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
