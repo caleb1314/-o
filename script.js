@@ -154,8 +154,6 @@ function updateStack() {
 
 // ================= 图片裁剪器逻辑 =================
 let currentCropWidget = null;
-let currentMusicAvatar = null;
-let cropTargetType = 'widget'; // 'widget', 'avatar', 'music-avatar'
 let cropImgX = 0, cropImgY = 0, cropImgScale = 1;
 let cropStartX = 0, cropStartY = 0, cropStartDist = 0;
 let isDraggingCrop = false, isPinchingCrop = false;
@@ -233,31 +231,17 @@ document.getElementById('crop-done').addEventListener('click', async () => {
     
     const base64 = canvas.toDataURL('image/png');
     
-    if (cropTargetType === 'avatar') {
-        const settingsAvatarImg = document.getElementById('settings-avatar-img');
-        settingsAvatarImg.src = base64;
-        settingsAvatarImg.classList.add('has-img');
-        await saveToDB('settings_avatar', base64);
-        cropBox.style.borderRadius = '12px'; 
-    } else if (cropTargetType === 'music-avatar') {
-        if (currentMusicAvatar) {
-            currentMusicAvatar.style.backgroundImage = `url(${base64})`;
-            await saveCurrentState();
-        }
-        cropBox.style.borderRadius = '12px';
-    } else {
-        const content = currentCropWidget.querySelector('.image-widget-content');
-        content.style.backgroundImage = `url(${base64})`;
-        content.style.backgroundColor = 'transparent';
-        content.style.border = 'none';
-        content.style.boxShadow = 'none';
-        const placeholder = content.querySelector('.upload-placeholder');
-        if (placeholder) placeholder.style.display = 'none';
-        
-        const widgetId = currentCropWidget.getAttribute('data-widget-id');
-        await saveToDB(`widget_${widgetId}`, base64);
-        await saveCurrentState();
-    }
+    const content = currentCropWidget.querySelector('.image-widget-content');
+    content.style.backgroundImage = `url(${base64})`;
+    content.style.backgroundColor = 'transparent';
+    content.style.border = 'none';
+    content.style.boxShadow = 'none';
+    const placeholder = content.querySelector('.upload-placeholder');
+    if (placeholder) placeholder.style.display = 'none';
+    
+    const widgetId = currentCropWidget.getAttribute('data-widget-id');
+    await saveToDB(`widget_${widgetId}`, base64);
+    await saveCurrentState();
     
     document.getElementById('crop-modal').classList.remove('show');
 });
@@ -301,15 +285,6 @@ function bindAllDynamicEvents() {
         item.addEventListener('mousedown', pressDownAnim);
         item.addEventListener('mouseup', pressUpAnim);
         item.addEventListener('mouseleave', cancelPressAnim);
-        
-        // 绑定设置点击事件
-        item.addEventListener('click', (e) => {
-            if (screen.classList.contains('edit-mode')) return;
-            const appNameEl = item.querySelector('.app-name');
-            if (appNameEl && appNameEl.textContent === '设置') {
-                openSettings();
-            }
-        });
     });
 
     document.querySelectorAll('.widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .custom-widget-item').forEach(widget => {
@@ -337,8 +312,6 @@ function bindAllDynamicEvents() {
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (event) => {
-                    cropTargetType = 'widget';
-                    cropBox.style.borderRadius = '12px';
                     currentCropWidget = widget;
                     cropImg.src = event.target.result;
                     
@@ -365,18 +338,6 @@ function bindAllDynamicEvents() {
                 };
                 reader.readAsDataURL(file);
             }
-        });
-    });
-
-    // 绑定音乐组件头像点击事件
-    document.querySelectorAll('.avatar-circle').forEach(circle => {
-        if (circle.dataset.bound) return;
-        circle.dataset.bound = "true";
-        circle.addEventListener('click', () => {
-            if (screen.classList.contains('edit-mode')) return;
-            cropTargetType = 'music-avatar';
-            currentMusicAvatar = circle;
-            document.getElementById('settings-avatar-input').click();
         });
     });
 
@@ -601,18 +562,6 @@ window.addEventListener('DOMContentLoaded', async () => {
                 }
             }
         }
-    }
-    
-    // 加载设置页面头像和昵称
-    const savedAvatar = await getFromDB('settings_avatar');
-    if (savedAvatar) {
-        const settingsAvatarImg = document.getElementById('settings-avatar-img');
-        settingsAvatarImg.src = savedAvatar;
-        settingsAvatarImg.classList.add('has-img');
-    }
-    const savedName = await getFromDB('settings_name');
-    if (savedName) {
-        document.getElementById('settings-name').textContent = savedName;
     }
     
     await loadCustomWidgets();
@@ -1371,57 +1320,4 @@ document.getElementById('cw-export-btn').addEventListener('click', () => {
     URL.revokeObjectURL(url);
     
     showToast('组件已导出！');
-});
-
-// ================= 设置页面交互逻辑 =================
-const settingsPage = document.getElementById('settings-page');
-const statusBar = document.querySelector('.status-bar');
-const settingsAvatarBtn = document.getElementById('settings-avatar-btn');
-const settingsAvatarInput = document.getElementById('settings-avatar-input');
-const settingsName = document.getElementById('settings-name');
-
-function openSettings() {
-    settingsPage.classList.add('show');
-    statusBar.classList.add('dark-mode');
-}
-
-document.getElementById('settings-back').addEventListener('click', () => {
-    settingsPage.classList.remove('show');
-    statusBar.classList.remove('dark-mode');
-});
-
-settingsAvatarBtn.addEventListener('click', () => {
-    cropTargetType = 'avatar';
-    settingsAvatarInput.click();
-});
-
-settingsAvatarInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            cropImg.src = event.target.result;
-            
-            let boxW = window.innerWidth * 0.8;
-            let boxH = boxW; 
-            cropBox.style.width = boxW + 'px';
-            cropBox.style.height = boxH + 'px';
-            cropBox.style.borderRadius = '50%'; 
-
-            cropImgX = 0; cropImgY = 0;
-            cropImg.onload = () => {
-                const imgRatio = cropImg.naturalWidth / cropImg.naturalHeight;
-                cropImgScale = (imgRatio > 1) ? (boxH / cropImg.naturalHeight) : (boxW / cropImg.naturalWidth);
-                cropImgScale *= 1.05; 
-                updateCropImgTransform();
-                document.getElementById('crop-modal').classList.add('show');
-            };
-            settingsAvatarInput.value = ''; 
-        };
-        reader.readAsDataURL(file);
-    }
-});
-
-settingsName.addEventListener('blur', async () => {
-    await saveToDB('settings_name', settingsName.textContent);
 });
