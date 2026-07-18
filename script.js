@@ -565,7 +565,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     
     await loadCustomWidgets();
-    renderDefaultWidgetsPreview(); // 渲染默认组件预览
+    renderDefaultWidgetsPreview(); 
     bindAllDynamicEvents();
 });
 
@@ -834,7 +834,7 @@ wallpaperInput.addEventListener('change', (e) => {
             document.getElementById('screen').style.backgroundImage = `url(${base64})`;
             await saveToDB('wallpaper', base64);
             renderCustomWidgetsToPanel();
-            renderDefaultWidgetsPreview(); // 更新默认组件预览图背景
+            renderDefaultWidgetsPreview(); 
         };
         reader.readAsDataURL(file);
     }
@@ -1321,24 +1321,29 @@ document.getElementById('cw-export-btn').addEventListener('click', () => {
     
     showToast('组件已导出！');
 });
-// ================= 音乐 APP 交互逻辑 =================
+
+// ================= 音乐 APP 交互与数据拉取逻辑 =================
 
 // 1. 监听点击事件打开音乐 APP
 screen.addEventListener('click', (e) => {
-    // 如果在编辑模式下，不允许打开 APP
     if (screen.classList.contains('edit-mode')) return;
-    
-    // 找到被点击的 APP 图标
     const appItem = e.target.closest('.app-item');
-    
-    // 确保点击的不是删除按钮
     if (appItem && !e.target.closest('.delete-btn')) {
         const appName = appItem.querySelector('.app-name');
-        // 判断名字是否为“音乐”
         if (appName && appName.textContent.trim() === '音乐') {
             document.getElementById('music-app-overlay').classList.add('show');
-            // 核心：给 screen 添加类名，让状态栏变成黑色
+            // 默认展示首页，状态栏变黑
+            document.querySelectorAll('.music-view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-home').classList.add('active');
+            document.querySelectorAll('.music-tab-item').forEach(t => t.classList.remove('active'));
+            document.querySelector('.music-tab-item[data-target="view-home"]').classList.add('active');
             screen.classList.add('music-active');
+            
+            // 如果有API，尝试拉取数据
+            if (apiUrl && !window.musicDataLoaded) {
+                fetchUserData();
+                window.musicDataLoaded = true;
+            }
         }
     }
 });
@@ -1346,7 +1351,6 @@ screen.addEventListener('click', (e) => {
 // 2. 点击左上角三横线退出音乐 APP
 document.getElementById('music-back-btn').addEventListener('click', () => {
     document.getElementById('music-app-overlay').classList.remove('show');
-    // 核心：移除类名，让状态栏恢复白色
     screen.classList.remove('music-active');
 });
 
@@ -1355,3 +1359,295 @@ const musicAppOverlay = document.getElementById('music-app-overlay');
 musicAppOverlay.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
 musicAppOverlay.addEventListener('mousedown', (e) => e.stopPropagation());
 musicAppOverlay.addEventListener('contextmenu', (e) => e.stopPropagation());
+
+// 4. 视图切换逻辑
+document.querySelectorAll('.music-tab-item').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const target = tab.dataset.target;
+        if (!target) return;
+
+        document.querySelectorAll('.music-tab-item').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        document.querySelectorAll('.music-view').forEach(v => v.classList.remove('active'));
+        document.getElementById(target).classList.add('active');
+        
+        if(target === 'view-profile') {
+            screen.classList.remove('music-active');
+        } else {
+            screen.classList.add('music-active');
+        }
+
+        if(target === 'view-search' && apiUrl && !document.getElementById('hot-search-list').dataset.loaded) {
+            fetchHotSearch();
+        }
+    });
+});
+
+// 5. 自定义背景与头像上传
+document.getElementById('profile-bg').addEventListener('click', (e) => {
+    if(e.target.id !== 'bg-upload') document.getElementById('bg-upload').click();
+});
+document.getElementById('bg-upload').addEventListener('change', function() {
+    if(this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => document.getElementById('profile-bg').style.backgroundImage = `url(${e.target.result})`;
+        reader.readAsDataURL(this.files[0]);
+    }
+});
+
+document.getElementById('profile-avatar').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if(e.target.id !== 'avatar-upload') document.getElementById('avatar-upload').click();
+});
+document.getElementById('avatar-upload').addEventListener('change', function() {
+    if(this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => document.getElementById('profile-avatar').style.backgroundImage = `url(${e.target.result})`;
+        reader.readAsDataURL(this.files[0]);
+    }
+});
+
+// 6. 网易云 API 核心逻辑
+let apiUrl = localStorage.getItem('netease_api') || '';
+let apiCookie = localStorage.getItem('netease_cookie') || '';
+let checkTimer = null;
+
+async function fetchApi(path) {
+    if (!apiUrl) return null;
+    if (path.startsWith('/')) path = path.substring(1);
+    const separator = path.includes('?') ? '&' : '?';
+    let url = `${apiUrl}${path}${separator}timestamp=${Date.now()}`;
+    if (apiCookie) url += `&cookie=${encodeURIComponent(apiCookie)}`;
+    
+    try {
+        const res = await fetch(url);
+        return await res.json();
+    } catch (err) {
+        console.error('API Fetch Error:', err);
+        return null;
+    }
+}
+
+document.getElementById('api-settings-btn').addEventListener('click', () => {
+    document.getElementById('api-input').value = apiUrl;
+    document.getElementById('api-modal').classList.add('show');
+});
+document.getElementById('api-cancel').addEventListener('click', () => {
+    document.getElementById('api-modal').classList.remove('show');
+});
+document.getElementById('api-confirm').addEventListener('click', () => {
+    let val = document.getElementById('api-input').value.trim();
+    if (val && !val.endsWith('/')) val += '/';
+    apiUrl = val;
+    localStorage.setItem('netease_api', apiUrl);
+    document.getElementById('api-modal').classList.remove('show');
+    if (apiUrl) startLogin();
+});
+
+async function startLogin() {
+    document.getElementById('qr-modal').classList.add('show');
+    document.getElementById('qr-img').style.display = 'none';
+    document.getElementById('qr-loading').style.display = 'block';
+    document.getElementById('qr-status').textContent = '正在获取二维码...';
+    
+    try {
+        const keyRes = await fetchApi('login/qr/key');
+        if (!keyRes || !keyRes.data) throw new Error('Key fetch failed');
+        const key = keyRes.data.unikey;
+        
+        const qrRes = await fetchApi(`login/qr/create?key=${key}&qrimg=true`);
+        document.getElementById('qr-img').src = qrRes.data.qrimg;
+        document.getElementById('qr-img').style.display = 'block';
+        document.getElementById('qr-loading').style.display = 'none';
+        document.getElementById('qr-status').textContent = '请使用网易云音乐APP扫码';
+        
+        checkTimer = setInterval(() => checkQrStatus(key), 3000);
+    } catch (err) {
+        document.getElementById('qr-status').textContent = '获取失败，请检查API地址是否正确';
+    }
+}
+
+async function checkQrStatus(key) {
+    try {
+        const res = await fetchApi(`login/qr/check?key=${key}`);
+        if (!res) return;
+        
+        if (res.code === 800) {
+            document.getElementById('qr-status').textContent = '二维码已过期，请重试';
+            clearInterval(checkTimer);
+        } else if (res.code === 802) {
+            document.getElementById('qr-status').textContent = '扫描成功，请在手机上确认';
+        } else if (res.code === 803) {
+            clearInterval(checkTimer);
+            apiCookie = res.cookie;
+            localStorage.setItem('netease_cookie', apiCookie);
+            document.getElementById('qr-status').textContent = '登录成功！正在拉取数据...';
+            setTimeout(() => {
+                document.getElementById('qr-modal').classList.remove('show');
+                fetchUserData();
+            }, 1500);
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+document.getElementById('qr-cancel').addEventListener('click', () => {
+    clearInterval(checkTimer);
+    document.getElementById('qr-modal').classList.remove('show');
+});
+
+// 7. 搜索逻辑
+const searchInput = document.getElementById('search-input');
+const searchCancel = document.getElementById('search-cancel');
+const hotArea = document.getElementById('search-hot-area');
+const resultArea = document.getElementById('search-result-area');
+const resultList = document.getElementById('search-result-list');
+
+async function fetchHotSearch() {
+    const res = await fetchApi('search/hot/detail');
+    if (res && res.data) {
+        const list = document.getElementById('hot-search-list');
+        list.innerHTML = res.data.map((item, index) => {
+            const isTop = index < 3;
+            const icon = item.iconUrl ? `<img src="${item.iconUrl}" style="height:12px; margin-left:4px;">` : '';
+            return `<div class="hot-search-tag ${isTop ? 'top-3' : ''}" onclick="doSearch('${item.searchWord}')">${item.searchWord} ${icon}</div>`;
+        }).join('');
+        list.dataset.loaded = 'true';
+    }
+}
+
+window.doSearch = async function(keyword) {
+    if(!keyword) return;
+    searchInput.value = keyword;
+    hotArea.style.display = 'none';
+    resultArea.style.display = 'block';
+    resultList.innerHTML = '<div style="text-align:center; padding: 20px; color:#888; font-size:13px;">搜索中...</div>';
+    
+    const res = await fetchApi(`search?keywords=${encodeURIComponent(keyword)}`);
+    if (res && res.result && res.result.songs) {
+        resultList.innerHTML = res.result.songs.map(song => `
+            <div class="search-result-item">
+                <div class="search-result-info">
+                    <div class="search-result-name">${song.name}</div>
+                    <div class="search-result-artist">${song.artists.map(a=>a.name).join(' / ')} - ${song.album.name}</div>
+                </div>
+                <div class="search-result-action">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="#999"/></svg>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        resultList.innerHTML = '<div style="text-align:center; padding: 20px; color:#888; font-size:13px;">未找到相关歌曲</div>';
+    }
+}
+
+searchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        searchInput.blur();
+        doSearch(searchInput.value.trim());
+    }
+});
+
+searchCancel.addEventListener('click', () => {
+    searchInput.value = '';
+    hotArea.style.display = 'block';
+    resultArea.style.display = 'none';
+});
+
+// 8. 获取并渲染数据
+async function fetchUserData() {
+    if (!apiUrl) return;
+    try {
+        // 获取账号信息
+        const accRes = await fetchApi('user/account');
+        if (accRes && accRes.profile) {
+            const p = accRes.profile;
+            document.getElementById('profile-nickname').textContent = p.nickname;
+            document.getElementById('profile-avatar').style.backgroundImage = `url(${p.avatarUrl})`;
+            document.getElementById('profile-bg').style.backgroundImage = `url(${p.backgroundUrl})`;
+            
+            const detRes = await fetchApi(`user/detail?uid=${p.userId}`);
+            if (detRes && detRes.profile) {
+                document.getElementById('profile-stats').innerHTML = `<span>${detRes.profile.follows} 关注</span><span>${detRes.profile.followeds} 粉丝</span>`;
+                document.getElementById('profile-level').textContent = `Lv.${detRes.level}`;
+            }
+            
+            const plRes = await fetchApi(`user/playlist?uid=${p.userId}`);
+            if (plRes && plRes.playlist) renderUserPlaylist(plRes.playlist);
+        }
+        
+        // 获取首页推荐歌单
+        const recPlRes = await fetchApi('personalized?limit=6');
+        if(recPlRes && recPlRes.result) {
+            renderTopCards(recPlRes.result.slice(0, 3));
+            renderHomePlaylist(recPlRes.result.slice(3, 6));
+        }
+        
+        // 获取首页推荐新音乐
+        const recSongRes = await fetchApi('personalized/newsong?limit=3');
+        if(recSongRes && recSongRes.result) renderHomeSongs(recSongRes.result);
+        
+    } catch (err) {
+        console.error('获取数据失败', err);
+    }
+}
+
+function renderTopCards(list) {
+    const cards = document.querySelectorAll('#home-top-cards .music-card');
+    const defaultTitles = ['每日推荐', '雷达歌单', '漫游'];
+    const defaultSubs = ['今日限定好歌推荐', '反复聆听你爱的歌', '多样频道无限畅听'];
+    
+    list.forEach((item, i) => {
+        if(cards[i]) {
+            cards[i].style.backgroundImage = `url(${item.picUrl}?param=300y300)`;
+            cards[i].style.backgroundSize = 'cover';
+            cards[i].style.backgroundPosition = 'center';
+            cards[i].className = 'music-card'; 
+            cards[i].querySelector('.music-card-title').textContent = defaultTitles[i] || item.name.substring(0, 6);
+            cards[i].querySelector('.music-card-sub').textContent = defaultSubs[i] || item.copywriter || '为你推荐';
+        }
+    });
+}
+
+function renderUserPlaylist(list) {
+    const container = document.getElementById('user-playlist');
+    if (!list || list.length === 0) return;
+    container.innerHTML = list.map(item => `
+        <div class="user-pl-item">
+            <div class="user-pl-cover" style="background-image: url(${item.coverImgUrl}?param=100y100)"></div>
+            <div class="user-pl-info">
+                <div class="user-pl-name">${item.name}</div>
+                <div class="user-pl-count">${item.trackCount}首</div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#ccc"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+        </div>
+    `).join('');
+}
+
+function renderHomePlaylist(list) {
+    const grids = document.querySelectorAll('.music-playlist-item');
+    list.forEach((item, i) => {
+        if(grids[i]) {
+            const box = grids[i].querySelector('.music-playlist-cover-box');
+            box.style.backgroundImage = `url(${item.picUrl}?param=200y200)`;
+            box.style.backgroundSize = 'cover';
+            box.className = 'music-playlist-cover-box';
+            grids[i].querySelector('.music-playlist-title').textContent = item.name;
+        }
+    });
+}
+
+function renderHomeSongs(list) {
+    const items = document.querySelectorAll('.music-song-item');
+    list.slice(0, 3).forEach((item, i) => {
+        if(items[i]) {
+            const cover = items[i].querySelector('.music-song-cover');
+            cover.style.backgroundImage = `url(${item.picUrl}?param=100y100)`;
+            cover.style.backgroundSize = 'cover';
+            cover.className = 'music-song-cover';
+            items[i].querySelector('.music-song-name').textContent = item.name;
+            items[i].querySelector('.music-song-artist').innerHTML = `<span class="music-tag">推荐</span> ${item.song.artists.map(a=>a.name).join(' / ')}`;
+        }
+    });
+}
