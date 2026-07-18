@@ -1321,3 +1321,41 @@ document.getElementById('cw-export-btn').addEventListener('click', () => {
     
     showToast('组件已导出！');
 });
+// ================= 音乐 APP 交互逻辑 =================
+
+// 1. 监听点击事件打开音乐 APP
+screen.addEventListener('click', (e) => {
+    // 如果在编辑模式下，不允许打开 APP
+    if (screen.classList.contains('edit-mode')) return;
+    
+    // 找到被点击的 APP 图标
+    const appItem = e.target.closest('.app-item');
+    
+    // 确保点击的不是删除按钮
+    if (appItem && !e.target.closest('.delete-btn')) {
+        const appName = appItem.querySelector('.app-name');
+        // 判断名字是否为“音乐” (兼容桌面和Dock栏的图标)
+        if (appName && appName.textContent.trim() === '音乐') {
+            document.getElementById('music-app-overlay').classList.add('show');
+        }
+    }
+});
+
+// 2. 点击左上角三横线退出音乐 APP
+document.getElementById('music-back-btn').addEventListener('click', () => {
+    document.getElementById('music-app-overlay').classList.remove('show');
+});
+
+// 3. 隔离长按事件：防止在音乐 APP 内部长按或滑动时，误触桌面的编辑模式和翻页
+const musicAppOverlay = document.getElementById('music-app-overlay');
+const stopProp = (e) => e.stopPropagation();
+
+musicAppOverlay.addEventListener('touchstart', stopProp, { passive: true });
+musicAppOverlay.addEventListener('touchmove', stopProp, { passive: true });
+musicAppOverlay.addEventListener('touchend', stopProp);
+musicAppOverlay.addEventListener('touchcancel', stopProp);
+musicAppOverlay.addEventListener('mousedown', stopProp);
+musicAppOverlay.addEventListener('mousemove', stopProp);
+musicAppOverlay.addEventListener('mouseup', stopProp);
+musicAppOverlay.addEventListener('mouseleave', stopProp);
+musicAppOverlay.addEventListener('contextmenu', stopProp);
