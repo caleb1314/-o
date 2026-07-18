@@ -201,7 +201,7 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 /* 顶部卡片：圆角缩小到6px，间距缩小到8px */
 .music-top-cards { display: flex; gap: 8px; padding: 0 18px 16px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .music-top-cards::-webkit-scrollbar { display: none; }
-.music-card { flex: 0 0 120px; height: 150px; border-radius: 6px; position: relative; overflow: hidden; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px; cursor: pointer; }
+.music-card { flex: 0 0 105px; height: 150px; border-radius: 6px; position: relative; overflow: hidden; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px; cursor: pointer; }
 .music-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.65) 100%); z-index: 0; }
 .music-card > * { position: relative; z-index: 1; }
 .music-card-title { font-size: 14px; font-weight: 800; color: #fff; margin-bottom: 4px; text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
@@ -215,7 +215,7 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .music-song-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
 .music-song-name { font-size: 14px; font-weight: 700; color: #111; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .music-song-artist { font-size: 11px; color: #888; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
-.music-tag { font-size: 9px; padding: 2px 4px; border-radius: 4px; background: rgba(0, 0, 0, 0.06); color: #666; font-weight: 700; }
+.music-tag { font-size: 9px; padding: 1px 3px; border-radius: 3px; border: 1px solid #ff3a3a; color: #ff3a3a; background: transparent; font-weight: 600; }
 
 /* ================= 搜索视图样式 ================= */
 .search-header { display: flex; align-items: center; padding: calc(env(safe-area-inset-top) + 44px) 18px 10px; background: #f7f8fa; z-index: 10; }
