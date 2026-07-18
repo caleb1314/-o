@@ -14,345 +14,345 @@
 </head>
 <body>
 
-    <div class="screen" id="screen">
-        
-        <!-- 顶栏 -->
-        <div class="status-bar">
-            <div class="time-container"><div class="time" id="clock"></div></div>
-            <div class="status-icons">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><rect x="0" y="12" width="4.5" height="6" rx="1.5"/><rect x="6.5" y="9" width="4.5" height="9" rx="1.5"/><rect x="13" y="6" width="4.5" height="12" rx="1.5"/><rect x="19.5" y="4" width="4.5" height="14" rx="1.5"/><rect x="0" y="20" width="4.5" height="4" rx="1.5"/><rect x="6.5" y="20" width="4.5" height="4" rx="1.5"/><rect x="13" y="20" width="4.5" height="4" rx="1.5"/><rect x="19.5" y="20" width="4.5" height="4" rx="1.5"/></svg>
-                <svg width="20" height="16" viewBox="0 0 24 20" fill="#fff"><path d="M12 3c4.6 0 8.8 1.8 12 4.7l-1.5 1.8C19.8 7 16.1 5.3 12 5.3s-7.8 1.7-10.5 4.2L0 7.7C3.2 4.8 7.4 3 12 3z" stroke="#fff" stroke-width="0.5"/><path d="M12 9.5c2.8 0 5.4 1.1 7.3 2.9l-1.5 1.8C16.5 13 14.4 12.2 12 12.2s-4.5.8-5.8 2L4.7 12.4c1.9-1.8 4.5-2.9 7.3-2.9z" stroke="#fff" stroke-width="0.5"/><path d="M12 15.8c1.1 0 2.1.4 2.8 1.1l-2.8 3.4-2.8-3.4c.7-.7 1.7-1.1 2.8-1.1z" stroke="#fff" stroke-width="0.5"/></svg>
-                <svg width="32" height="14" viewBox="0 0 32 14">
-                    <defs><clipPath id="battery-clip"><rect x="0" y="0" width="27" height="14" rx="4.5" /></clipPath></defs>
-                    <rect x="0" y="0" width="27" height="14" rx="4.5" fill="rgba(255,255,255,0.3)" />
-                    <g clip-path="url(#battery-clip)"><rect x="0" y="0" width="27" height="14" fill="#fff" id="battery-level" /></g>
-                    <path d="M28 4.5 v5 a2 2 0 0 0 0 -5 z" fill="rgba(255,255,255,0.5)" />
-                    <text x="13.5" y="11.5" font-size="12" font-weight="900" fill="#000" text-anchor="middle" letter-spacing="-0.5" id="battery-text">77</text>
-                </svg>
-            </div>
+<div class="screen" id="screen">
+    
+    <!-- 顶栏 -->
+    <div class="status-bar">
+        <div class="time-container"><div class="time" id="clock"></div></div>
+        <div class="status-icons">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><rect x="0" y="12" width="4.5" height="6" rx="1.5"/><rect x="6.5" y="9" width="4.5" height="9" rx="1.5"/><rect x="13" y="6" width="4.5" height="12" rx="1.5"/><rect x="19.5" y="4" width="4.5" height="14" rx="1.5"/><rect x="0" y="20" width="4.5" height="4" rx="1.5"/><rect x="6.5" y="20" width="4.5" height="4" rx="1.5"/><rect x="13" y="20" width="4.5" height="4" rx="1.5"/><rect x="19.5" y="20" width="4.5" height="4" rx="1.5"/></svg>
+            <svg width="20" height="16" viewBox="0 0 24 20" fill="#fff"><path d="M12 3c4.6 0 8.8 1.8 12 4.7l-1.5 1.8C19.8 7 16.1 5.3 12 5.3s-7.8 1.7-10.5 4.2L0 7.7C3.2 4.8 7.4 3 12 3z" stroke="#fff" stroke-width="0.5"/><path d="M12 9.5c2.8 0 5.4 1.1 7.3 2.9l-1.5 1.8C16.5 13 14.4 12.2 12 12.2s-4.5.8-5.8 2L4.7 12.4c1.9-1.8 4.5-2.9 7.3-2.9z" stroke="#fff" stroke-width="0.5"/><path d="M12 15.8c1.1 0 2.1.4 2.8 1.1l-2.8 3.4-2.8-3.4c.7-.7 1.7-1.1 2.8-1.1z" stroke="#fff" stroke-width="0.5"/></svg>
+            <svg width="32" height="14" viewBox="0 0 32 14">
+                <defs><clipPath id="battery-clip"><rect x="0" y="0" width="27" height="14" rx="4.5" /></clipPath></defs>
+                <rect x="0" y="0" width="27" height="14" rx="4.5" fill="rgba(255,255,255,0.3)" />
+                <g clip-path="url(#battery-clip)"><rect x="0" y="0" width="27" height="14" fill="#fff" id="battery-level" /></g>
+                <path d="M28 4.5 v5 a2 2 0 0 0 0 -5 z" fill="rgba(255,255,255,0.5)" />
+                <text x="13.5" y="11.5" font-size="12" font-weight="900" fill="#000" text-anchor="middle" letter-spacing="-0.5" id="battery-text">77</text>
+            </svg>
         </div>
-
-        <!-- 编辑模式控制栏 -->
-        <div class="edit-controls">
-            <div style="position: relative;">
-                <div class="edit-btn liquid-glass" id="edit-btn">编辑</div>
-                <div class="edit-menu liquid-glass" id="edit-menu">
-                    <div class="edit-menu-item" id="menu-add">添加组件</div>
-                    <div class="edit-menu-item" id="menu-wallpaper">更换壁纸</div>
-                    <div class="edit-menu-item" id="menu-preview">页面预览</div>
-                    <div class="edit-menu-item" id="menu-cancel">取消修改</div>
-                </div>
-            </div>
-            <div class="done-btn liquid-glass" id="done-btn">完成</div>
-        </div>
-
-        <!-- ================= 音乐 APP 界面 ================= -->
-        <div id="music-app-overlay" class="music-app-overlay">
-            
-            <!-- 首页视图 -->
-            <div class="music-view active" id="view-home">
-                <div class="music-nav-bar">
-                    <div class="music-nav-icon" id="music-back-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></div>
-                    <div class="music-nav-title">Music</div>
-                    <div class="music-nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-                </div>
-
-                <div class="music-content-area">
-                    <div class="music-top-cards" id="home-top-cards">
-                        <div class="music-card music-bg-grey-5"><div class="music-card-title">每日推荐</div><div class="music-card-sub">今日限定好歌推荐</div><div class="music-card-play"><svg width="10" height="10" viewBox="0 0 24 24" fill="#111"><path d="M6 4l15 8-15 8z"/></svg></div></div>
-                        <div class="music-card music-bg-grey-4"><div class="music-card-title">雷达歌单</div><div class="music-card-sub">反复聆听你爱的歌</div><div class="music-card-play"><svg width="10" height="10" viewBox="0 0 24 24" fill="#111"><path d="M6 4l15 8-15 8z"/></svg></div></div>
-                        <div class="music-card music-bg-grey-3"><div class="music-card-title">漫游</div><div class="music-card-sub">多样频道无限畅听</div><div class="music-card-play"><svg width="10" height="10" viewBox="0 0 24 24" fill="#111"><path d="M6 4l15 8-15 8z"/></svg></div></div>
-                    </div>
-
-                    <div class="music-section">
-                        <div class="music-section-title">推荐新音乐</div>
-                        <div class="music-song-item"><div class="music-song-cover music-bg-grey-2"></div><div class="music-song-info"><div class="music-song-name">未知</div><div class="music-song-artist"><span class="music-tag">未知</span> 未知歌手</div></div></div>
-                        <div class="music-song-item"><div class="music-song-cover music-bg-grey-3"></div><div class="music-song-info"><div class="music-song-name">未知</div><div class="music-song-artist"><span class="music-tag">未知</span> 未知歌手</div></div></div>
-                        <div class="music-song-item"><div class="music-song-cover music-bg-grey-1"></div><div class="music-song-info"><div class="music-song-name">未知</div><div class="music-song-artist"><span class="music-tag">未知</span> 未知歌手</div></div></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 搜索视图 -->
-            <div class="music-view" id="view-search">
-                <div class="search-header">
-                    <div class="search-input-box">
-                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        <input type="text" id="search-input" class="search-input" placeholder="搜索歌曲、歌手、专辑">
-                    </div>
-                    <div class="search-cancel" id="search-cancel">取消</div>
-                </div>
-                <div class="search-content-area">
-                    <div id="search-result-area" style="display: none;">
-                        <div class="music-section-title" style="margin-bottom: 8px;">单曲</div>
-                        <div id="search-result-list"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 我的视图 -->
-            <div class="music-view profile-view" id="view-profile">
-                <div class="profile-bg" id="profile-bg"><input type="file" id="bg-upload" accept="image/*" style="display:none;"></div>
-                
-                <div class="profile-nav-bar">
-                    <div class="p-nav-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></div>
-                    <div class="nav-title">+ 添加状态</div>
-                    <div class="nav-right">
-                        <div class="p-nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-                        <div class="p-nav-icon" id="api-settings-btn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="profile-info-area">
-                    <div class="avatar-wrapper">
-                        <div class="profile-avatar" id="profile-avatar"><input type="file" id="avatar-upload" accept="image/*" style="display:none;"></div>
-                    </div>
-                    <div class="profile-nickname" id="profile-nickname">点击右上角配置API</div>
-                    <div class="profile-tags">
-                        <span class="p-tag vip"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg> VIP</span>
-                        <span class="p-tag" id="profile-level">Lv.0</span>
-                    </div>
-                    <div class="profile-stats" id="profile-stats"><span>0 关注</span><span>0 粉丝</span></div>
-
-                    <div class="quick-actions">
-                        <div class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>最近</div>
-                        <div class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>本地</div>
-                        <div class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>云盘</div>
-                        <div class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>歌词</div>
-                    </div>
-                </div>
-
-                <div class="profile-bottom-card">
-                    <div class="profile-tabs"><div class="ptab active">音乐</div><div class="ptab">播客</div><div class="ptab">笔记</div></div>
-                    <div class="pl-header">
-                        <div class="pl-tabs-small"><div class="pl-tab active">近期</div><div class="pl-tab">创建</div><div class="pl-tab">收藏</div></div>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#ccc"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-                    </div>
-                    <div id="user-playlist">
-                        <div class="user-pl-item"><div class="user-pl-cover music-bg-grey-3"></div><div class="user-pl-info"><div class="user-pl-name">我喜欢的音乐</div><div class="user-pl-count">0首</div></div></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="music-bottom-bar">
-                <div class="music-tab-item active" data-target="view-home"><div class="music-tab-text">首页</div></div>
-                <div class="music-tab-item" data-target="view-search"><div class="music-tab-text">搜索</div></div>
-                <div class="music-tab-item"><div class="music-tab-text">笔记</div></div>
-                <div class="music-tab-item" data-target="view-profile"><div class="music-tab-text">我的</div></div>
-            </div>
-        </div>
-
-        <!-- 桌面应用容器 -->
-        <div class="pages-container">
-            <!-- 第一页 -->
-            <div class="page">
-                <div class="app-grid">
-                    <div class="widget-4x3 jiggle-item grid-item" style="--col: 1; --row: 1; --w: 4; --h: 3;">
-                        <div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div>
-                        <div class="music-widget-inner">
-                            <svg class="connecting-lines" viewBox="0 0 400 250" preserveAspectRatio="xMidYMin slice"><defs><linearGradient id="fade-grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#555555;stop-opacity:1" /><stop offset="85%" style="stop-color:#555555;stop-opacity:0" /></linearGradient></defs><circle cx="151" cy="100" r="4" fill="#555555" /><circle cx="249" cy="100" r="4" fill="#555555" /><path d="M 151 100 Q 100 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/><path d="M 249 100 Q 300 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/></svg>
-                            <div class="avatars-wrapper">
-                                <div class="avatar-group"><div class="speech-bubble" contenteditable="true" spellcheck="false">你在左边</div><div class="avatar-circle"></div></div>
-                                <div class="avatar-group"><div class="speech-bubble" contenteditable="true" spellcheck="false">我紧靠右</div><div class="avatar-circle"></div></div>
-                            </div>
-                            <div class="center-text" contenteditable="true" spellcheck="false">Twenty four seven with us</div>
-                            <div class="music-player-v2">
-                                <div class="music-title">Pink Lavender</div>
-                                <div class="music-subtitle" contenteditable="true" spellcheck="false">· ⁺ ⋆ ‿ ıllıllı ‿ ⋆ ⁺ ·</div>
-                                <div class="progress-container"><div class="time-label">1:26</div><div class="progress-bar"><div class="progress-fill"></div></div><div class="time-label">3:48</div></div>
-                                <div class="controls-row">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#666"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                                    <div class="main-controls"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M22 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg><svg width="32" height="32" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="2" fill="#333"/><rect x="14" y="5" width="4" height="14" rx="2" fill="#333"/></svg><svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M13 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg></div>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><path d="M9.52 14.47 A 3.5 3.5 0 1 1 14.48 14.47"/><path d="M7.05 16.95 A 7 7 0 1 1 16.95 16.95"/><path d="M4.58 19.42 A 10.5 10.5 0 1 1 19.42 19.42"/><path d="M12 15.5L16.5 21H7.5L12 15.5Z" fill="#333"/></svg>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="app-item jiggle-item grid-item" style="--col: 1; --row: 4; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">微信</div></div>
-                    <div class="app-item jiggle-item grid-item" style="--col: 2; --row: 4; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">音乐</div></div>
-                    <div class="app-item jiggle-item grid-item" style="--col: 3; --row: 4; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">小红书</div></div>
-                    <div class="app-item jiggle-item grid-item" style="--col: 4; --row: 4; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">Ins</div></div>
-                </div>
-            </div>
-
-            <!-- 第二页 -->
-            <div class="page">
-                <div class="app-grid">
-                    <div class="app-item jiggle-item grid-item" style="--col: 1; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">美化</div></div>
-                    <div class="app-item jiggle-item grid-item" style="--col: 2; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">情侣空间</div></div>
-                    <div class="app-item jiggle-item grid-item" style="--col: 3; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">工具</div></div>
-                    <div class="app-item jiggle-item grid-item" style="--col: 4; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">社区</div></div>
-                    <div class="app-item jiggle-item grid-item" style="--col: 1; --row: 2; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">应用商店</div></div>
-                    <div class="app-item jiggle-item grid-item" style="--col: 2; --row: 2; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">世界</div></div>
-                    <div class="app-item jiggle-item grid-item" style="--col: 3; --row: 2; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">书架</div></div>
-                    <div class="app-item jiggle-item grid-item" style="--col: 4; --row: 2; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">影视</div></div>
-                </div>
-            </div>
-
-            <!-- 第三页 -->
-            <div class="page">
-                <div class="app-grid">
-                    <div class="app-item jiggle-item grid-item" style="--col: 1; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">异世界</div></div>
-                    <div class="app-item jiggle-item grid-item" style="--col: 2; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">查手机</div></div>
-                    <div class="app-item jiggle-item grid-item" style="--col: 3; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">备忘录</div></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 底部 Dock 栏 -->
-        <div class="dock-container liquid-glass">
-            <div class="app-item jiggle-item" style="--w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">设置</div></div>
-            <div class="app-item jiggle-item" style="--w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">电话</div></div>
-            <div class="app-item jiggle-item" style="--w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">信息</div></div>
-            <div class="app-item jiggle-item" style="--w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">浏览器</div></div>
-        </div>
-
-        <input type="file" id="wallpaper-input" accept="image/*" style="display: none;">
-
-        <!-- 页面预览覆盖层 -->
-        <div class="preview-overlay" id="preview-overlay">
-            <div class="preview-header">
-                <div class="preview-btn" id="preview-add-btn">添加</div>
-                <div class="preview-btn" id="preview-done-btn">完成</div>
-            </div>
-            <div class="preview-container" id="preview-container"></div>
-        </div>
-
-        <!-- 组件面板 -->
-        <div class="widget-panel" id="widget-panel">
-            <div class="panel-header">
-                <div class="panel-title">添加组件</div>
-                <div class="size-tabs">
-                    <div class="size-tab active" data-size="small">小</div>
-                    <div class="size-tab" data-size="medium">中</div>
-                    <div class="size-tab" data-size="large">大</div>
-                </div>
-                <div class="panel-actions">
-                    <div class="panel-icon-btn" id="panel-import-btn" title="导入组件">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </div>
-                    <div class="panel-icon-btn" id="panel-new-btn" title="新建组件">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    </div>
-                </div>
-            </div>
-            <input type="file" id="import-widget-input" accept=".json" style="display: none;">
-
-            <div class="widget-list" id="widget-list">
-                <div class="widget-option default-widget" id="add-img-1x2" data-size="small"><div class="widget-name">竖图 (1×2)</div></div>
-                <div class="widget-option default-widget" id="add-img-2x1" data-size="small"><div class="widget-name">横图 (2×1)</div></div>
-                <div class="widget-option default-widget hidden" id="add-img-widget" data-size="medium"><div class="widget-name">方图 (2×2)</div></div>
-                <div class="widget-option default-widget hidden" id="add-img-4x2" data-size="medium"><div class="widget-name">宽图 (4×2)</div></div>
-                <div class="widget-option default-widget hidden" id="add-music-widget" data-size="large"><div class="widget-name">音乐播放器</div></div>
-            </div>
-        </div>
-
-        <!-- 图片裁剪弹窗 -->
-        <div id="crop-modal" class="crop-modal liquid-glass">
-            <div class="crop-header">
-                <div class="crop-btn" id="crop-cancel">取消</div>
-                <div class="crop-btn" id="crop-done">选取</div>
-            </div>
-            <div class="crop-area" id="crop-area">
-                <img id="crop-img" src="" alt="crop">
-                <div class="crop-box" id="crop-box"></div>
-            </div>
-        </div>
-
-        <!-- 自定义组件创建/编辑弹窗 -->
-        <div id="cw-modal-overlay" class="cw-modal-overlay">
-            <div class="cw-modal-content">
-                <div class="cw-header">
-                    <div class="cw-btn" id="cw-cancel">取消</div>
-                    <div class="cw-title" id="cw-modal-title">新建组件</div>
-                    <div style="display:flex; gap:16px; align-items:center;">
-                        <div class="cw-btn" id="cw-delete" style="display:none; color: #999;">删除</div>
-                        <div class="cw-btn" id="cw-save">保存</div>
-                    </div>
-                </div>
-                <div class="cw-body">
-                    <div class="cw-input-group">
-                        <input type="text" id="cw-name" placeholder="给组件起个名字" autocomplete="off">
-                    </div>
-                    <div class="cw-row-group">
-                        <div class="cw-input-group" style="flex: 1;">
-                            <label>分类</label>
-                            <div class="cw-size-select">
-                                <div class="cw-size-opt active" data-size="small">小</div>
-                                <div class="cw-size-opt" data-size="medium">中</div>
-                                <div class="cw-size-opt" data-size="large">大</div>
-                            </div>
-                        </div>
-                        <div class="cw-input-group" style="flex: 1;">
-                            <label>网格 (宽×高)</label>
-                            <div class="cw-grid-select">
-                                <input type="number" id="cw-w" value="2" min="1" max="4">
-                                <span>×</span>
-                                <input type="number" id="cw-h" value="2" min="1" max="6">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="cw-input-group">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                            <label style="margin:0;">HTML 代码</label>
-                            <div id="cw-example-btn" style="font-size:12px; color:#007aff; cursor:pointer; font-weight:600; background:rgba(0,122,255,0.1); padding:4px 10px; border-radius:10px;">查看示例</div>
-                        </div>
-                        <textarea id="cw-html" placeholder="输入 HTML 代码..."></textarea>
-                    </div>
-                    <div class="cw-input-group">
-                        <label>CSS 代码</label>
-                        <textarea id="cw-css" placeholder="输入 CSS 代码...（无需包裹 <style>）"></textarea>
-                    </div>
-                    <div class="cw-input-group">
-                        <label>JS 代码</label>
-                        <textarea id="cw-js" placeholder="输入 JS 代码... (可用 'widget' 代表当前组件DOM)"></textarea>
-                    </div>
-                    <div class="cw-preview-section">
-                        <label style="font-size: 13px; font-weight: 600; color: #555;">实时预览</label>
-                        <div class="cw-preview-container">
-                            <style id="cw-preview-style"></style>
-                            <div class="cw-preview-box" id="cw-preview-box"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="cw-input-group" style="margin-top: 5px;">
-                        <div id="cw-export-btn" style="background: rgba(0,0,0,0.05); color: #555; text-align: center; padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s;">导出为文件</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= API 配置弹窗 ================= -->
-        <div class="modal-overlay" id="api-modal">
-            <div class="modal-content">
-                <div class="modal-title">配置网易云 API</div>
-                <div class="modal-desc">请输入您部署的网易云音乐API链接<br><span style="color:#bbb;">例如：https://your-api-domain.com/</span></div>
-                <input type="text" id="api-input" class="modal-input" placeholder="https://...">
-                <div class="modal-actions">
-                    <div class="modal-btn cancel" id="api-cancel">取消</div>
-                    <div class="modal-btn confirm" id="api-confirm">确定</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= 扫码登录弹窗 ================= -->
-        <div class="modal-overlay" id="qr-modal">
-            <div class="modal-content" style="align-items: center;">
-                <div class="modal-title">扫码登录</div>
-                <div class="qr-box">
-                    <img id="qr-img" src="" alt="QR Code">
-                    <span class="qr-loading" id="qr-loading">加载中...</span>
-                </div>
-                <div class="modal-desc" id="qr-status" style="margin-bottom: 20px;">请使用网易云音乐APP扫码</div>
-                <div class="modal-btn cancel" id="qr-cancel" style="width: 100%;">取消</div>
-            </div>
-        </div>
-
     </div>
 
-    <script src="script.js" defer></script>
+    <!-- 编辑模式控制栏 -->
+    <div class="edit-controls">
+        <div style="position: relative;">
+            <div class="edit-btn liquid-glass" id="edit-btn">编辑</div>
+            <div class="edit-menu liquid-glass" id="edit-menu">
+                <div class="edit-menu-item" id="menu-add">添加组件</div>
+                <div class="edit-menu-item" id="menu-wallpaper">更换壁纸</div>
+                <div class="edit-menu-item" id="menu-preview">页面预览</div>
+                <div class="edit-menu-item" id="menu-cancel">取消修改</div>
+            </div>
+        </div>
+        <div class="done-btn liquid-glass" id="done-btn">完成</div>
+    </div>
+
+    <!-- ================= 音乐 APP 界面 ================= -->
+    <div id="music-app-overlay" class="music-app-overlay">
+        
+        <!-- 首页视图 -->
+        <div class="music-view active" id="view-home">
+            <div class="music-nav-bar">
+                <div class="music-nav-icon music-back-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></div>
+                <div class="music-nav-title">Music</div>
+                <div class="music-nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            </div>
+
+            <div class="music-content-area">
+                <div class="music-top-cards" id="home-top-cards">
+                    <div class="music-card music-bg-grey-5"><div class="music-card-title">每日推荐</div><div class="music-card-sub">今日限定好歌推荐</div><div class="music-card-play"><svg width="12" height="12" viewBox="0 0 24 24" fill="#111"><path d="M7 5.5 C7 4.5 8 4 9 4.5 L18 10.5 C19 11 19 12 18 12.5 L9 18.5 C8 19 7 18.5 7 17.5 Z"/></svg></div></div>
+                    <div class="music-card music-bg-grey-4"><div class="music-card-title">雷达歌单</div><div class="music-card-sub">反复聆听你爱的歌</div><div class="music-card-play"><svg width="12" height="12" viewBox="0 0 24 24" fill="#111"><path d="M7 5.5 C7 4.5 8 4 9 4.5 L18 10.5 C19 11 19 12 18 12.5 L9 18.5 C8 19 7 18.5 7 17.5 Z"/></svg></div></div>
+                    <div class="music-card music-bg-grey-3"><div class="music-card-title">漫游</div><div class="music-card-sub">多样频道无限畅听</div><div class="music-card-play"><svg width="12" height="12" viewBox="0 0 24 24" fill="#111"><path d="M7 5.5 C7 4.5 8 4 9 4.5 L18 10.5 C19 11 19 12 18 12.5 L9 18.5 C8 19 7 18.5 7 17.5 Z"/></svg></div></div>
+                </div>
+
+                <div class="music-section">
+                    <div class="music-section-title">推荐新音乐</div>
+                    <div class="music-song-item"><div class="music-song-cover music-bg-grey-2"></div><div class="music-song-info"><div class="music-song-name">未知</div><div class="music-song-artist"><span class="music-tag">推荐</span> 未知歌手</div></div></div>
+                    <div class="music-song-item"><div class="music-song-cover music-bg-grey-3"></div><div class="music-song-info"><div class="music-song-name">未知</div><div class="music-song-artist"><span class="music-tag">推荐</span> 未知歌手</div></div></div>
+                    <div class="music-song-item"><div class="music-song-cover music-bg-grey-1"></div><div class="music-song-info"><div class="music-song-name">未知</div><div class="music-song-artist"><span class="music-tag">推荐</span> 未知歌手</div></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 搜索视图 -->
+        <div class="music-view" id="view-search">
+            <div class="search-header">
+                <div class="search-input-box">
+                    <svg id="search-btn" style="cursor: pointer;" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="search-input" class="search-input" placeholder="搜索歌曲、歌手、专辑">
+                </div>
+                <div class="search-cancel" id="search-cancel">取消</div>
+            </div>
+            <div class="search-content-area">
+                <div id="search-result-area" style="display: none;">
+                    <div class="music-section-title" style="margin-bottom: 8px;">单曲</div>
+                    <div id="search-result-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 我的视图 -->
+        <div class="music-view profile-view" id="view-profile">
+            <div class="profile-bg" id="profile-bg"><input type="file" id="bg-upload" accept="image/*" style="display:none;"></div>
+            
+            <div class="profile-nav-bar">
+                <div class="p-nav-icon music-back-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></div>
+                <div class="nav-title">+ 添加状态</div>
+                <div class="nav-right">
+                    <div class="p-nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+                    <div class="p-nav-icon" id="api-settings-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-info-area">
+                <div class="avatar-wrapper">
+                    <div class="profile-avatar" id="profile-avatar"><input type="file" id="avatar-upload" accept="image/*" style="display:none;"></div>
+                </div>
+                <div class="profile-nickname" id="profile-nickname">点击右上角配置API</div>
+                <div class="profile-tags">
+                    <span class="p-tag vip"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg> VIP</span>
+                    <span class="p-tag" id="profile-level">Lv.0</span>
+                </div>
+                <div class="profile-stats" id="profile-stats"><span>0 关注</span><span>0 粉丝</span></div>
+
+                <div class="quick-actions">
+                    <div class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>最近</div>
+                    <div class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>本地</div>
+                    <div class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>云盘</div>
+                    <div class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>歌词</div>
+                </div>
+            </div>
+
+            <div class="profile-bottom-card">
+                <div class="profile-tabs"><div class="ptab active">音乐</div><div class="ptab">播客</div><div class="ptab">笔记</div></div>
+                <div class="pl-header">
+                    <div class="pl-tabs-small"><div class="pl-tab active">近期</div><div class="pl-tab">创建</div><div class="pl-tab">收藏</div></div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#ccc"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                </div>
+                <div id="user-playlist">
+                    <div class="user-pl-item"><div class="user-pl-cover music-bg-grey-3"></div><div class="user-pl-info"><div class="user-pl-name">我喜欢的音乐</div><div class="user-pl-count">0首</div></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="music-bottom-bar">
+            <div class="music-tab-item active" data-target="view-home"><div class="music-tab-text">首页</div></div>
+            <div class="music-tab-item" data-target="view-search"><div class="music-tab-text">搜索</div></div>
+            <div class="music-tab-item"><div class="music-tab-text">笔记</div></div>
+            <div class="music-tab-item" data-target="view-profile"><div class="music-tab-text">我的</div></div>
+        </div>
+    </div>
+
+    <!-- 桌面应用容器 -->
+    <div class="pages-container">
+        <!-- 第一页 -->
+        <div class="page">
+            <div class="app-grid">
+                <div class="widget-4x3 jiggle-item grid-item" style="--col: 1; --row: 1; --w: 4; --h: 3;">
+                    <div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+                    <div class="music-widget-inner">
+                        <svg class="connecting-lines" viewBox="0 0 400 250" preserveAspectRatio="xMidYMin slice"><defs><linearGradient id="fade-grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#555555;stop-opacity:1" /><stop offset="85%" style="stop-color:#555555;stop-opacity:0" /></linearGradient></defs><circle cx="151" cy="100" r="4" fill="#555555" /><circle cx="249" cy="100" r="4" fill="#555555" /><path d="M 151 100 Q 100 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/><path d="M 249 100 Q 300 145, 200 195" fill="none" stroke="url(#fade-grad)" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        <div class="avatars-wrapper">
+                            <div class="avatar-group"><div class="speech-bubble" contenteditable="true" spellcheck="false">你在左边</div><div class="avatar-circle"></div></div>
+                            <div class="avatar-group"><div class="speech-bubble" contenteditable="true" spellcheck="false">我紧靠右</div><div class="avatar-circle"></div></div>
+                        </div>
+                        <div class="center-text" contenteditable="true" spellcheck="false">Twenty four seven with us</div>
+                        <div class="music-player-v2">
+                            <div class="music-title">Pink Lavender</div>
+                            <div class="music-subtitle" contenteditable="true" spellcheck="false">· ⁺ ⋆ ‿ ıllıllı ‿ ⋆ ⁺ ·</div>
+                            <div class="progress-container"><div class="time-label">1:26</div><div class="progress-bar"><div class="progress-fill"></div></div><div class="time-label">3:48</div></div>
+                            <div class="controls-row">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="#666"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                <div class="main-controls"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M22 18V6l-8.5 6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg><svg width="32" height="32" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="2" fill="#333"/><rect x="14" y="5" width="4" height="14" rx="2" fill="#333"/></svg><svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/><path d="M13 6v12l8.5-6z" fill="#333" stroke="#333" stroke-width="3" stroke-linejoin="round"/></svg></div>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><path d="M9.52 14.47 A 3.5 3.5 0 1 1 14.48 14.47"/><path d="M7.05 16.95 A 7 7 0 1 1 16.95 16.95"/><path d="M4.58 19.42 A 10.5 10.5 0 1 1 19.42 19.42"/><path d="M12 15.5L16.5 21H7.5L12 15.5Z" fill="#333"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="app-item jiggle-item grid-item" style="--col: 1; --row: 4; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">微信</div></div>
+                <div class="app-item jiggle-item grid-item" style="--col: 2; --row: 4; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">音乐</div></div>
+                <div class="app-item jiggle-item grid-item" style="--col: 3; --row: 4; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">小红书</div></div>
+                <div class="app-item jiggle-item grid-item" style="--col: 4; --row: 4; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">Ins</div></div>
+            </div>
+        </div>
+
+        <!-- 第二页 -->
+        <div class="page">
+            <div class="app-grid">
+                <div class="app-item jiggle-item grid-item" style="--col: 1; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">美化</div></div>
+                <div class="app-item jiggle-item grid-item" style="--col: 2; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">情侣空间</div></div>
+                <div class="app-item jiggle-item grid-item" style="--col: 3; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">工具</div></div>
+                <div class="app-item jiggle-item grid-item" style="--col: 4; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">社区</div></div>
+                <div class="app-item jiggle-item grid-item" style="--col: 1; --row: 2; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">应用商店</div></div>
+                <div class="app-item jiggle-item grid-item" style="--col: 2; --row: 2; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">世界</div></div>
+                <div class="app-item jiggle-item grid-item" style="--col: 3; --row: 2; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">书架</div></div>
+                <div class="app-item jiggle-item grid-item" style="--col: 4; --row: 2; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">影视</div></div>
+            </div>
+        </div>
+
+        <!-- 第三页 -->
+        <div class="page">
+            <div class="app-grid">
+                <div class="app-item jiggle-item grid-item" style="--col: 1; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">异世界</div></div>
+                <div class="app-item jiggle-item grid-item" style="--col: 2; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">查手机</div></div>
+                <div class="app-item jiggle-item grid-item" style="--col: 3; --row: 1; --w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">备忘录</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部 Dock 栏 -->
+    <div class="dock-container liquid-glass">
+        <div class="app-item jiggle-item" style="--w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">设置</div></div>
+        <div class="app-item jiggle-item" style="--w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">电话</div></div>
+        <div class="app-item jiggle-item" style="--w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">信息</div></div>
+        <div class="app-item jiggle-item" style="--w: 1; --h: 1;"><div class="delete-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(220, 220, 225, 0.85)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/><line x1="7" y1="12" x2="17" y2="12" stroke="#555" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="app-icon-box"></div><div class="app-name">浏览器</div></div>
+    </div>
+
+    <input type="file" id="wallpaper-input" accept="image/*" style="display: none;">
+
+    <!-- 页面预览覆盖层 -->
+    <div class="preview-overlay" id="preview-overlay">
+        <div class="preview-header">
+            <div class="preview-btn" id="preview-add-btn">添加</div>
+            <div class="preview-btn" id="preview-done-btn">完成</div>
+        </div>
+        <div class="preview-container" id="preview-container"></div>
+    </div>
+
+    <!-- 组件面板 -->
+    <div class="widget-panel" id="widget-panel">
+        <div class="panel-header">
+            <div class="panel-title">添加组件</div>
+            <div class="size-tabs">
+                <div class="size-tab active" data-size="small">小</div>
+                <div class="size-tab" data-size="medium">中</div>
+                <div class="size-tab" data-size="large">大</div>
+            </div>
+            <div class="panel-actions">
+                <div class="panel-icon-btn" id="panel-import-btn" title="导入组件">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </div>
+                <div class="panel-icon-btn" id="panel-new-btn" title="新建组件">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </div>
+            </div>
+        </div>
+        <input type="file" id="import-widget-input" accept=".json" style="display: none;">
+
+        <div class="widget-list" id="widget-list">
+            <div class="widget-option default-widget" id="add-img-1x2" data-size="small"><div class="widget-name">竖图 (1×2)</div></div>
+            <div class="widget-option default-widget" id="add-img-2x1" data-size="small"><div class="widget-name">横图 (2×1)</div></div>
+            <div class="widget-option default-widget hidden" id="add-img-widget" data-size="medium"><div class="widget-name">方图 (2×2)</div></div>
+            <div class="widget-option default-widget hidden" id="add-img-4x2" data-size="medium"><div class="widget-name">宽图 (4×2)</div></div>
+            <div class="widget-option default-widget hidden" id="add-music-widget" data-size="large"><div class="widget-name">音乐播放器</div></div>
+        </div>
+    </div>
+
+    <!-- 图片裁剪弹窗 -->
+    <div id="crop-modal" class="crop-modal liquid-glass">
+        <div class="crop-header">
+            <div class="crop-btn" id="crop-cancel">取消</div>
+            <div class="crop-btn" id="crop-done">选取</div>
+        </div>
+        <div class="crop-area" id="crop-area">
+            <img id="crop-img" src="" alt="crop">
+            <div class="crop-box" id="crop-box"></div>
+        </div>
+    </div>
+
+    <!-- 自定义组件创建/编辑弹窗 -->
+    <div id="cw-modal-overlay" class="cw-modal-overlay">
+        <div class="cw-modal-content">
+            <div class="cw-header">
+                <div class="cw-btn" id="cw-cancel">取消</div>
+                <div class="cw-title" id="cw-modal-title">新建组件</div>
+                <div style="display:flex; gap:16px; align-items:center;">
+                    <div class="cw-btn" id="cw-delete" style="display:none; color: #999;">删除</div>
+                    <div class="cw-btn" id="cw-save">保存</div>
+                </div>
+            </div>
+            <div class="cw-body">
+                <div class="cw-input-group">
+                    <input type="text" id="cw-name" placeholder="给组件起个名字" autocomplete="off">
+                </div>
+                <div class="cw-row-group">
+                    <div class="cw-input-group" style="flex: 1;">
+                        <label>分类</label>
+                        <div class="cw-size-select">
+                            <div class="cw-size-opt active" data-size="small">小</div>
+                            <div class="cw-size-opt" data-size="medium">中</div>
+                            <div class="cw-size-opt" data-size="large">大</div>
+                        </div>
+                    </div>
+                    <div class="cw-input-group" style="flex: 1;">
+                        <label>网格 (宽×高)</label>
+                        <div class="cw-grid-select">
+                            <input type="number" id="cw-w" value="2" min="1" max="4">
+                            <span>×</span>
+                            <input type="number" id="cw-h" value="2" min="1" max="6">
+                        </div>
+                    </div>
+                </div>
+                <div class="cw-input-group">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <label style="margin:0;">HTML 代码</label>
+                        <div id="cw-example-btn" style="font-size:12px; color:#007aff; cursor:pointer; font-weight:600; background:rgba(0,122,255,0.1); padding:4px 10px; border-radius:10px;">查看示例</div>
+                    </div>
+                    <textarea id="cw-html" placeholder="输入 HTML 代码..."></textarea>
+                </div>
+                <div class="cw-input-group">
+                    <label>CSS 代码</label>
+                    <textarea id="cw-css" placeholder="输入 CSS 代码...（无需包裹 <style>）"></textarea>
+                </div>
+                <div class="cw-input-group">
+                    <label>JS 代码</label>
+                    <textarea id="cw-js" placeholder="输入 JS 代码... (可用 'widget' 代表当前组件DOM)"></textarea>
+                </div>
+                <div class="cw-preview-section">
+                    <label style="font-size: 13px; font-weight: 600; color: #555;">实时预览</label>
+                    <div class="cw-preview-container">
+                        <style id="cw-preview-style"></style>
+                        <div class="cw-preview-box" id="cw-preview-box"></div>
+                    </div>
+                </div>
+                
+                <div class="cw-input-group" style="margin-top: 5px;">
+                    <div id="cw-export-btn" style="background: rgba(0,0,0,0.05); color: #555; text-align: center; padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s;">导出为文件</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= API 配置弹窗 ================= -->
+    <div class="modal-overlay" id="api-modal">
+        <div class="modal-content">
+            <div class="modal-title">配置网易云 API</div>
+            <div class="modal-desc">请输入您部署的网易云音乐API链接<br><span style="color:#bbb;">例如：https://your-api-domain.com/</span></div>
+            <input type="text" id="api-input" class="modal-input" placeholder="https://...">
+            <div class="modal-actions">
+                <div class="modal-btn cancel" id="api-cancel">取消</div>
+                <div class="modal-btn confirm" id="api-confirm">确定</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 扫码登录弹窗 ================= -->
+    <div class="modal-overlay" id="qr-modal">
+        <div class="modal-content" style="align-items: center;">
+            <div class="modal-title">扫码登录</div>
+            <div class="qr-box">
+                <img id="qr-img" src="" alt="QR Code">
+                <span class="qr-loading" id="qr-loading">加载中...</span>
+            </div>
+            <div class="modal-desc" id="qr-status" style="margin-bottom: 20px;">请使用网易云音乐APP扫码</div>
+            <div class="modal-btn cancel" id="qr-cancel" style="width: 100%;">取消</div>
+        </div>
+    </div>
+
+</div>
+
+<script src="script.js" defer></script>
 </body>
 </html>
