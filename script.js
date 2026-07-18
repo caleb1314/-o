@@ -77,7 +77,6 @@ if ('getBattery' in navigator) {
             const batteryLevel = document.getElementById('battery-level');
             
             if (batteryText) batteryText.textContent = level;
-            // 修复电量满格显示：最大宽度改为27
             if (batteryLevel) batteryLevel.setAttribute('width', (level / 100) * 27);
         }
         updateBattery();
@@ -215,6 +214,7 @@ cropArea.addEventListener('wheel', e => {
 
 document.getElementById('crop-cancel').addEventListener('click', () => {
     document.getElementById('crop-modal').classList.remove('show');
+    cropBox.style.borderRadius = '12px'; // 恢复默认圆角
 });
 
 document.getElementById('crop-done').addEventListener('click', async () => {
@@ -232,17 +232,26 @@ document.getElementById('crop-done').addEventListener('click', async () => {
     
     const base64 = canvas.toDataURL('image/png');
     
-    const content = currentCropWidget.querySelector('.image-widget-content');
-    content.style.backgroundImage = `url(${base64})`;
-    content.style.backgroundColor = 'transparent';
-    content.style.border = 'none';
-    content.style.boxShadow = 'none';
-    const placeholder = content.querySelector('.upload-placeholder');
-    if (placeholder) placeholder.style.display = 'none';
-    
-    const widgetId = currentCropWidget.getAttribute('data-widget-id');
-    await saveToDB(`widget_${widgetId}`, base64);
-    await saveCurrentState();
+    if (currentCropWidget.classList.contains('avatar-circle')) {
+        // 音乐组件头像裁剪完成
+        currentCropWidget.style.backgroundImage = `url(${base64})`;
+        currentCropWidget.style.backgroundColor = 'transparent';
+        saveCurrentState();
+        cropBox.style.borderRadius = '12px'; // 恢复默认圆角
+    } else {
+        // 普通图片组件裁剪完成
+        const content = currentCropWidget.querySelector('.image-widget-content');
+        content.style.backgroundImage = `url(${base64})`;
+        content.style.backgroundColor = 'transparent';
+        content.style.border = 'none';
+        content.style.boxShadow = 'none';
+        const placeholder = content.querySelector('.upload-placeholder');
+        if (placeholder) placeholder.style.display = 'none';
+        
+        const widgetId = currentCropWidget.getAttribute('data-widget-id');
+        await saveToDB(`widget_${widgetId}`, base64);
+        await saveCurrentState();
+    }
     
     document.getElementById('crop-modal').classList.remove('show');
 });
@@ -342,7 +351,7 @@ function bindAllDynamicEvents() {
         });
     });
 
-    // 绑定音乐组件头像上传事件
+    // 绑定音乐组件头像上传事件（触发裁剪器）
     document.querySelectorAll('.avatar-circle').forEach(circle => {
         if (circle.dataset.hasUpload) return;
         circle.dataset.hasUpload = 'true';
@@ -367,9 +376,25 @@ function bindAllDynamicEvents() {
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (event) => {
-                    circle.style.backgroundImage = `url(${event.target.result})`;
-                    circle.style.backgroundColor = 'transparent';
-                    saveCurrentState();
+                    currentCropWidget = circle; // 复用裁剪器
+                    cropImg.src = event.target.result;
+                    
+                    const ratio = 1; // 头像为正方形
+                    let boxW = window.innerWidth * 0.7;
+                    let boxH = boxW;
+                    cropBox.style.width = boxW + 'px';
+                    cropBox.style.height = boxH + 'px';
+                    cropBox.style.borderRadius = '50%'; // 圆形裁剪框
+
+                    cropImgX = 0; cropImgY = 0;
+                    cropImg.onload = () => {
+                        const imgRatio = cropImg.naturalWidth / cropImg.naturalHeight;
+                        cropImgScale = (imgRatio > ratio) ? (boxH / cropImg.naturalHeight) : (boxW / cropImg.naturalWidth);
+                        cropImgScale *= 1.05; 
+                        updateCropImgTransform();
+                        document.getElementById('crop-modal').classList.add('show');
+                    };
+                    input.value = ''; 
                 };
                 reader.readAsDataURL(file);
             }
@@ -575,6 +600,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     const savedWallpaper = await getFromDB('wallpaper');
     if (savedWallpaper) document.getElementById('screen').style.backgroundImage = `url(${savedWallpaper})`;
     
+    // 恢复音乐APP的背景和头像缓存
+    const savedMusicBg = await getFromDB('music_profile_bg');
+    if (savedMusicBg) document.getElementById('profile-bg').style.backgroundImage = `url(${savedMusicBg})`;
+    const savedMusicAvatar = await getFromDB('music_profile_avatar');
+    if (savedMusicAvatar) document.getElementById('profile-avatar').style.backgroundImage = `url(${savedMusicAvatar})`;
+
     const savedPages = await getFromDB('pagesHTML');
     const savedDock = await getFromDB('dockHTML');
     if (savedPages) document.querySelector('.pages-container').innerHTML = savedPages;
@@ -1380,10 +1411,12 @@ screen.addEventListener('click', (e) => {
     }
 });
 
-// 2. 点击左上角三横线退出音乐 APP
-document.getElementById('music-back-btn').addEventListener('click', () => {
-    document.getElementById('music-app-overlay').classList.remove('show');
-    screen.classList.remove('music-active');
+// 2. 全局绑定：点击左上角三横线退出音乐 APP
+document.querySelectorAll('.music-back-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.getElementById('music-app-overlay').classList.remove('show');
+        screen.classList.remove('music-active');
+    });
 });
 
 // 3. 隔离长按事件：防止在音乐 APP 内部长按触发桌面的编辑模式
@@ -1412,14 +1445,17 @@ document.querySelectorAll('.music-tab-item').forEach(tab => {
     });
 });
 
-// 5. 自定义背景与头像上传
+// 5. 自定义背景与头像上传 (加入 IndexedDB 缓存)
 document.getElementById('profile-bg').addEventListener('click', (e) => {
     if(e.target.id !== 'bg-upload') document.getElementById('bg-upload').click();
 });
-document.getElementById('bg-upload').addEventListener('change', function() {
+document.getElementById('bg-upload').addEventListener('change', async function() {
     if(this.files[0]) {
         const reader = new FileReader();
-        reader.onload = e => document.getElementById('profile-bg').style.backgroundImage = `url(${e.target.result})`;
+        reader.onload = async e => {
+            document.getElementById('profile-bg').style.backgroundImage = `url(${e.target.result})`;
+            await saveToDB('music_profile_bg', e.target.result);
+        };
         reader.readAsDataURL(this.files[0]);
     }
 });
@@ -1428,10 +1464,13 @@ document.getElementById('profile-avatar').addEventListener('click', (e) => {
     e.stopPropagation();
     if(e.target.id !== 'avatar-upload') document.getElementById('avatar-upload').click();
 });
-document.getElementById('avatar-upload').addEventListener('change', function() {
+document.getElementById('avatar-upload').addEventListener('change', async function() {
     if(this.files[0]) {
         const reader = new FileReader();
-        reader.onload = e => document.getElementById('profile-avatar').style.backgroundImage = `url(${e.target.result})`;
+        reader.onload = async e => {
+            document.getElementById('profile-avatar').style.backgroundImage = `url(${e.target.result})`;
+            await saveToDB('music_profile_avatar', e.target.result);
+        };
         reader.readAsDataURL(this.files[0]);
     }
 });
@@ -1555,6 +1594,11 @@ window.doSearch = async function(keyword) {
     }
 }
 
+// 绑定放大镜点击事件
+document.getElementById('search-btn').addEventListener('click', () => {
+    doSearch(searchInput.value.trim());
+});
+
 searchInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         searchInput.blur();
@@ -1642,7 +1686,13 @@ function renderHomeSongs(list) {
             cover.style.backgroundSize = 'cover';
             cover.className = 'music-song-cover';
             items[i].querySelector('.music-song-name').textContent = item.name;
-            items[i].querySelector('.music-song-artist').innerHTML = `<span class="music-tag">推荐</span> ${item.song.artists.map(a=>a.name).join(' / ')}`;
+            
+            // 随机加点标签 (SQ / VIP)
+            let tags = '<span class="music-tag">推荐</span>';
+            if (Math.random() > 0.5) tags += ' <span class="music-tag">SQ</span>';
+            if (Math.random() > 0.7) tags += ' <span class="music-tag">VIP</span>';
+            
+            items[i].querySelector('.music-song-artist').innerHTML = `${tags} ${item.song.artists.map(a=>a.name).join(' / ')}`;
         }
     });
 }
