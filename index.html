@@ -7,12 +7,9 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
     <link rel="manifest" href="manifest.json">
-    
     <title>液态玻璃手机主页</title>
     <link rel="stylesheet" href="style.css">
-    <!-- 用于注入自定义组件的CSS -->
     <style id="custom-widgets-style"></style>
 </head>
 <body>
@@ -49,110 +46,116 @@
             <div class="done-btn liquid-glass" id="done-btn">完成</div>
         </div>
 
-        <!-- ================= 新增：音乐 APP 界面 ================= -->
+        <!-- ================= 音乐 APP 界面 ================= -->
         <div id="music-app-overlay" class="music-app-overlay">
-            <!-- 顶部导航栏 -->
-            <div class="music-nav-bar">
-                <div class="music-nav-icon" id="music-back-btn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-                </div>
-                <div class="music-nav-title">Music</div>
-                <div class="music-nav-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                </div>
-            </div>
-
-            <!-- 内容区 -->
-            <div class="music-content-area">
-                <!-- 顶部卡片 -->
-                <div class="music-top-cards">
-                    <div class="music-card music-bg-grey-5">
-                        <div class="music-card-title">未知</div>
-                        <div class="music-card-sub">未知</div>
-                        <div class="music-card-play"><svg width="10" height="10" viewBox="0 0 24 24" fill="#111"><path d="M6 4l15 8-15 8z"/></svg></div>
-                    </div>
-                    <div class="music-card music-bg-grey-4">
-                        <div class="music-card-title">未知</div>
-                        <div class="music-card-sub">未知</div>
-                    </div>
-                    <div class="music-card music-bg-grey-3">
-                        <div class="music-card-title">未知</div>
-                        <div class="music-card-sub">未知</div>
-                    </div>
+            
+            <!-- 首页视图 -->
+            <div class="music-view active" id="view-home">
+                <div class="music-nav-bar">
+                    <div class="music-nav-icon" id="music-back-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></div>
+                    <div class="music-nav-title">Music</div>
+                    <div class="music-nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
                 </div>
 
-                <!-- 推荐歌曲 -->
-                <div class="music-section">
-                    <div class="music-section-title">根据你喜爱的歌曲推荐</div>
-                    <div class="music-song-item">
-                        <div class="music-song-cover music-bg-grey-2"></div>
-                        <div class="music-song-info">
-                            <div class="music-song-name">未知</div>
-                            <div class="music-song-artist"><span class="music-tag">未知</span> 未知歌手</div>
-                        </div>
-                        <div class="music-song-action"><svg width="18" height="18" viewBox="0 0 24 24" fill="#888"><path d="M8 6l12 6-12 6z"/></svg></div>
+                <div class="music-content-area">
+                    <div class="music-top-cards" id="home-top-cards">
+                        <div class="music-card music-bg-grey-5"><div class="music-card-title">每日推荐</div><div class="music-card-sub">今日限定好歌推荐</div><div class="music-card-play"><svg width="10" height="10" viewBox="0 0 24 24" fill="#111"><path d="M6 4l15 8-15 8z"/></svg></div></div>
+                        <div class="music-card music-bg-grey-4"><div class="music-card-title">雷达歌单</div><div class="music-card-sub">反复聆听你爱的歌</div><div class="music-card-play"><svg width="10" height="10" viewBox="0 0 24 24" fill="#111"><path d="M6 4l15 8-15 8z"/></svg></div></div>
+                        <div class="music-card music-bg-grey-3"><div class="music-card-title">漫游</div><div class="music-card-sub">多样频道无限畅听</div><div class="music-card-play"><svg width="10" height="10" viewBox="0 0 24 24" fill="#111"><path d="M6 4l15 8-15 8z"/></svg></div></div>
                     </div>
-                    <div class="music-song-item">
-                        <div class="music-song-cover music-bg-grey-3"></div>
-                        <div class="music-song-info">
-                            <div class="music-song-name">未知</div>
-                            <div class="music-song-artist"><span class="music-tag">未知</span> 未知歌手</div>
-                        </div>
-                        <div class="music-song-action"><svg width="18" height="18" viewBox="0 0 24 24" fill="#888"><path d="M8 6l12 6-12 6z"/></svg></div>
-                    </div>
-                    <div class="music-song-item">
-                        <div class="music-song-cover music-bg-grey-1"></div>
-                        <div class="music-song-info">
-                            <div class="music-song-name">未知</div>
-                            <div class="music-song-artist"><span class="music-tag">未知</span> 未知歌手</div>
-                        </div>
-                        <div class="music-song-action">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#888"><rect x="6" y="12" width="3" height="8" rx="1"/><rect x="11" y="6" width="3" height="14" rx="1"/><rect x="16" y="15" width="3" height="5" rx="1"/></svg>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- 推荐歌单 -->
-                <div class="music-section-full">
-                    <div class="music-section-title">
-                        推荐歌单 
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                    <div class="music-section">
+                        <div class="music-section-title">推荐新音乐</div>
+                        <div class="music-song-item"><div class="music-song-cover music-bg-grey-2"></div><div class="music-song-info"><div class="music-song-name">未知</div><div class="music-song-artist"><span class="music-tag">未知</span> 未知歌手</div></div></div>
+                        <div class="music-song-item"><div class="music-song-cover music-bg-grey-3"></div><div class="music-song-info"><div class="music-song-name">未知</div><div class="music-song-artist"><span class="music-tag">未知</span> 未知歌手</div></div></div>
+                        <div class="music-song-item"><div class="music-song-cover music-bg-grey-1"></div><div class="music-song-info"><div class="music-song-name">未知</div><div class="music-song-artist"><span class="music-tag">未知</span> 未知歌手</div></div></div>
                     </div>
-                    <div class="music-playlist-grid">
-                        <div class="music-playlist-item">
-                            <div class="music-playlist-cover-box music-bg-grey-6">
-                                <div class="music-playlist-tag">未知</div>
-                                <div class="music-playlist-play"><svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M7 5l13 7-13 7z"/></svg></div>
-                            </div>
-                            <div class="music-playlist-title">未知</div>
-                        </div>
-                        <div class="music-playlist-item">
-                            <div class="music-playlist-cover-box music-bg-grey-4">
-                                <div class="music-playlist-tag">未知</div>
-                                <div class="music-playlist-play"><svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M7 5l13 7-13 7z"/></svg></div>
-                            </div>
-                            <div class="music-playlist-title">未知</div>
-                        </div>
-                        <div class="music-playlist-item">
-                            <div class="music-playlist-cover-box music-bg-grey-7">
-                                <div class="music-playlist-tag">未知</div>
-                                <div class="music-playlist-play"><svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M7 5l13 7-13 7z"/></svg></div>
-                            </div>
-                            <div class="music-playlist-title">未知</div>
+
+                    <div class="music-section-full">
+                        <div class="music-section-title">推荐歌单</div>
+                        <div class="music-playlist-grid">
+                            <div class="music-playlist-item"><div class="music-playlist-cover-box music-bg-grey-6"></div><div class="music-playlist-title">未知</div></div>
+                            <div class="music-playlist-item"><div class="music-playlist-cover-box music-bg-grey-4"></div><div class="music-playlist-title">未知</div></div>
+                            <div class="music-playlist-item"><div class="music-playlist-cover-box music-bg-grey-7"></div><div class="music-playlist-title">未知</div></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 底部导航栏 -->
+            <!-- 搜索视图 -->
+            <div class="music-view" id="view-search">
+                <div class="search-header">
+                    <div class="search-input-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="search-input" class="search-input" placeholder="搜索歌曲、歌手、专辑">
+                    </div>
+                    <div class="search-cancel" id="search-cancel">取消</div>
+                </div>
+                <div class="search-content-area">
+                    <div id="search-hot-area">
+                        <div class="music-section-title" style="margin-bottom: 8px;">热搜榜</div>
+                        <div class="hot-search-list" id="hot-search-list"><div class="hot-search-tag">加载中...</div></div>
+                    </div>
+                    <div id="search-result-area" style="display: none;">
+                        <div class="music-section-title" style="margin-bottom: 8px;">单曲</div>
+                        <div id="search-result-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 我的视图 -->
+            <div class="music-view profile-view" id="view-profile">
+                <div class="profile-bg" id="profile-bg"><input type="file" id="bg-upload" accept="image/*" style="display:none;"></div>
+                
+                <div class="profile-nav-bar">
+                    <div class="p-nav-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></div>
+                    <div class="nav-title">+ 添加状态</div>
+                    <div class="nav-right">
+                        <div class="p-nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+                        <div class="p-nav-icon" id="api-settings-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-info-area">
+                    <div class="avatar-wrapper">
+                        <div class="profile-avatar" id="profile-avatar"><input type="file" id="avatar-upload" accept="image/*" style="display:none;"></div>
+                    </div>
+                    <div class="profile-nickname" id="profile-nickname">点击右上角配置API</div>
+                    <div class="profile-tags">
+                        <span class="p-tag vip"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg> VIP</span>
+                        <span class="p-tag" id="profile-level">Lv.0</span>
+                    </div>
+                    <div class="profile-stats" id="profile-stats"><span>0 关注</span><span>0 粉丝</span></div>
+
+                    <div class="quick-actions">
+                        <div class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>最近</div>
+                        <div class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>本地</div>
+                        <div class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>云盘</div>
+                        <div class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>歌词</div>
+                    </div>
+                </div>
+
+                <div class="profile-bottom-card">
+                    <div class="profile-tabs"><div class="ptab active">音乐</div><div class="ptab">播客</div><div class="ptab">笔记</div></div>
+                    <div class="pl-header">
+                        <div class="pl-tabs-small"><div class="pl-tab active">近期</div><div class="pl-tab">创建</div><div class="pl-tab">收藏</div></div>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#ccc"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                    </div>
+                    <div id="user-playlist">
+                        <div class="user-pl-item"><div class="user-pl-cover music-bg-grey-3"></div><div class="user-pl-info"><div class="user-pl-name">我喜欢的音乐</div><div class="user-pl-count">0首</div></div></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="music-bottom-bar">
-                <div class="music-tab-item active"><div class="music-tab-text">首页</div></div>
-                <div class="music-tab-item"><div class="music-tab-text">搜索</div></div>
+                <div class="music-tab-item active" data-target="view-home"><div class="music-tab-text">首页</div></div>
+                <div class="music-tab-item" data-target="view-search"><div class="music-tab-text">搜索</div></div>
                 <div class="music-tab-item"><div class="music-tab-text">笔记</div></div>
-                <div class="music-tab-item"><div class="music-tab-text">我的</div></div>
+                <div class="music-tab-item" data-target="view-profile"><div class="music-tab-text">我的</div></div>
             </div>
         </div>
-        <!-- ================= 音乐 APP 界面结束 ================= -->
 
         <!-- 桌面应用容器 -->
         <div class="pages-container">
@@ -249,7 +252,6 @@
                     </div>
                 </div>
             </div>
-            <!-- 隐藏的导入文件输入框 -->
             <input type="file" id="import-widget-input" accept=".json" style="display: none;">
 
             <div class="widget-list" id="widget-list">
@@ -329,11 +331,36 @@
                         </div>
                     </div>
                     
-                    <!-- 导出组件按键 -->
                     <div class="cw-input-group" style="margin-top: 5px;">
                         <div id="cw-export-btn" style="background: rgba(0,0,0,0.05); color: #555; text-align: center; padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s;">导出为文件</div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- ================= API 配置弹窗 ================= -->
+        <div class="modal-overlay" id="api-modal">
+            <div class="modal-content">
+                <div class="modal-title">配置网易云 API</div>
+                <div class="modal-desc">请输入您部署的网易云音乐API链接<br><span style="color:#bbb;">例如：https://your-api-domain.com/</span></div>
+                <input type="text" id="api-input" class="modal-input" placeholder="https://...">
+                <div class="modal-actions">
+                    <div class="modal-btn cancel" id="api-cancel">取消</div>
+                    <div class="modal-btn confirm" id="api-confirm">确定</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 扫码登录弹窗 ================= -->
+        <div class="modal-overlay" id="qr-modal">
+            <div class="modal-content" style="align-items: center;">
+                <div class="modal-title">扫码登录</div>
+                <div class="qr-box">
+                    <img id="qr-img" src="" alt="QR Code">
+                    <span class="qr-loading" id="qr-loading">加载中...</span>
+                </div>
+                <div class="modal-desc" id="qr-status" style="margin-bottom: 20px;">请使用网易云音乐APP扫码</div>
+                <div class="modal-btn cancel" id="qr-cancel" style="width: 100%;">取消</div>
             </div>
         </div>
 
