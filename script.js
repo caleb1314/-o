@@ -1757,6 +1757,28 @@ const progressTrack = document.getElementById('progress-track');
 const playPauseBtn = document.getElementById('play-pause-btn');
 const playIcon = document.getElementById('play-icon');
 const recordDisk = document.getElementById('record-disk');
+const playModeBtn = document.getElementById('play-mode-btn');
+
+// 播放模式状态
+let currentPlayMode = 0; // 0: 列表循环, 1: 单曲循环, 2: 随机播放
+const playModeIcons = [
+    // 列表循环
+    `<svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M18 5a1 1 0 0 1 1.707-.707l2 2a1 1 0 0 1 0 1.414l-2 2A1 1 0 0 1 18 9V8H7a3 3 0 0 0-3 3a1 1 0 1 1-2 0a5 5 0 0 1 5-5h11zM6 19a1 1 0 0 1-1.707.707l-2-2a1 1 0 0 1 0-1.414l2-2A1 1 0 0 1 6 15v1h11a3 3 0 0 0 3-3a1 1 0 1 1 2 0a5 5 0 0 1-4.998 5H6z" clip-rule="evenodd"></path></svg>`,
+    // 单曲循环
+    `<svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M22 9a1 1 0 1 1-2 0V5.618l-.553.276a1 1 0 1 1-.894-1.788l2-1A1 1 0 0 1 22 4zM6 19a1 1 0 0 1-1.707.707l-2-2a1 1 0 0 1 0-1.414l2-2A1 1 0 0 1 6 15v1h11a3 3 0 0 0 3-3a1 1 0 1 1 2 0a5 5 0 0 1-4.998 5H6zM16 7a1 1 0 0 0-1-1H7a5 5 0 0 0-5 5a1 1 0 1 0 2 0a3 3 0 0 1 3-3h8a1 1 0 0 0 1-1" clip-rule="evenodd"></path></svg>`,
+    // 随机播放
+    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 17h2.735a4 4 0 0 0 3.43-1.942l3.67-6.116A4 4 0 0 1 16.265 7H21m0 0l-2-2m2 2l-2 2M3 7h2.735a4 4 0 0 1 2.871 1.215M21 17h-4.735a4 4 0 0 1-2.871-1.215M21 17l-2 2m2-2l-2-2"></path></svg>`
+];
+const playModeNames = ['列表循环', '单曲循环', '随机播放'];
+
+// 切换播放模式
+if (playModeBtn) {
+    playModeBtn.addEventListener('click', () => {
+        currentPlayMode = (currentPlayMode + 1) % 3;
+        playModeBtn.innerHTML = playModeIcons[currentPlayMode];
+        showToast(playModeNames[currentPlayMode]);
+    });
+}
 
 function formatTime(seconds) {
     if (isNaN(seconds)) return '0:00';
@@ -1780,10 +1802,17 @@ globalAudio.addEventListener('loadedmetadata', () => {
 });
 
 globalAudio.addEventListener('ended', () => {
-    recordDisk.classList.remove('playing');
-    playIcon.innerHTML = '<polygon points="7 4 20 12 7 20" fill="#fff" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/>';
-    progressFill.style.width = '0%';
-    timeCurrent.textContent = '0:00';
+    if (currentPlayMode === 1) {
+        // 单曲循环模式：时间归零并重新播放
+        globalAudio.currentTime = 0;
+        globalAudio.play();
+    } else {
+        // 列表循环或随机播放：目前暂未接入自动切歌，先重置状态
+        recordDisk.classList.remove('playing');
+        playIcon.innerHTML = '<polygon points="7 4 20 12 7 20" fill="#fff" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/>';
+        progressFill.style.width = '0%';
+        timeCurrent.textContent = '0:00';
+    }
 });
 
 playPauseBtn.addEventListener('click', () => {
