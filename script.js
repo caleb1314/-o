@@ -214,7 +214,7 @@ cropArea.addEventListener('wheel', e => {
 
 document.getElementById('crop-cancel').addEventListener('click', () => {
     document.getElementById('crop-modal').classList.remove('show');
-    cropBox.style.borderRadius = '12px'; // 恢复默认圆角
+    cropBox.style.borderRadius = '12px'; 
 });
 
 document.getElementById('crop-done').addEventListener('click', async () => {
@@ -233,13 +233,11 @@ document.getElementById('crop-done').addEventListener('click', async () => {
     const base64 = canvas.toDataURL('image/png');
     
     if (currentCropWidget.classList.contains('avatar-circle')) {
-        // 音乐组件头像裁剪完成
         currentCropWidget.style.backgroundImage = `url(${base64})`;
         currentCropWidget.style.backgroundColor = 'transparent';
         saveCurrentState();
-        cropBox.style.borderRadius = '12px'; // 恢复默认圆角
+        cropBox.style.borderRadius = '12px'; 
     } else {
-        // 普通图片组件裁剪完成
         const content = currentCropWidget.querySelector('.image-widget-content');
         content.style.backgroundImage = `url(${base64})`;
         content.style.backgroundColor = 'transparent';
@@ -260,7 +258,6 @@ document.getElementById('crop-done').addEventListener('click', async () => {
 const screen = document.getElementById('screen');
 
 function bindAllDynamicEvents() {
-    // 每次重新绑定前，克隆节点以清除旧的事件监听器
     document.querySelectorAll('.app-item, .widget-1x2, .widget-2x1, .widget-2x2, .widget-4x2, .widget-4x3, .custom-widget-item').forEach(item => {
         const newBtn = item.cloneNode(true);
         delete newBtn.dataset.jsInited; 
@@ -352,7 +349,6 @@ function bindAllDynamicEvents() {
         });
     });
 
-    // 绑定音乐组件头像上传事件（触发裁剪器）
     document.querySelectorAll('.avatar-circle').forEach(circle => {
         let input = circle.querySelector('input[type="file"]');
         if (!input) {
@@ -374,15 +370,15 @@ function bindAllDynamicEvents() {
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (event) => {
-                    currentCropWidget = circle; // 复用裁剪器
+                    currentCropWidget = circle; 
                     cropImg.src = event.target.result;
                     
-                    const ratio = 1; // 头像为正方形
+                    const ratio = 1; 
                     let boxW = window.innerWidth * 0.7;
                     let boxH = boxW;
                     cropBox.style.width = boxW + 'px';
                     cropBox.style.height = boxH + 'px';
-                    cropBox.style.borderRadius = '50%'; // 圆形裁剪框
+                    cropBox.style.borderRadius = '50%'; 
 
                     cropImgX = 0; cropImgY = 0;
                     cropImg.onload = () => {
@@ -598,7 +594,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     const savedWallpaper = await getFromDB('wallpaper');
     if (savedWallpaper) document.getElementById('screen').style.backgroundImage = `url(${savedWallpaper})`;
     
-    // 恢复音乐APP的背景和头像缓存
     const savedMusicBg = await getFromDB('music_profile_bg');
     if (savedMusicBg) document.getElementById('profile-bg').style.backgroundImage = `url(${savedMusicBg})`;
     const savedMusicAvatar = await getFromDB('music_profile_avatar');
@@ -1574,11 +1569,14 @@ window.doSearch = async function(keyword) {
     resultArea.style.display = 'block';
     resultList.innerHTML = '<div style="text-align:center; padding: 20px; color:#888; font-size:13px;">搜索中...</div>';
     
-    // 使用 cloudsearch 接口获取带封面的数据
     const res = await fetchApi(`cloudsearch?keywords=${encodeURIComponent(keyword)}`);
     if (res && res.result && res.result.songs) {
-        resultList.innerHTML = res.result.songs.map(song => `
-            <div class="search-result-item">
+        resultList.innerHTML = res.result.songs.map(song => {
+            const songName = song.name.replace(/'/g, "\\'");
+            const artistName = song.ar.map(a=>a.name).join(' / ').replace(/'/g, "\\'");
+            const coverUrl = `${song.al.picUrl}?param=300y300`;
+            return `
+            <div class="search-result-item" onclick="playSong(${song.id}, '${songName}', '${artistName}', '${coverUrl}')">
                 <div class="search-result-cover" style="background-image: url(${song.al.picUrl}?param=100y100)"></div>
                 <div class="search-result-info">
                     <div class="search-result-name">${song.name}</div>
@@ -1588,13 +1586,12 @@ window.doSearch = async function(keyword) {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="#ccc"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     } else {
         resultList.innerHTML = '<div style="text-align:center; padding: 20px; color:#888; font-size:13px;">未找到相关歌曲</div>';
     }
 }
 
-// 绑定放大镜点击事件
 document.getElementById('search-btn').addEventListener('click', () => {
     doSearch(searchInput.value.trim());
 });
@@ -1666,7 +1663,7 @@ function renderUserPlaylist(list) {
     const container = document.getElementById('user-playlist');
     if (!list || list.length === 0) return;
     container.innerHTML = list.map(item => `
-        <div class="user-pl-item">
+        <div class="user-pl-item" onclick="openPlaylistDetail(${item.id})">
             <div class="user-pl-cover" style="background-image: url(${item.coverImgUrl}?param=100y100)"></div>
             <div class="user-pl-info">
                 <div class="user-pl-name">${item.name}</div>
@@ -1678,21 +1675,166 @@ function renderUserPlaylist(list) {
 }
 
 function renderHomeSongs(list) {
-    const items = document.querySelectorAll('.music-song-item');
-    list.slice(0, 3).forEach((item, i) => {
-        if(items[i]) {
-            const cover = items[i].querySelector('.music-song-cover');
-            cover.style.backgroundImage = `url(${item.picUrl}?param=100y100)`;
-            cover.style.backgroundSize = 'cover';
-            cover.className = 'music-song-cover';
-            items[i].querySelector('.music-song-name').textContent = item.name;
+    const container = document.getElementById('home-song-list');
+    if (!list || list.length === 0) return;
+    container.innerHTML = list.slice(0, 3).map(item => {
+        const songName = item.name.replace(/'/g, "\\'");
+        const artistName = item.song.artists.map(a=>a.name).join(' / ').replace(/'/g, "\\'");
+        const coverUrl = `${item.picUrl}?param=300y300`;
+        
+        let tags = '<span class="music-tag">推荐</span>';
+        if (Math.random() > 0.5) tags += ' <span class="music-tag">SQ</span>';
+        if (Math.random() > 0.7) tags += ' <span class="music-tag">VIP</span>';
+
+        return `
+        <div class="music-song-item" onclick="playSong(${item.id}, '${songName}', '${artistName}', '${coverUrl}')">
+            <div class="music-song-cover" style="background-image: url(${item.picUrl}?param=100y100); background-size: cover;"></div>
+            <div class="music-song-info">
+                <div class="music-song-name">${item.name}</div>
+                <div class="music-song-artist">${tags} ${item.song.artists.map(a=>a.name).join(' / ')}</div>
+            </div>
+        </div>
+    `}).join('');
+}
+
+// ================= 歌单详情逻辑 =================
+async function openPlaylistDetail(id) {
+    document.querySelectorAll('.music-view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-playlist-detail').classList.add('active');
+    
+    const header = document.getElementById('pl-detail-header');
+    const list = document.getElementById('pl-detail-songs');
+    list.innerHTML = '<div style="text-align:center; padding: 40px; color:#888; font-size:13px;">加载中...</div>';
+    
+    try {
+        const res = await fetchApi(`playlist/detail?id=${id}`);
+        if (res && res.playlist) {
+            const pl = res.playlist;
+            header.innerHTML = `
+                <div class="pl-detail-cover" style="background-image: url(${pl.coverImgUrl}?param=200y200)"></div>
+                <div class="pl-detail-info">
+                    <div class="pl-detail-name">${pl.name}</div>
+                    <div class="pl-detail-creator"><img src="${pl.creator.avatarUrl}?param=50y50"> ${pl.creator.nickname}</div>
+                </div>
+            `;
             
-            // 随机加点标签 (SQ / VIP)
-            let tags = '<span class="music-tag">推荐</span>';
-            if (Math.random() > 0.5) tags += ' <span class="music-tag">SQ</span>';
-            if (Math.random() > 0.7) tags += ' <span class="music-tag">VIP</span>';
-            
-            items[i].querySelector('.music-song-artist').innerHTML = `${tags} ${item.song.artists.map(a=>a.name).join(' / ')}`;
+            const tracksRes = await fetchApi(`playlist/track/all?id=${id}&limit=50`);
+            if (tracksRes && tracksRes.songs) {
+                list.innerHTML = tracksRes.songs.map((song, index) => {
+                    const songName = song.name.replace(/'/g, "\\'");
+                    const artistName = song.ar.map(a=>a.name).join(' / ').replace(/'/g, "\\'");
+                    const coverUrl = `${song.al.picUrl}?param=300y300`;
+                    return `
+                    <div class="search-result-item" onclick="playSong(${song.id}, '${songName}', '${artistName}', '${coverUrl}')">
+                        <div style="width: 30px; text-align: center; color: #999; font-size: 14px; font-weight: 600; margin-right: 10px;">${index + 1}</div>
+                        <div class="search-result-info">
+                            <div class="search-result-name">${song.name}</div>
+                            <div class="search-result-artist">${song.ar.map(a=>a.name).join(' / ')} - ${song.al.name}</div>
+                        </div>
+                        <div class="search-result-action">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#ccc"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        </div>
+                    </div>
+                `}).join('');
+            }
         }
-    });
+    } catch (e) {
+        list.innerHTML = '<div style="text-align:center; padding: 40px; color:#888; font-size:13px;">加载失败</div>';
+    }
+}
+
+document.getElementById('pl-detail-back').addEventListener('click', () => {
+    document.querySelectorAll('.music-view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-profile').classList.add('active');
+});
+
+// ================= 全局播放器逻辑 =================
+const globalAudio = new Audio();
+const progressFill = document.getElementById('progress-fill');
+const timeCurrent = document.getElementById('time-current');
+const timeTotal = document.getElementById('time-total');
+const progressTrack = document.getElementById('progress-track');
+const playPauseBtn = document.getElementById('play-pause-btn');
+const playIcon = document.getElementById('play-icon');
+const recordDisk = document.getElementById('record-disk');
+
+function formatTime(seconds) {
+    if (isNaN(seconds)) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+globalAudio.addEventListener('timeupdate', () => {
+    const current = globalAudio.currentTime;
+    const duration = globalAudio.duration;
+    timeCurrent.textContent = formatTime(current);
+    if (duration) {
+        timeTotal.textContent = formatTime(duration);
+        progressFill.style.width = `${(current / duration) * 100}%`;
+    }
+});
+
+globalAudio.addEventListener('loadedmetadata', () => {
+    timeTotal.textContent = formatTime(globalAudio.duration);
+});
+
+globalAudio.addEventListener('ended', () => {
+    recordDisk.classList.remove('playing');
+    playIcon.innerHTML = '<polygon points="7 4 20 12 7 20" fill="#fff" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/>';
+    progressFill.style.width = '0%';
+    timeCurrent.textContent = '0:00';
+});
+
+playPauseBtn.addEventListener('click', () => {
+    if (!globalAudio.src) return;
+    if (globalAudio.paused) {
+        globalAudio.play();
+        recordDisk.classList.add('playing');
+        playIcon.innerHTML = '<rect x="6" y="5" width="4" height="14" fill="#fff" rx="1"/><rect x="14" y="5" width="4" height="14" fill="#fff" rx="1"/>';
+    } else {
+        globalAudio.pause();
+        recordDisk.classList.remove('playing');
+        playIcon.innerHTML = '<polygon points="7 4 20 12 7 20" fill="#fff" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/>';
+    }
+});
+
+progressTrack.addEventListener('click', (e) => {
+    if (!globalAudio.duration) return;
+    const rect = progressTrack.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    globalAudio.currentTime = percent * globalAudio.duration;
+});
+
+window.closePlayer = function() {
+    document.getElementById('player-view').classList.remove('show');
+}
+
+window.playSong = async function(songId, songName, artistName, coverUrl) {
+    document.getElementById('player-view').classList.add('show');
+    document.getElementById('player-title').textContent = songName;
+    document.getElementById('player-artist').textContent = artistName;
+    document.getElementById('record-cover').style.backgroundImage = `url(${coverUrl})`;
+    document.getElementById('player-bg').style.backgroundImage = `url(${coverUrl})`;
+    
+    globalAudio.pause();
+    recordDisk.classList.remove('playing');
+    playIcon.innerHTML = '<polygon points="7 4 20 12 7 20" fill="#fff" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/>';
+    progressFill.style.width = '0%';
+    timeCurrent.textContent = '0:00';
+    timeTotal.textContent = '0:00';
+    
+    try {
+        const res = await fetchApi(`song/url/v1?id=${songId}&level=standard`);
+        if (res && res.data && res.data[0] && res.data[0].url) {
+            globalAudio.src = res.data[0].url;
+            globalAudio.play();
+            recordDisk.classList.add('playing');
+            playIcon.innerHTML = '<rect x="6" y="5" width="4" height="14" fill="#fff" rx="1"/><rect x="14" y="5" width="4" height="14" fill="#fff" rx="1"/>';
+        } else {
+            showToast('无法获取该歌曲的播放链接(可能需要VIP或无版权)');
+        }
+    } catch (e) {
+        showToast('播放失败');
+    }
 }
