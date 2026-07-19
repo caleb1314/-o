@@ -187,8 +187,8 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .music-app-overlay.show { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
 
 /* 视图切换容器 - 彻底修复了点击穿透拦截桌面的Bug！去掉了 pointer-events: auto */
-.music-view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; opacity: 0; transition: opacity 0.2s ease; background: #f7f8fa; z-index: 1; }
-.music-view.active { opacity: 1; z-index: 5; }
+.music-view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; opacity: 0; transition: opacity 0.2s ease; background: #f7f8fa; z-index: 1; pointer-events: none; }
+.music-view.active { opacity: 1; z-index: 5; pointer-events: auto; }
 
 /* ================= 首页视图样式 ================= */
 .music-nav-bar { width: 100%; height: calc(44px + 44px + env(safe-area-inset-top)); padding-top: calc(44px + env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; padding-left: 18px; padding-right: 18px; background: rgba(247, 248, 250, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 10; flex-shrink: 0; }
@@ -361,7 +361,7 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .time-text { color: rgba(255,255,255,0.6); font-size: 11px; font-weight: 600; width: 32px; text-align: center; font-variant-numeric: tabular-nums; }
 .progress-track { flex: 1; height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; cursor: pointer; position: relative; display: flex; align-items: center; }
 .progress-fill { width: 0%; height: 100%; background: #fff; border-radius: 3px; pointer-events: none; position: relative; }
-.progress-fill::after { content: ''; position: absolute; right: -4px; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; background: #fff; border-radius: 50%; box-shadow: 0 0 4px rgba(0,0,0,0.3); }
+
 
 /* 控制栏 */
 .controls-area { display: flex; justify-content: space-between; align-items: center; padding: 0 24px; margin-top: 30px; margin-bottom: calc(30px + env(safe-area-inset-bottom)); }
