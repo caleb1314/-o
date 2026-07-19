@@ -66,9 +66,9 @@
 
                 <div class="music-section">
                     <div class="music-section-title">推荐新音乐</div>
-                    <div class="music-song-item"><div class="music-song-cover music-bg-grey-2"></div><div class="music-song-info"><div class="music-song-name">未知</div><div class="music-song-artist"><span class="music-tag">推荐</span> 未知歌手</div></div></div>
-                    <div class="music-song-item"><div class="music-song-cover music-bg-grey-3"></div><div class="music-song-info"><div class="music-song-name">未知</div><div class="music-song-artist"><span class="music-tag">推荐</span> 未知歌手</div></div></div>
-                    <div class="music-song-item"><div class="music-song-cover music-bg-grey-1"></div><div class="music-song-info"><div class="music-song-name">未知</div><div class="music-song-artist"><span class="music-tag">推荐</span> 未知歌手</div></div></div>
+                    <div id="home-song-list">
+                        <!-- 动态渲染 -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -136,11 +136,104 @@
             </div>
         </div>
 
+        <!-- 歌单详情视图 -->
+        <div class="music-view" id="view-playlist-detail" style="background: #f7f8fa; z-index: 6;">
+            <div class="music-nav-bar" style="background: transparent;">
+                <div class="music-nav-icon" id="pl-detail-back"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>
+                <div class="music-nav-title">歌单</div>
+                <div class="music-nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            </div>
+            <div class="music-content-area" style="padding-top: 0;">
+                <div class="playlist-detail-header" id="pl-detail-header">
+                    <!-- 动态渲染歌单信息 -->
+                </div>
+                <div class="music-section" style="margin-top: 20px;">
+                    <div class="music-section-title" style="font-size: 15px;">歌曲列表</div>
+                    <div id="pl-detail-songs">
+                        <div style="text-align:center; padding: 40px; color:#888; font-size:13px;">加载中...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部导航栏 -->
         <div class="music-bottom-bar">
             <div class="music-tab-item active" data-target="view-home"><div class="music-tab-text">首页</div></div>
             <div class="music-tab-item" data-target="view-search"><div class="music-tab-text">搜索</div></div>
             <div class="music-tab-item"><div class="music-tab-text">笔记</div></div>
             <div class="music-tab-item" data-target="view-profile"><div class="music-tab-text">我的</div></div>
+        </div>
+
+        <!-- ================= 播放器全屏界面 ================= -->
+        <div class="player-view" id="player-view">
+            <!-- 动态模糊背景 -->
+            <div class="player-bg" id="player-bg"></div>
+
+            <div class="player-content">
+                <!-- 顶部导航 -->
+                <div class="player-nav">
+                    <div class="nav-btn" onclick="closePlayer()">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    </div>
+                    <div class="player-nav-title">MUSIC</div>
+                    <div class="player-nav-right">
+                        <div class="nav-btn" style="width:auto; margin-left: 4px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1.5" fill="#fff" stroke="none"/><circle cx="4" cy="12" r="1.5" fill="#fff" stroke="none"/><circle cx="4" cy="18" r="1.5" fill="#fff" stroke="none"/></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 唱片区 -->
+                <div class="record-area">
+                    <div class="record-disk" id="record-disk">
+                        <div class="record-cover" id="record-cover"></div>
+                    </div>
+                </div>
+
+                <!-- 歌曲信息 -->
+                <div class="song-info-area">
+                    <div style="flex: 1; overflow: hidden; padding-right: 10px;">
+                        <div class="s-title" id="player-title">暂无播放</div>
+                        <div class="s-sub"><span id="player-artist">未知歌手</span> <span class="sq-tag">SQ</span></div>
+                    </div>
+                    <div class="song-actions">
+                        <div class="action-btn">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        </div>
+                        <div class="action-btn">
+                            <svg width="26" height="26" viewBox="0 0 56 56" fill="rgba(255,255,255,0.8)"><path d="M29.746 51.836c3.469 0 8.719-2.602 8.719-9.492V20.898c0-1.171.187-1.382 1.242-1.593l11.18-2.461c.82-.188 1.36-.844 1.36-1.664V6.344c0-1.313-1.056-2.18-2.345-1.899L37.48 7.141c-1.617.351-2.484 1.195-2.484 2.601l.14 26.063c0 1.078-.492 1.78-1.453 1.968l-3.726.797c-4.781.985-7.008 3.446-7.008 7.032c0 3.656 2.836 6.234 6.797 6.234M5.348 16.375H26.3c.89 0 1.593-.727 1.593-1.594s-.703-1.57-1.593-1.57H5.348c-.868 0-1.594.703-1.594 1.57a1.61 1.61 0 0 0 1.594 1.594m0 8.344H26.3c.914 0 1.593-.727 1.593-1.617c0-.868-.703-1.547-1.593-1.547H5.348c-.868 0-1.594.68-1.594 1.547a1.6 1.6 0 0 0 1.594 1.617m0 8.343H26.3c.914 0 1.593-.703 1.593-1.593c0-.867-.703-1.57-1.593-1.57H5.348a1.58 1.58 0 1 0 0 3.163"/></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 进度条 -->
+                <div class="progress-area">
+                    <div class="time-text" id="time-current">0:00</div>
+                    <div class="progress-track" id="progress-track">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="time-text" id="time-total">0:00</div>
+                </div>
+
+                <!-- 控制栏 -->
+                <div class="controls-area">
+                    <div class="ctrl-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M18 5a1 1 0 0 1 1.707-.707l2 2a1 1 0 0 1 0 1.414l-2 2A1 1 0 0 1 18 9V8H7a3 3 0 0 0-3 3a1 1 0 1 1-2 0a5 5 0 0 1 5-5h11zM6 19a1 1 0 0 1-1.707.707l-2-2a1 1 0 0 1 0-1.414l2-2A1 1 0 0 1 6 15v1h11a3 3 0 0 0 3-3a1 1 0 1 1 2 0a5 5 0 0 1-4.998 5H6z" clip-rule="evenodd"></path></svg>
+                    </div>
+                    <div class="ctrl-icon">
+                        <svg viewBox="0 0 24 24"><polygon points="11.5 12 20 18.5 20 5.5" fill="#fff" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/><polygon points="3.5 12 12 18.5 12 5.5" fill="#fff" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div class="play-btn" id="play-pause-btn">
+                        <svg viewBox="0 0 24 24" id="play-icon"><polygon points="7 4 20 12 7 20" fill="#fff" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div class="ctrl-icon">
+                        <svg viewBox="0 0 24 24"><polygon points="12.5 12 4 5.5 4 18.5" fill="#fff" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/><polygon points="20.5 12 12 5.5 12 18.5" fill="#fff" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div class="ctrl-icon">
+                        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10.147 2.022A.5.5 0 0 0 9.5 2.5v9.905a3.25 3.25 0 1 0 .995 2.165l.005-.07V7.177l5.853 1.8A.5.5 0 0 0 17 8.5V5.977a2.5 2.5 0 0 0-1.765-2.39z"/></svg>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
