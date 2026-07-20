@@ -355,3 +355,11 @@ body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; 
 .play-btn { width: 72px; height: 72px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.2s; }
 .play-btn:active { transform: scale(0.9); }
 .play-btn svg { width: 44px; height: 44px; }
+/* 歌词区样式 */
+.lyrics-area { display: none; flex: 1; overflow-y: auto; text-align: center; padding: 20px 24px; margin-top: 20px; margin-bottom: 40px; scroll-behavior: smooth; scrollbar-width: none; }
+.lyrics-area::-webkit-scrollbar { display: none; }
+.player-view.show-lyrics .record-area { display: none; }
+.player-view.show-lyrics .lyrics-area { display: block; }
+
+.lyric-line { color: rgba(255,255,255,0.4); font-size: 15px; margin-bottom: 22px; transition: color 0.3s, transform 0.3s, text-shadow 0.3s; font-weight: 600; cursor: pointer; }
+.lyric-line.active { color: #fff; font-size: 18px; transform: scale(1.05); text-shadow: 0 2px 8px rgba(255,255,255,0.3); }
