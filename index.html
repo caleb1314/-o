@@ -191,23 +191,34 @@
                         <div class="record-cover" id="record-cover"></div>
                     </div>
                 </div>
-
+                <!-- 歌词区 (默认隐藏) -->
+                <div class="lyrics-area" id="lyrics-area">
+                    <div class="lyric-line">暂无歌词</div>
+                </div>
                 <!-- 歌曲信息 -->
                 <div class="song-info-area">
                     <div style="flex: 1; overflow: hidden; padding-right: 10px;">
                         <div class="s-title" id="player-title">暂无播放</div>
                         <div class="s-sub"><span id="player-artist">未知歌手</span> <span class="sq-tag">SQ</span></div>
                     </div>
-                    <div class="song-actions">
-    <div class="action-btn">
-        <!-- 纯白星星 -->
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-    </div>
-    <div class="action-btn">
-        <!-- 纯白列表 -->
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-    </div>
-</div>
+                                    <div class="song-actions">
+                    <div class="action-btn">
+                        <!-- 完美复刻：空心圆角星星 -->
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                    </div>
+                    <div class="action-btn">
+                        <!-- 完美复刻：三道杠 + 小音符 -->
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="4" y1="7" x2="14" y2="7"/>
+                            <line x1="4" y1="12" x2="14" y2="12"/>
+                            <line x1="4" y1="17" x2="10" y2="17"/>
+                            <path d="M18 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" fill="#fff" stroke="none"/>
+                            <polyline points="18 17 18 6 21 6" stroke="#fff" fill="none"/>
+                        </svg>
+                    </div>
+                </div>
                 </div>
 
                 <!-- 进度条 -->
@@ -219,22 +230,25 @@
                     <div class="time-text" id="time-total">0:00</div>
                 </div>
 
-                <!-- 控制栏 -->
+                                <!-- 控制栏 -->
                 <div class="controls-area">
                     <div class="ctrl-icon" id="play-mode-btn">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M18 5a1 1 0 0 1 1.707-.707l2 2a1 1 0 0 1 0 1.414l-2 2A1 1 0 0 1 18 9V8H7a3 3 0 0 0-3 3a1 1 0 1 1-2 0a5 5 0 0 1 5-5h11zM6 19a1 1 0 0 1-1.707.707l-2-2a1 1 0 0 1 0-1.414l2-2A1 1 0 0 1 6 15v1h11a3 3 0 0 0 3-3a1 1 0 1 1 2 0a5 5 0 0 1-4.998 5H6z" clip-rule="evenodd"></path></svg>
-</div>
-                    <div class="ctrl-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M18 5a1 1 0 0 1 1.707-.707l2 2a1 1 0 0 1 0 1.414l-2 2A1 1 0 0 1 18 9V8H7a3 3 0 0 0-3 3a1 1 0 1 1-2 0a5 5 0 0 1 5-5h11zM6 19a1 1 0 0 1-1.707.707l-2-2a1 1 0 0 1 0-1.414l2-2A1 1 0 0 1 6 15v1h11a3 3 0 0 0 3-3a1 1 0 1 1 2 0a5 5 0 0 1-4.998 5H6z" clip-rule="evenodd"></path></svg>
+                    </div>
+                    <div class="ctrl-icon" id="prev-btn">
                         <svg viewBox="0 0 24 24"><polygon points="11.5 12 20 18.5 20 5.5" fill="#fff" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/><polygon points="3.5 12 12 18.5 12 5.5" fill="#fff" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/></svg>
                     </div>
                     <div class="play-btn" id="play-pause-btn">
                         <svg viewBox="0 0 24 24" id="play-icon"><polygon points="7 4 20 12 7 20" fill="#fff" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/></svg>
                     </div>
-                    <div class="ctrl-icon">
+                    <div class="ctrl-icon" id="next-btn">
                         <svg viewBox="0 0 24 24"><polygon points="12.5 12 4 5.5 4 18.5" fill="#fff" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/><polygon points="20.5 12 12 5.5 12 18.5" fill="#fff" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/></svg>
                     </div>
-                    <div class="ctrl-icon">
-                        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10.147 2.022A.5.5 0 0 0 9.5 2.5v9.905a3.25 3.25 0 1 0 .995 2.165l.005-.07V7.177l5.853 1.8A.5.5 0 0 0 17 8.5V5.977a2.5 2.5 0 0 0-1.765-2.39z"/></svg>
+                    <div class="ctrl-icon" id="lyrics-btn">
+                        <!-- 完美复刻：实心单音符 -->
+                        <svg viewBox="0 0 24 24" fill="#fff">
+                            <path d="M19 3H10a1 1 0 0 0-1 1v11.59A4.48 4.48 0 0 0 6 15a4.5 4.5 0 1 0 4.5 4.5V7h7.5a.5.5 0 0 0 .5-.5V3.5a.5.5 0 0 0-.5-.5z"/>
+                        </svg>
                     </div>
                 </div>
             </div>
