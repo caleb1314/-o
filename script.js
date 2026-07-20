@@ -1571,6 +1571,9 @@ window.doSearch = async function(keyword) {
     
     const res = await fetchApi(`cloudsearch?keywords=${encodeURIComponent(keyword)}`);
     if (res && res.result && res.result.songs) {
+        // 【新增】：保存当前搜索列表，用于切歌
+        window.currentPlaylistContext = res.result.songs.map(song => ({ id: song.id, name: song.name.replace(/'/g, "\\'"), artist: song.ar.map(a=>a.name).join(' / ').replace(/'/g, "\\'"), cover: `${song.al.picUrl}?param=300y300` }));
+        
         resultList.innerHTML = res.result.songs.map(song => {
             const songName = song.name.replace(/'/g, "\\'");
             const artistName = song.ar.map(a=>a.name).join(' / ').replace(/'/g, "\\'");
@@ -1677,6 +1680,10 @@ function renderUserPlaylist(list) {
 function renderHomeSongs(list) {
     const container = document.getElementById('home-song-list');
     if (!list || list.length === 0) return;
+    
+    // 【新增】：保存当前推荐列表，用于切歌
+    window.currentPlaylistContext = list.slice(0, 3).map(item => ({ id: item.id, name: item.name.replace(/'/g, "\\'"), artist: item.song.artists.map(a=>a.name).join(' / ').replace(/'/g, "\\'"), cover: `${item.picUrl}?param=300y300` }));
+
     container.innerHTML = list.slice(0, 3).map(item => {
         const songName = item.name.replace(/'/g, "\\'");
         const artistName = item.song.artists.map(a=>a.name).join(' / ').replace(/'/g, "\\'");
@@ -1720,6 +1727,9 @@ async function openPlaylistDetail(id) {
             
             const tracksRes = await fetchApi(`playlist/track/all?id=${id}&limit=50`);
             if (tracksRes && tracksRes.songs) {
+                // 【新增】：保存当前歌单列表，用于切歌
+                window.currentPlaylistContext = tracksRes.songs.map(song => ({ id: song.id, name: song.name.replace(/'/g, "\\'"), artist: song.ar.map(a=>a.name).join(' / ').replace(/'/g, "\\'"), cover: `${song.al.picUrl}?param=300y300` }));
+
                 list.innerHTML = tracksRes.songs.map((song, index) => {
                     const songName = song.name.replace(/'/g, "\\'");
                     const artistName = song.ar.map(a=>a.name).join(' / ').replace(/'/g, "\\'");
@@ -1748,7 +1758,7 @@ document.getElementById('pl-detail-back').addEventListener('click', () => {
     document.getElementById('view-profile').classList.add('active');
 });
 
-// ================= 全局播放器逻辑 =================
+// ================= 全局播放器与歌词逻辑 =================
 const globalAudio = new Audio();
 const progressFill = document.getElementById('progress-fill');
 const timeCurrent = document.getElementById('time-current');
@@ -1757,27 +1767,55 @@ const progressTrack = document.getElementById('progress-track');
 const playPauseBtn = document.getElementById('play-pause-btn');
 const playIcon = document.getElementById('play-icon');
 const recordDisk = document.getElementById('record-disk');
-const playModeBtn = document.getElementById('play-mode-btn');
 
-// 播放模式状态
+window.currentPlaylist = [];
+window.currentSongIndex = -1;
+let parsedLyrics = [];
+
+// 播放模式切换
+const playModeBtn = document.getElementById('play-mode-btn');
 let currentPlayMode = 0; // 0: 列表循环, 1: 单曲循环, 2: 随机播放
 const playModeIcons = [
-    // 列表循环
     `<svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M18 5a1 1 0 0 1 1.707-.707l2 2a1 1 0 0 1 0 1.414l-2 2A1 1 0 0 1 18 9V8H7a3 3 0 0 0-3 3a1 1 0 1 1-2 0a5 5 0 0 1 5-5h11zM6 19a1 1 0 0 1-1.707.707l-2-2a1 1 0 0 1 0-1.414l2-2A1 1 0 0 1 6 15v1h11a3 3 0 0 0 3-3a1 1 0 1 1 2 0a5 5 0 0 1-4.998 5H6z" clip-rule="evenodd"></path></svg>`,
-    // 单曲循环
     `<svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M22 9a1 1 0 1 1-2 0V5.618l-.553.276a1 1 0 1 1-.894-1.788l2-1A1 1 0 0 1 22 4zM6 19a1 1 0 0 1-1.707.707l-2-2a1 1 0 0 1 0-1.414l2-2A1 1 0 0 1 6 15v1h11a3 3 0 0 0 3-3a1 1 0 1 1 2 0a5 5 0 0 1-4.998 5H6zM16 7a1 1 0 0 0-1-1H7a5 5 0 0 0-5 5a1 1 0 1 0 2 0a3 3 0 0 1 3-3h8a1 1 0 0 0 1-1" clip-rule="evenodd"></path></svg>`,
-    // 随机播放
     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 17h2.735a4 4 0 0 0 3.43-1.942l3.67-6.116A4 4 0 0 1 16.265 7H21m0 0l-2-2m2 2l-2 2M3 7h2.735a4 4 0 0 1 2.871 1.215M21 17h-4.735a4 4 0 0 1-2.871-1.215M21 17l-2 2m2-2l-2-2"></path></svg>`
 ];
-const playModeNames = ['列表循环', '单曲循环', '随机播放'];
+playModeBtn.addEventListener('click', () => {
+    currentPlayMode = (currentPlayMode + 1) % 3;
+    playModeBtn.innerHTML = playModeIcons[currentPlayMode];
+    showToast(['列表循环', '单曲循环', '随机播放'][currentPlayMode]);
+});
 
-// 切换播放模式
-if (playModeBtn) {
-    playModeBtn.addEventListener('click', () => {
-        currentPlayMode = (currentPlayMode + 1) % 3;
-        playModeBtn.innerHTML = playModeIcons[currentPlayMode];
-        showToast(playModeNames[currentPlayMode]);
-    });
+// 歌词显示切换
+document.getElementById('lyrics-btn').addEventListener('click', () => {
+    document.getElementById('player-view').classList.toggle('show-lyrics');
+});
+
+// 获取并解析歌词
+async function fetchLyrics(id) {
+    const lyricsArea = document.getElementById('lyrics-area');
+    lyricsArea.innerHTML = '<div class="lyric-line">加载歌词中...</div>';
+    parsedLyrics = [];
+    try {
+        const res = await fetchApi(`lyric?id=${id}`);
+        if (res && res.lrc && res.lrc.lyric) {
+            const lines = res.lrc.lyric.split('\n');
+            const regex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
+            for (let line of lines) {
+                const match = regex.exec(line);
+                if (match) {
+                    const time = parseInt(match[1]) * 60 + parseInt(match[2]) + parseInt(match[3]) / (match[3].length === 3 ? 1000 : 100);
+                    const text = match[4].trim();
+                    if (text) parsedLyrics.push({ time, text });
+                }
+            }
+            lyricsArea.innerHTML = parsedLyrics.length ? parsedLyrics.map((l, i) => `<div class="lyric-line" id="lyric-${i}">${l.text}</div>`).join('') : '<div class="lyric-line">纯音乐，请欣赏</div>';
+        } else {
+            lyricsArea.innerHTML = '<div class="lyric-line">暂无歌词</div>';
+        }
+    } catch(e) {
+        lyricsArea.innerHTML = '<div class="lyric-line">歌词加载失败</div>';
+    }
 }
 
 function formatTime(seconds) {
@@ -1787,6 +1825,7 @@ function formatTime(seconds) {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
+// 监听播放进度 (同步进度条与歌词)
 globalAudio.addEventListener('timeupdate', () => {
     const current = globalAudio.currentTime;
     const duration = globalAudio.duration;
@@ -1795,23 +1834,36 @@ globalAudio.addEventListener('timeupdate', () => {
         timeTotal.textContent = formatTime(duration);
         progressFill.style.width = `${(current / duration) * 100}%`;
     }
+    
+    // 歌词滚动逻辑
+    if (parsedLyrics.length > 0 && document.getElementById('player-view').classList.contains('show-lyrics')) {
+        let activeIndex = -1;
+        for (let i = 0; i < parsedLyrics.length; i++) {
+            if (current >= parsedLyrics[i].time) activeIndex = i;
+            else break;
+        }
+        if (activeIndex !== -1) {
+            const activeLine = document.getElementById(`lyric-${activeIndex}`);
+            if (activeLine && !activeLine.classList.contains('active')) {
+                document.querySelectorAll('.lyric-line').forEach(el => el.classList.remove('active'));
+                activeLine.classList.add('active');
+                activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }
 });
 
 globalAudio.addEventListener('loadedmetadata', () => {
     timeTotal.textContent = formatTime(globalAudio.duration);
 });
 
+// 自动切歌逻辑
 globalAudio.addEventListener('ended', () => {
-    if (currentPlayMode === 1) {
-        // 单曲循环模式：时间归零并重新播放
+    if (currentPlayMode === 1) { // 单曲循环
         globalAudio.currentTime = 0;
         globalAudio.play();
-    } else {
-        // 列表循环或随机播放：目前暂未接入自动切歌，先重置状态
-        recordDisk.classList.remove('playing');
-        playIcon.innerHTML = '<polygon points="7 4 20 12 7 20" fill="#fff" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/>';
-        progressFill.style.width = '0%';
-        timeCurrent.textContent = '0:00';
+    } else { // 列表循环 或 随机播放
+        playNext();
     }
 });
 
@@ -1839,7 +1891,11 @@ window.closePlayer = function() {
     document.getElementById('player-view').classList.remove('show');
 }
 
+// 播放核心函数
 window.playSong = async function(songId, songName, artistName, coverUrl) {
+    window.currentPlaylist = window.currentPlaylistContext || [];
+    window.currentSongIndex = window.currentPlaylist.findIndex(s => s.id == songId);
+
     document.getElementById('player-view').classList.add('show');
     document.getElementById('player-title').textContent = songName;
     document.getElementById('player-artist').textContent = artistName;
@@ -1852,6 +1908,8 @@ window.playSong = async function(songId, songName, artistName, coverUrl) {
     progressFill.style.width = '0%';
     timeCurrent.textContent = '0:00';
     timeTotal.textContent = '0:00';
+    
+    fetchLyrics(songId); // 拉取歌词
     
     try {
         const res = await fetchApi(`song/url/v1?id=${songId}&level=standard`);
@@ -1867,3 +1925,19 @@ window.playSong = async function(songId, songName, artistName, coverUrl) {
         showToast('播放失败');
     }
 }
+
+// 上一曲 / 下一曲
+window.playNext = function() {
+    if (window.currentPlaylist.length === 0) return;
+    let nextIndex = (currentPlayMode === 2) ? Math.floor(Math.random() * window.currentPlaylist.length) : (window.currentSongIndex + 1) % window.currentPlaylist.length;
+    let song = window.currentPlaylist[nextIndex];
+    playSong(song.id, song.name, song.artist, song.cover);
+}
+window.playPrev = function() {
+    if (window.currentPlaylist.length === 0) return;
+    let prevIndex = (currentPlayMode === 2) ? Math.floor(Math.random() * window.currentPlaylist.length) : (window.currentSongIndex - 1 < 0 ? window.currentPlaylist.length - 1 : window.currentSongIndex - 1);
+    let song = window.currentPlaylist[prevIndex];
+    playSong(song.id, song.name, song.artist, song.cover);
+}
+document.getElementById('next-btn').addEventListener('click', playNext);
+document.getElementById('prev-btn').addEventListener('click', playPrev);
